@@ -1,19 +1,18 @@
 package org.twelve.gcp.outline.primitive;
 
-import org.twelve.gcp.ast.ONode;
-import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
 
 public abstract class Primitive extends ProductADT {
 
-    private ONode node;
+    private Node node;
 
     protected Primitive(BuildInOutline buildIn) {
         this(buildIn,null);
     }
 
-    protected Primitive(BuildInOutline buildIn,ONode node) {
+    protected Primitive(BuildInOutline buildIn, Node node) {
         super(buildIn);
         this.node = node;
     }
@@ -28,7 +27,7 @@ public abstract class Primitive extends ProductADT {
     }
 
     @Override
-    public ONode node() {
+    public Node node() {
         return this.node;
     }
 }

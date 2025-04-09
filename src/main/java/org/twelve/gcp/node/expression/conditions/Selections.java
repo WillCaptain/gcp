@@ -1,6 +1,6 @@
 package org.twelve.gcp.node.expression.conditions;
 
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.Outline;
@@ -14,7 +14,7 @@ public class Selections extends Expression {
 
     private Expression others = null;
 
-    public Selections(OAST ast) {
+    public Selections(AST ast) {
         super(ast, null);
     }
 

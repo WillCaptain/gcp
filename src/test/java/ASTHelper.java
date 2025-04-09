@@ -1,6 +1,6 @@
 import org.twelve.gcp.ast.ASF;
-import org.twelve.gcp.ast.OAST;
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.common.Pair;
@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 import static org.twelve.gcp.common.Tool.cast;
 
 public class ASTHelper {
-    public static void fillHumanAst(OAST ast) {
+    public static void fillHumanAst(AST ast) {
         //namespace org.twelve.human
         List<Token> namespace = new ArrayList<>();
         namespace.add(new Token("org", 10));
@@ -73,7 +73,7 @@ public class ASTHelper {
         ast.addExport(new Export(ast, vars));
     }
 
-    public static void fillEducationAst(OAST ast) {
+    public static void fillEducationAst(AST ast) {
         //namespace org.twelve.education
         List<Token> namespace = new ArrayList<>();
         namespace.add(new Token("org", 10));
@@ -98,16 +98,16 @@ public class ASTHelper {
 
     public static ASF asf() {
         ASF asf = new ASF();
-        OAST education = asf.newAST();
+        AST education = asf.newAST();
         fillEducationAst(education);
-        OAST human = asf.newAST();
+        AST human = asf.newAST();
         fillHumanAst(human);
         return asf;
     }
 
-    public static OAST mockAddFunc() {
+    public static AST mockAddFunc() {
         ASF asf = new ASF();
-        OAST ast = asf.newAST();
+        AST ast = asf.newAST();
         //const add = (x,y)->x+y;
 
         //List<Argument> args = new ArrayList<>();
@@ -131,8 +131,8 @@ public class ASTHelper {
         return ast;
     }
 
-    public static OAST mockOverrideAddFunc() {
-        OAST ast = mockAddFunc();
+    public static AST mockOverrideAddFunc() {
+        AST ast = mockAddFunc();
         //x+y+z
         Identifier x = new Identifier(ast, new Token("x", 0));
         Identifier y = new Identifier(ast, new Token("y", 0));
@@ -157,8 +157,8 @@ public class ASTHelper {
         return ast;
     }
 
-    public static OAST mockErrorPoly() {
-        OAST ast = mockOverrideAddFunc();
+    public static AST mockErrorPoly() {
+        AST ast = mockOverrideAddFunc();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.VAR);
         declare.declare(new Token("forError", 0), LiteralNode.parse(ast, new Token("any")));
         ast.program().body().addStatement(declare);
@@ -170,7 +170,7 @@ public class ASTHelper {
         return ast;
     }
 
-    public static OAST mockSimplePersonEntity() {
+    public static AST mockSimplePersonEntity() {
         //let person: Entity = {
         //  name = "Will",
         //  get_name = ()->{
@@ -182,7 +182,7 @@ public class ASTHelper {
         //};
         //let name_1 = person.name;
         //let name_2 = person.get_name();
-        OAST ast = mockTestAst();
+        AST ast = mockTestAst();
         List<MemberNode> members = new ArrayList<>();
         members.add(new MemberNode(ast, new Token("name"),
                 LiteralNode.parse(ast, new Token("Will", 0)), false));
@@ -217,10 +217,10 @@ public class ASTHelper {
         return ast;
     }
 
-    public static OAST mockSimplePersonEntityWithOverrideMember() {
-        OAST ast = mockSimplePersonEntity();
+    public static AST mockSimplePersonEntityWithOverrideMember() {
+        AST ast = mockSimplePersonEntity();
         FunctionBody body = new FunctionBody(ast);
-        Pair<ONode, Modifier> getName = new Pair<>(FunctionNode.from(body, new Argument(ast, new Token("last_name"))), Modifier.PUBLIC);
+        Pair<Node, Modifier> getName = new Pair<>(FunctionNode.from(body, new Argument(ast, new Token("last_name"))), Modifier.PUBLIC);
         body.addStatement(new ReturnStatement(
                 new BinaryExpression(
                         new MemberAccessor(ast, new This(ast, new Token("this")), new Identifier(ast, new Token("name"))),
@@ -237,8 +237,8 @@ public class ASTHelper {
         return ast;
     }
 
-    public static OAST mockInheritedPersonEntity() {
-        OAST ast = mockSimplePersonEntity();
+    public static AST mockInheritedPersonEntity() {
+        AST ast = mockSimplePersonEntity();
 
         FunctionBody body = new FunctionBody(ast);
 //        Pair<ONode, Modifier> getFullName = new Pair<>(FunctionNode.from(body), Modifier.PUBLIC);
@@ -267,8 +267,8 @@ public class ASTHelper {
         return ast;
     }
 
-    public static OAST mockInheritedPersonEntityWithOverrideMember() {
-        OAST ast = mockSimplePersonEntity();
+    public static AST mockInheritedPersonEntityWithOverrideMember() {
+        AST ast = mockSimplePersonEntity();
 
         MemberAccessor accessor = new MemberAccessor(ast, new This(ast, new Token("this")), new Identifier(ast, new Token("get_name")));
         FunctionCallNode call = new FunctionCallNode(ast, accessor);
@@ -300,18 +300,18 @@ public class ASTHelper {
         return ast;
     }
 
-    private static OAST mockTestAst() {
+    private static AST mockTestAst() {
         ASF asf = new ASF();
-        OAST ast = asf.newAST();
+        AST ast = asf.newAST();
         List<Token> namespace = new ArrayList<>();
         namespace.add(new Token("test"));
         ast.setNamespace(namespace);
         return ast;
     }
 
-    public static OAST mockDefinedPoly() {
+    public static AST mockDefinedPoly() {
         ASF asf = new ASF();
-        OAST ast = asf.newAST();
+        AST ast = asf.newAST();
         PolyNode poly = new PolyNode(ast, LiteralNode.parse(ast, new Token(100)), LiteralNode.parse(ast, new Token("some")));
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.VAR);
         declare.declare(new Token("poly", 0), poly);
@@ -319,8 +319,8 @@ public class ASTHelper {
         return ast;
     }
 
-    public static OAST mockErrorAssignOnDefinedPoly() {
-        OAST ast = mockDefinedPoly();
+    public static AST mockErrorAssignOnDefinedPoly() {
+        AST ast = mockDefinedPoly();
         Assignment assignment = new Assignment(new Identifier(ast, new Token("poly")),
                 LiteralNode.parse(ast, new Token(10.0f)));
         ast.addStatement(assignment);
@@ -331,9 +331,9 @@ public class ASTHelper {
         return ast;
     }
 
-    public static OAST mockDefinedLiteralUnion() {
+    public static AST mockDefinedLiteralUnion() {
         ASF asf = new ASF();
-        OAST ast = asf.newAST();
+        AST ast = asf.newAST();
         LiteralUnionNode union = new LiteralUnionNode(ast, LiteralNode.parse(ast, new Token(100)), LiteralNode.parse(ast, new Token("some")));
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.VAR);
         declare.declare(new Token("union", 0), union);
@@ -341,8 +341,8 @@ public class ASTHelper {
         return ast;
     }
 
-    public static OAST mockAssignOnDefinedLiteralUnion() {
-        OAST ast = mockDefinedLiteralUnion();
+    public static AST mockAssignOnDefinedLiteralUnion() {
+        AST ast = mockDefinedLiteralUnion();
         Assignment assignment = new Assignment(new Identifier(ast, new Token("union")),
                 LiteralNode.parse(ast, new Token(100)));
         ast.addStatement(assignment);
@@ -355,14 +355,14 @@ public class ASTHelper {
         return ast;
     }
 
-    public static ONode mockEntityProjection1(int type, Consumer<FunctionBody> mockCallNode) {
+    public static Node mockEntityProjection1(int type, Consumer<FunctionBody> mockCallNode) {
         //let f = (x,z,y)-> z.combine(x,y);
         //f(20,{combine = (x,y)->{{
         //        age = x1,
         //        name = y1.name,
         //      }},{name = "Will"})
         ASF asf = new ASF();
-        OAST ast = asf.newAST();
+        AST ast = asf.newAST();
         List<Token> namespace = new ArrayList<>();
         namespace.add(new Token("test"));
         ast.setNamespace(namespace);
@@ -425,20 +425,20 @@ public class ASTHelper {
     }
 
     static void  mockEntityProjectionNode1(FunctionBody body) {
-        OAST ast = body.ast();
+        AST ast = body.ast();
         MemberAccessor accessor = new MemberAccessor(ast, new Identifier(ast, new Token("z")), new Identifier(ast, new Token("combine")));
         FunctionCallNode call1 = new FunctionCallNode(ast, accessor, new Identifier(ast, new Token("x")), new Identifier(ast, new Token("y")));
         body.addStatement(new ReturnStatement(call1));
     }
     static void mockEntityProjectionNode2(FunctionBody body) {
-        OAST ast = body.ast();
+        AST ast = body.ast();
         MemberAccessor accessor = new MemberAccessor(ast, new Identifier(ast, new Token("z")), new Identifier(ast, new Token("combine")));
         FunctionCallNode call1 = new FunctionCallNode(ast, accessor, new Identifier(ast, new Token("x")), new Identifier(ast, new Token("y")));
         accessor = new MemberAccessor(body.ast(), call1, new Identifier(ast, new Token("name")));
         body.addStatement(new ReturnStatement(accessor));
     }
     static void mockEntityProjectionNode3(FunctionBody body) {
-        OAST ast = body.ast();
+        AST ast = body.ast();
         MemberAccessor accessor = new MemberAccessor(ast, new Identifier(ast, new Token("z")), new Identifier(ast, new Token("combine")));
         FunctionCallNode call1 = new FunctionCallNode(ast, accessor, new Identifier(ast, new Token("x")), new Identifier(ast, new Token("y")));
         accessor = new MemberAccessor(ast, call1, new Identifier(ast, new Token("gender")));
@@ -446,7 +446,7 @@ public class ASTHelper {
     }
 
     static void mockEntityProjectionNode4(FunctionBody body) {
-        OAST ast = body.ast();
+        AST ast = body.ast();
         VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.VAR);
         declarator.declare(new Token("w"),new Identifier(ast, new Token("z")));
         body.addStatement(declarator);
@@ -456,7 +456,7 @@ public class ASTHelper {
     }
 
     static void mockEntityProjectionNode5(FunctionBody body) {
-        OAST ast = body.ast();
+        AST ast = body.ast();
         List<EntityMember> members = new ArrayList<>();
         members.add(EntityMember.from("name",Outline.String,Modifier.PUBLIC,true));
         Entity p = Entity.from(members);

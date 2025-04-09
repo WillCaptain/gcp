@@ -1,6 +1,6 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Expression;
@@ -87,7 +87,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         return true;
     }
 
-    private Outline project(Outline target, ONode argument) {
+    private Outline project(Outline target, Node argument) {
 //        ProjectSession session = new ProjectSession();
         //hlf function call
         if (target instanceof Genericable) {
@@ -111,7 +111,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      * @param argument HFL函数调用的参数
      * @return 虚拟的函数返回
      */
-    private Outline project(Genericable generic, ONode argument) {
+    private Outline project(Genericable generic, Node argument) {
         Return returns = Return.from(generic.node());
         HigherOrderFunction defined = new HigherOrderFunction(generic.node(), cast(argument.outline()), returns);
         generic.addDefinedToBe(defined);
@@ -127,7 +127,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      * @param argument 要投影的参数节点
      * @return
      */
-    private Outline project(FirstOrderFunction function, ONode argument) {
+    private Outline project(FirstOrderFunction function, Node argument) {
         ProjectSession session = function.getSession();
         if(session==null){
             //开始一个projection session

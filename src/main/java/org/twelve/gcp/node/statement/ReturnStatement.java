@@ -1,6 +1,6 @@
 package org.twelve.gcp.node.statement;
 
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.outline.Outline;
@@ -13,7 +13,7 @@ public class ReturnStatement extends Statement{
         this.expression = this.addNode(expression);
     }
 
-    public ReturnStatement(OAST ast) {
+    public ReturnStatement(AST ast) {
         super(ast);
         this.expression = null;
     }

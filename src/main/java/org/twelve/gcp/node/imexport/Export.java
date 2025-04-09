@@ -8,10 +8,10 @@ import org.twelve.gcp.outline.Outline;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Export extends ONode {
+public class Export extends Node {
     private final List<ExportSpecifier> specifiers = new ArrayList<>();
 
-    public Export(OAST ast, List<Pair<Token, Token>> vars) {
+    public Export(AST ast, List<Pair<Token, Token>> vars) {
         super(ast, null);
         for (Pair<Token, Token> var : vars) {
             this.specifiers.add(this.addNode(new ExportSpecifier(ast, var.getKey(), var.getValue())));

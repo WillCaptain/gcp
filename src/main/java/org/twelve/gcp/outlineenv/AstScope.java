@@ -1,6 +1,6 @@
 package org.twelve.gcp.outlineenv;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.HashMap;
@@ -30,7 +30,7 @@ public class AstScope implements Scope {
     }
 
 
-    public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, boolean isDeclared, ONode originNode) {
+    public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, boolean isDeclared, Node originNode) {
         if (this.symbols.containsKey(key)) {
             return this.symbols.get(key);
         }

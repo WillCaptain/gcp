@@ -1,6 +1,6 @@
 package org.twelve.gcp.outline.projectable;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.primitive.STRING;
@@ -15,9 +15,9 @@ public class Addable implements Projectable, OperateAble {
     private final Outline left;
     private final Outline right;
     private Outline definedToBe = null;
-    private ONode node;
+    private Node node;
 
-    public Addable(ONode node, Outline left, Outline right) {
+    public Addable(Node node, Outline left, Outline right) {
         this.node = node;
         this.id = Counter.getAndIncrement();
 
@@ -71,7 +71,7 @@ public class Addable implements Projectable, OperateAble {
     }
 
     @Override
-    public ONode node() {
+    public Node node() {
         return this.node;
     }
 

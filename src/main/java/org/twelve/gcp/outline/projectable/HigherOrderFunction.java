@@ -1,14 +1,14 @@
 package org.twelve.gcp.outline.projectable;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 
 /**
  * 函数参数在函数体内以函数方式调用产生的函数定义
  * x->x(10), 此时x.defined_to_be = higher order function
  */
-public class HigherOrderFunction extends Function<ONode, Outline> {
-    public HigherOrderFunction(ONode node, Outline argument, Return returns) {
+public class HigherOrderFunction extends Function<Node, Outline> {
+    public HigherOrderFunction(Node node, Outline argument, Return returns) {
         super(node, argument, returns);
     }
 

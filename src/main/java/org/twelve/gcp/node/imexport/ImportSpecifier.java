@@ -1,6 +1,6 @@
 package org.twelve.gcp.node.imexport;
 
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.node.expression.Identifier;
 
@@ -12,7 +12,7 @@ public class ImportSpecifier extends ImportExportSpecifier{
     private final Identifier imported;
     private final Identifier local;
 
-    public ImportSpecifier(OAST ast, Token imported, Token local) {
+    public ImportSpecifier(AST ast, Token imported, Token local) {
         super(ast, imported, local);
         this.imported = cast(this.get(0));
         this.local = cast(this.get(1));

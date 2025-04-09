@@ -1,6 +1,6 @@
 package org.twelve.gcp.outline.builtin;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -28,7 +28,7 @@ public class Module implements Outline {
     }
 
     @Override
-    public ONode node() {
+    public Node node() {
         return null;
     }
 

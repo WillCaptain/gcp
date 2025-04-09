@@ -1,6 +1,6 @@
 import org.junit.jupiter.api.Test;
 import org.twelve.gcp.ast.ASF;
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -29,7 +29,7 @@ public class InferenceTest {
     void test_initialization_inference() {
         ASF asf = ASTHelper.asf();
         asf.infer();
-        OAST ast = cast(asf.get("human"));
+        AST ast = cast(asf.get("human"));
         List<Statement> stmts = ast.program().body().statements();
         VariableDeclarator var = cast(ast.program().body().statements().get(0));
         assertEquals(Ignore, var.outline());
@@ -48,7 +48,7 @@ public class InferenceTest {
     @Test
     void test_declared_assignment_type_mismatch_inference() {
         ASF asf = new ASF();
-        OAST ast = asf.newAST();
+        AST ast = asf.newAST();
 
         List<Token> namespace = new ArrayList<>();
         namespace.add(new Token("module", 10));
@@ -65,7 +65,7 @@ public class InferenceTest {
     @Test
     void test_assign_mismatch_inference() {
         ASF asf = new ASF();
-        OAST ast = asf.newAST();
+        AST ast = asf.newAST();
 
         LiteralNode str = LiteralNode.parse(ast, new Token("some"));
         LiteralNode num = LiteralNode.parse(ast, new Token(100));
@@ -87,7 +87,7 @@ public class InferenceTest {
     @Test
     void test_declared_poly_mismatch_assignment_inference() {
         ASF asf = new ASF();
-        OAST ast = asf.newAST();
+        AST ast = asf.newAST();
 
         LiteralNode str = LiteralNode.parse(ast, new Token("some"));
         LiteralNode num = LiteralNode.parse(ast, new Token(100));
@@ -111,7 +111,7 @@ public class InferenceTest {
     void test_import_inference() {
         ASF asf = ASTHelper.asf();
         asf.infer();
-        OAST human = asf.get("human");
+        AST human = asf.get("human");
         VariableDeclarator declare = cast(human.program().body().statements().get(0));
         Assignment school = declare.assignments().get(3);
         assertEquals("grade: Integer = level", school.toString());
@@ -119,7 +119,7 @@ public class InferenceTest {
 
     @Test
     void test_implicit_poly_inference(){
-        OAST ast = ASTHelper.mockErrorPoly();
+        AST ast = ASTHelper.mockErrorPoly();
         ast.asf().infer();;
         Outline add = ((Assignment) ast.program().body().nodes().get(3)).lhs().outline();
         assertTrue(add instanceof Poly);
@@ -132,7 +132,7 @@ public class InferenceTest {
 
     @Test
     void test_explicit_poly_inference(){
-        OAST ast = ASTHelper.mockDefinedPoly();
+        AST ast = ASTHelper.mockDefinedPoly();
         ast.asf().infer();
         Identifier lhs = cast(((VariableDeclarator) ast.program().body().nodes().get(0)).assignments().get(0).lhs());
         Poly poly = cast(lhs.outline());
@@ -157,7 +157,7 @@ public class InferenceTest {
     }
     @Test
     void test_literal_inference(){
-        OAST ast = ASTHelper.mockDefinedLiteralUnion();
+        AST ast = ASTHelper.mockDefinedLiteralUnion();
         ast.asf().infer();
         Identifier lhs = cast(((VariableDeclarator) ast.program().body().nodes().get(0)).assignments().get(0).lhs());
         LiteralUnion union = cast(lhs.outline());
@@ -173,7 +173,7 @@ public class InferenceTest {
 
     @Test
     void test_function_inference() {
-        OAST ast = ASTHelper.mockAddFunc();
+        AST ast = ASTHelper.mockAddFunc();
         ast.infer();
         VariableDeclarator declare = cast(ast.program().body().statements().get(0));
         Assignment assign = declare.assignments().get(0);
@@ -183,7 +183,7 @@ public class InferenceTest {
 
     @Test
     void test_override_function_inference() {
-        OAST ast = ASTHelper.mockOverrideAddFunc();
+        AST ast = ASTHelper.mockOverrideAddFunc();
         ast.asf().infer();
         Identifier getName1 = cast(ast.program().body().nodes().get(0).nodes().get(0).nodes().get(0));
         Identifier getName2 = cast(ast.program().body().nodes().get(1).nodes().get(0).nodes().get(0));
@@ -208,7 +208,7 @@ public class InferenceTest {
 
     @Test
     void test_binary_expression() {
-        OAST ast = mockGCPTestAst();
+        AST ast = mockGCPTestAst();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         declare.declare(new Token("a"), LiteralNode.parse(ast, new Token(100d)));
         declare.declare(new Token("b"), LiteralNode.parse(ast, new Token(100)));
@@ -257,7 +257,7 @@ public class InferenceTest {
         //    name
         //  }
         //};
-        OAST ast = ASTHelper.mockSimplePersonEntity();
+        AST ast = ASTHelper.mockSimplePersonEntity();
         ast.asf().infer();
         VariableDeclarator var = cast(ast.program().body().statements().get(0));
         Entity person = cast(var.assignments().get(0).lhs().outline());
@@ -273,7 +273,7 @@ public class InferenceTest {
 
     @Test
     void test_simple_person_entity_with_override_member() {
-        OAST ast = ASTHelper.mockSimplePersonEntityWithOverrideMember();
+        AST ast = ASTHelper.mockSimplePersonEntityWithOverrideMember();
         ast.asf().infer();
         VariableDeclarator var = cast(ast.program().body().statements().get(0));
         Entity person = cast(var.assignments().get(0).lhs().outline());
@@ -291,7 +291,7 @@ public class InferenceTest {
 
     @Test
     void test_inherited_person_entity() {
-        OAST ast = ASTHelper.mockInheritedPersonEntity();
+        AST ast = ASTHelper.mockInheritedPersonEntity();
         ast.asf().infer();
         Entity person = cast(ast.program().body().statements().get(3).nodes().get(0).nodes().get(0).outline());
         assertEquals(4, person.members().size());
@@ -302,7 +302,7 @@ public class InferenceTest {
 
     @Test
     void test_inherited_person_entity_with_override_member() {
-        OAST ast = ASTHelper.mockInheritedPersonEntityWithOverrideMember();
+        AST ast = ASTHelper.mockInheritedPersonEntityWithOverrideMember();
         ast.asf().infer();
         Entity person = cast(ast.program().body().statements().get(3).nodes().get(0).nodes().get(0).outline());
         List<EntityMember> members = person.members();
@@ -317,9 +317,9 @@ public class InferenceTest {
     }
 
     @Test
-    private static OAST mockGCPTestAst() {
+    private static AST mockGCPTestAst() {
         ASF asf = new ASF();
-        OAST ast = asf.newAST();
+        AST ast = asf.newAST();
         List<Token> namespace = new ArrayList<>();
         namespace.add(new Token("test"));
         ast.setNamespace(namespace);

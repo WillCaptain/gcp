@@ -1,10 +1,9 @@
 package org.twelve.gcp.node.expression;
 
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.node.ValueNode;
 import org.twelve.gcp.outline.adt.ProductADT;
-import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.primitive.*;
 
 import java.math.BigDecimal;
@@ -14,7 +13,7 @@ import java.math.BigDecimal;
  */
 public class LiteralNode<T, O extends Primitive> extends ValueNode<LiteralNode<?,?>> {
 
-    public static LiteralNode parse(OAST ast, Token token) {
+    public static LiteralNode parse(AST ast, Token token) {
         Object value = token.data();// LiteralParser.parse(token.lexeme());
         if (value instanceof String) {
             LiteralNode node = new LiteralNode<>(ast, token,  (String) value);
@@ -46,7 +45,7 @@ public class LiteralNode<T, O extends Primitive> extends ValueNode<LiteralNode<?
     private final Token token;
     private final T value;
 
-    private LiteralNode(OAST ast, Token token,T value) {
+    private LiteralNode(AST ast, Token token, T value) {
         super(ast, token.loc());
         this.token = token;
         this.value = value;

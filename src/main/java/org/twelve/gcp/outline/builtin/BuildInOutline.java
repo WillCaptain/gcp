@@ -1,6 +1,6 @@
 package org.twelve.gcp.outline.builtin;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 
 public interface BuildInOutline extends Outline {
@@ -11,7 +11,7 @@ public interface BuildInOutline extends Outline {
     }
 
     @Override
-    default ONode node(){
+    default Node node(){
         return null;
     }
 }

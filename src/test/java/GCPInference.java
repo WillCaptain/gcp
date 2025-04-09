@@ -1,7 +1,7 @@
 import org.junit.jupiter.api.Test;
 import org.twelve.gcp.ast.ASF;
-import org.twelve.gcp.ast.OAST;
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -36,7 +36,7 @@ public class GCPInference {
     @Test
     void test_gcp_declare_to_be() {
         //let f = x->x
-        OAST ast = mockGCPTestAst();
+        AST ast = mockGCPTestAst();
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         Argument x = new Argument(ast, new Token("x"), Outline.Integer);
@@ -75,7 +75,7 @@ public class GCPInference {
     @Test
     void test_gcp_extend_to_be() {
         //let f = fn(x){x=10; x}
-        OAST ast = mockGCPTestAst();
+        AST ast = mockGCPTestAst();
         Argument x = new Argument(ast, new Token("x"));
         FunctionBody body = new FunctionBody(ast);
 
@@ -112,7 +112,7 @@ public class GCPInference {
     @Test
     void test_gcp_has_to_be() {
         //let f = fn(x){var y="str"; y = x; x}
-        OAST ast = mockGCPTestAst();
+        AST ast = mockGCPTestAst();
         Argument x = new Argument(ast, new Token("x"));
         FunctionBody body = new FunctionBody(ast);
 
@@ -154,7 +154,7 @@ public class GCPInference {
     @Test
     void test_gcp_defined_to_be() {
         //let f = x->x+1
-        OAST ast = mockGCPTestAst();
+        AST ast = mockGCPTestAst();
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         Argument x = new Argument(ast, new Token("x"));
@@ -192,7 +192,7 @@ public class GCPInference {
     @Test
     void test_gcp_add_expression() {
         //let f = (x,y)->x+y
-        OAST ast = mockGCPTestAst();
+        AST ast = mockGCPTestAst();
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         Argument x = new Argument(ast, new Token("x"));
@@ -243,7 +243,7 @@ public class GCPInference {
 
     @Test
     void test_generic_refer_each_other() {
-        OAST ast = mockGCPTestAst();
+        AST ast = mockGCPTestAst();
         //f = (x,y,z)->{y = x; z=y; x+y;}
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         Argument x = new Argument(ast, new Token("x"));
@@ -286,7 +286,7 @@ public class GCPInference {
     @Test
     void test_gcp_hof_projection_1() {
         //let f = (x,y)->y(x)
-        OAST ast = mockGCPTestAst();
+        AST ast = mockGCPTestAst();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         Argument x = new Argument(ast, new Token("x"));
         Argument y = new Argument(ast, new Token("y"));
@@ -315,7 +315,7 @@ public class GCPInference {
     @Test
     void test_gcp_hof_projection_2() {
         //let f = (y,x)->y(x)
-        OAST ast = mockGCPTestAst();
+        AST ast = mockGCPTestAst();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         Argument x = new Argument(ast, new Token("x"));
         Argument y = new Argument(ast, new Token("y"));
@@ -344,7 +344,7 @@ public class GCPInference {
     @Test
     void test_gcp_hof_projection_3() {
         //let f = (x,y,z)->z(y(x))
-        OAST ast = mockGCPTestAst();
+        AST ast = mockGCPTestAst();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         Argument x = new Argument(ast, new Token("x"));
         Argument y = new Argument(ast, new Token("y"));
@@ -384,7 +384,7 @@ public class GCPInference {
     @Test
     void test_gcp_hof_projection_4() {
         //let f = (z,y,x)->z(y(x))
-        OAST ast = mockGCPTestAst();
+        AST ast = mockGCPTestAst();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         Argument x = new Argument(ast, new Token("x"));
         Argument y = new Argument(ast, new Token("y"));
@@ -427,7 +427,7 @@ public class GCPInference {
         //        name = y1.name,
         //      }},{name = "Will"})
         for(int i=1; i<4; i++) {
-            ONode call = ASTHelper.mockEntityProjection1(i,body->ASTHelper.mockEntityProjectionNode1(body));
+            Node call = ASTHelper.mockEntityProjection1(i, body->ASTHelper.mockEntityProjectionNode1(body));
             call.ast().asf().infer();
             Entity result = cast(call.outline());
             assertEquals("name", result.members().get(0).name());
@@ -440,7 +440,7 @@ public class GCPInference {
     @Test
     void test_entity_hof_projection_2() {
         for(int i=1; i<4; i++) {
-            ONode call = ASTHelper.mockEntityProjection1(i,body->ASTHelper.mockEntityProjectionNode2(body));
+            Node call = ASTHelper.mockEntityProjection1(i, body->ASTHelper.mockEntityProjectionNode2(body));
             call.ast().asf().infer();
             assertTrue(call.outline() instanceof STRING);
         }
@@ -448,7 +448,7 @@ public class GCPInference {
     @Test
     void test_entity_hof_projection_3() {
         for(int i=1; i<4; i++) {
-            ONode call = ASTHelper.mockEntityProjection1(i,body->ASTHelper.mockEntityProjectionNode3(body));
+            Node call = ASTHelper.mockEntityProjection1(i, body->ASTHelper.mockEntityProjectionNode3(body));
             call.ast().asf().infer();
             assertTrue(call.ast().errors().size()>0);
             assertTrue(call.outline() instanceof AccessorGeneric);
@@ -462,7 +462,7 @@ public class GCPInference {
         //        name = y1.name,
         //      }},{name = "Will"})
         for(int i=1; i<4; i++) {
-            ONode call = ASTHelper.mockEntityProjection1(i,body->ASTHelper.mockEntityProjectionNode4(body));
+            Node call = ASTHelper.mockEntityProjection1(i, body->ASTHelper.mockEntityProjectionNode4(body));
             call.ast().asf().infer();
             Entity result = cast(call.outline());
             assertEquals("name", result.members().get(0).name());
@@ -481,7 +481,7 @@ public class GCPInference {
         //        name = y1.name,
         //      }},{name = "Will"})
         for(int i=1; i<4; i++) {
-            ONode call = ASTHelper.mockEntityProjection1(i,body->ASTHelper.mockEntityProjectionNode5(body));
+            Node call = ASTHelper.mockEntityProjection1(i, body->ASTHelper.mockEntityProjectionNode5(body));
             call.ast().asf().infer();
             assertTrue(call.ast().errors().size()==0);
             Entity result = cast(call.outline());
@@ -497,9 +497,9 @@ public class GCPInference {
 //todo
     }
 
-    private static OAST mockGCPTestAst() {
+    private static AST mockGCPTestAst() {
         ASF asf = new ASF();
-        OAST ast = asf.newAST();
+        AST ast = asf.newAST();
         List<Token> namespace = new ArrayList<>();
         namespace.add(new Token("test"));
         ast.setNamespace(namespace);

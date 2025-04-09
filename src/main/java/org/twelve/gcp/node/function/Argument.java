@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.function;
 
-import org.twelve.gcp.ast.OAST;
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -15,11 +15,11 @@ import static org.twelve.gcp.common.Tool.cast;
 import static org.twelve.gcp.outline.Outline.Unit;
 import static org.twelve.gcp.outline.Outline.Unknown;
 
-public class Argument extends ONode {
+public class Argument extends Node {
     //    private static Argument unit = null;
     private int index = 0;
 
-    public static Argument unit(OAST ast) {
+    public static Argument unit(AST ast) {
 //        if (unit == null) {
 //            unit = new Argument(ast, Token.unit(), Unit);
 //        }
@@ -30,22 +30,22 @@ public class Argument extends ONode {
     private final Identifier identifier;
     protected final Expression defaultValue;
 
-    public Argument(OAST ast, Token token) {
+    public Argument(AST ast, Token token) {
         this(ast, token, (Expression) null);
     }
 
-    public Argument(OAST ast, Token token, Expression reference) {
+    public Argument(AST ast, Token token, Expression reference) {
         this(ast, token, null, reference);
     }
 
-    public Argument(OAST ast, Token token, Outline outline, Expression defaultValue) {
+    public Argument(AST ast, Token token, Outline outline, Expression defaultValue) {
         super(ast);
         this.identifier = this.addNode(outline == null ? new Identifier(ast, token) :
                 new Identifier(ast, token, outline, false));
         this.defaultValue = defaultValue;
     }
 
-    public Argument(OAST ast, Token token, Outline outline) {
+    public Argument(AST ast, Token token, Outline outline) {
         this(ast, token, outline, null);
     }
 

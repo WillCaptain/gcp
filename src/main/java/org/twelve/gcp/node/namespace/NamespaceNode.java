@@ -6,8 +6,8 @@ import org.twelve.gcp.outline.builtin.Namespace;
 
 import java.util.List;
 
-public class NamespaceNode extends ONode {
-    public NamespaceNode(OAST ast, List<Token> names) {
+public class NamespaceNode extends Node {
+    public NamespaceNode(AST ast, List<Token> names) {
         super(ast, null);
         Namespace outline = null;
         for (Token name : names) {

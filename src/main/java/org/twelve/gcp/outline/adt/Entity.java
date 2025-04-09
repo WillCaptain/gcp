@@ -1,6 +1,6 @@
 package org.twelve.gcp.outline.adt;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -35,16 +35,16 @@ public class Entity extends ProductADT implements Projectable {
     /**
      * Entity不是标准类型，所以一定会对应一个节点
      */
-    private final ONode node;
+    private final Node node;
 
-    private Entity(ONode node, ProductADT base, List<EntityMember> extended) {
+    private Entity(Node node, ProductADT base, List<EntityMember> extended) {
         super(base == null ? Outline.Any : base.buildIn, extended);
         this.node = node;
         this.id = Counter.getAndIncrement();
         this.base = base;
     }
 
-    private Entity(ONode node, BuildInOutline buildIn, List<EntityMember> members) {
+    private Entity(Node node, BuildInOutline buildIn, List<EntityMember> members) {
         super(buildIn, members);
         this.node = node;
         this.id = Counter.getAndIncrement();
@@ -57,7 +57,7 @@ public class Entity extends ProductADT implements Projectable {
      *
      * @return merged product adt
      */
-    public static Entity produce(ONode node, ProductADT you, ProductADT me) {
+    public static Entity produce(Node node, ProductADT you, ProductADT me) {
         Entity entity;
         if (you.maybe(me)) {
             entity = new Entity(node, me.buildIn, new ArrayList<>());
@@ -71,15 +71,15 @@ public class Entity extends ProductADT implements Projectable {
         return entity;
     }
 
-    public static Entity from(ONode node, ProductADT base, List<EntityMember> extended) {
+    public static Entity from(Node node, ProductADT base, List<EntityMember> extended) {
         return new Entity(node, base, extended);
     }
 
-    public static Entity from(ONode node) {
+    public static Entity from(Node node) {
         return new Entity(node, Outline.Any, new ArrayList<>());
     }
 
-    public static Entity from(ONode node, BuildInOutline buildIn) {
+    public static Entity from(Node node, BuildInOutline buildIn) {
         return new Entity(node, buildIn, new ArrayList<>());
     }
 
@@ -158,7 +158,7 @@ public class Entity extends ProductADT implements Projectable {
     }
 
     @Override
-    public ONode node() {
+    public Node node() {
         return this.node;
     }
 

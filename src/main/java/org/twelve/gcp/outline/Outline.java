@@ -1,6 +1,6 @@
 package org.twelve.gcp.outline;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.primitive.*;
@@ -27,7 +27,7 @@ public interface Outline extends Serializable {
     ANY Any = ANY.instance();
     ERROR Error = ERROR.instance();
 
-    ONode node();
+    Node node();
 
     default String name() {
         String name = this.getClass().getSimpleName();

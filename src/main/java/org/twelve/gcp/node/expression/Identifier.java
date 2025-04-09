@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.Location;
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.exception.ErrorReporter;
@@ -26,11 +26,11 @@ public class Identifier extends Assignable {
     private Boolean declared;
 
     // import a as b, b is the reference
-    public Identifier(OAST ast, Token token) {
+    public Identifier(AST ast, Token token) {
         this(ast, token, Unknown, true);
     }
 
-    public Identifier(OAST ast, Token token, Outline declared, Boolean mutable) {
+    public Identifier(AST ast, Token token, Outline declared, Boolean mutable) {
         super(ast, null);
         this.token = token;
         this.outline = declared;

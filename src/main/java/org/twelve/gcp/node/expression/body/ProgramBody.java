@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.expression.body;
 
 import com.sun.xml.ws.developer.Serialization;
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.node.statement.Statement;
 import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.Import;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ProgramBody extends Body {
-    public ProgramBody(OAST ast) {
+    public ProgramBody(AST ast) {
         super(ast);
     }
 

@@ -1,18 +1,18 @@
 package org.twelve.gcp.node.namespace;
 
-import org.twelve.gcp.ast.OAST;
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.builtin.Module;
 
 import java.util.List;
 
-public class ModuleNode extends ONode {
+public class ModuleNode extends Node {
     private final Identifier name;
     private NamespaceNode namespace = null;
 
-    public ModuleNode(OAST ast, List<Token> source) {
+    public ModuleNode(AST ast, List<Token> source) {
         super(ast,null, new Module());
         Token module = source.remove(source.size() - 1);
         if(source.size()>0) {

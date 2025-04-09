@@ -1,6 +1,6 @@
 package org.twelve.gcp.outline.adt;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
 
@@ -16,13 +16,13 @@ public class Option extends SumADT {
     public static Option StringOrNumber = new Option(null, Outline.String, Outline.Number);
 
 
-    public static Outline from(ONode node, Outline... outlines) {
+    public static Outline from(Node node, Outline... outlines) {
         return new Option(node, outlines);
     }
 
 
 
-    Option(ONode node, Outline... outlines) {
+    Option(Node node, Outline... outlines) {
         super(node, outlines);
     }
 

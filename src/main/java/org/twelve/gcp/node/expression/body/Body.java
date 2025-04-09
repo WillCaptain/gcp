@@ -1,13 +1,13 @@
 package org.twelve.gcp.node.expression.body;
 
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.statement.Statement;
 
 public abstract class Body extends Expression {
     private final Long scope;
 
-    public Body(OAST ast) {
+    public Body(AST ast) {
         super(ast, null);
         this.scope = ast.scopeIndexer().incrementAndGet();
     }

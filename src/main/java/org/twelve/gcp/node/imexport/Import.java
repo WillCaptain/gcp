@@ -9,11 +9,11 @@ import org.twelve.gcp.outline.Outline;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Import extends ONode {
+public class Import extends Node {
     private final ModuleNode source;
     private final List<ImportSpecifier> specifiers = new ArrayList<>();
 
-    public Import(OAST ast, List<Pair<Token,Token>> vars, List<Token> source) {
+    public Import(AST ast, List<Pair<Token,Token>> vars, List<Token> source) {
         super(ast, null);
         if(vars!=null) {
             for (Pair<Token, Token> var : vars) {
@@ -23,7 +23,7 @@ public class Import extends ONode {
         this.source = this.addNode(new ModuleNode(ast,source));
     }
 
-    public Import(OAST ast, List<Token> source) {
+    public Import(AST ast, List<Token> source) {
         this(ast,  null,source);
     }
 

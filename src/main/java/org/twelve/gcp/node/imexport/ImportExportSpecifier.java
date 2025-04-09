@@ -1,13 +1,12 @@
 package org.twelve.gcp.node.imexport;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.OAST;
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.node.expression.Identifier;
 
-public abstract class ImportExportSpecifier extends ONode {
-    public ImportExportSpecifier(OAST ast, Token a, Token b) {
+public abstract class ImportExportSpecifier extends Node {
+    public ImportExportSpecifier(AST ast, Token a, Token b) {
         super(ast);
         Identifier origin = new Identifier(ast, a);
         this.addNode(origin);

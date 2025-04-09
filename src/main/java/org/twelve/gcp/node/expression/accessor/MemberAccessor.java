@@ -1,6 +1,6 @@
 package org.twelve.gcp.node.expression.accessor;
 
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
@@ -20,7 +20,7 @@ public class MemberAccessor extends Accessor {
     private final Expression entity;
     private final Identifier member;
 
-    public MemberAccessor(OAST ast, Expression entity, Identifier member) {
+    public MemberAccessor(AST ast, Expression entity, Identifier member) {
         super(ast);
         this.entity = entity;
         this.member = member;

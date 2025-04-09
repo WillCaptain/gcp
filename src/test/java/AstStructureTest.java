@@ -1,7 +1,7 @@
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.twelve.gcp.ast.ASF;
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.node.expression.body.FunctionBody;
@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class AstStructureTest {
     private ASF asf;
-    private OAST ast;
+    private AST ast;
 
 
     @BeforeEach
@@ -155,7 +155,7 @@ public class AstStructureTest {
 
     @Test
     void test_function_definition(){
-        OAST ast = ASTHelper.mockAddFunc();
+        AST ast = ASTHelper.mockAddFunc();
         String expected = "let add = x->{" +
                 "  y->{" +
                 "    x+y" +
@@ -166,7 +166,7 @@ public class AstStructureTest {
 
     @Test
     void test_non_argument_function(){
-        OAST ast = new ASF().newAST();
+        AST ast = new ASF().newAST();
         FunctionBody body = new FunctionBody(ast);
         FunctionNode function = FunctionNode.from(body);
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
@@ -177,7 +177,7 @@ public class AstStructureTest {
 
     @Test
     void test_entity(){
-        OAST ast = ASTHelper.mockSimplePersonEntity();
+        AST ast = ASTHelper.mockSimplePersonEntity();
         String expected = "let person = {\n" +
                 "  name = \"Will\",\n" +
                 "  get_name = ()->{\n" +
@@ -194,14 +194,14 @@ public class AstStructureTest {
 
     @Test
     void test_poly(){
-        OAST ast = ASTHelper.mockDefinedPoly();
+        AST ast = ASTHelper.mockDefinedPoly();
         String expected = "var poly = 100&\"some\";";
         assertEquals(expected,ast.lexeme());
     }
 
     @Test
     void test_union(){
-        OAST ast = ASTHelper.mockDefinedLiteralUnion();
+        AST ast = ASTHelper.mockDefinedLiteralUnion();
         String expected = "var union = 100|\"some\";";
         assertEquals(expected,ast.lexeme());
     }

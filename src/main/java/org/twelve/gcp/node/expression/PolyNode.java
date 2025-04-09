@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.Location;
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.SimpleLocation;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.outline.Outline;
@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
  * 例如：1|“some”，代表了poly既是Number也是String
  */
 public class PolyNode extends Expression{
-    public PolyNode(OAST ast, Expression ... expressions) {
+    public PolyNode(AST ast, Expression ... expressions) {
         super(ast, null);
         for (Expression expression : expressions) {
             this.addNode(expression);

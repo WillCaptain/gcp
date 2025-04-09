@@ -8,14 +8,20 @@ import org.twelve.gcp.outlineenv.GlobalScope;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * outline abstract syntax forest
+ * it is the root of asts
+ * include a global symbol env to let asts import and export variables
+ * huizi 2025
+ */
 public class ASF {
 
-    private List<OAST> asts = new ArrayList<>();
+    private List<AST> asts = new ArrayList<>();
     private Inferences inferences = new OutlineInferences();
     private GlobalSymbolEnvironment globalSymbolEnvironment = new GlobalSymbolEnvironment();
 
-    public OAST newAST() {
-        OAST ast = new OAST(this.inferences, this);
+    public AST newAST() {
+        AST ast = new AST(this.inferences, this);
         this.asts.add(ast);
         return ast;
     }
@@ -33,7 +39,7 @@ public class ASF {
         //infer a few times
         int times = 4;
         while (!this.fullyInferred()) {
-            for (OAST ast : this.asts) {
+            for (AST ast : this.asts) {
                 ast.infer();
             }
             if (--times == 0) {
@@ -42,16 +48,20 @@ public class ASF {
             }
         }
         //最终为unknown的outline添加error
-        for (OAST ast : this.asts) {
+        for (AST ast : this.asts) {
             ast.markUnknowns();
         }
     }
 
+    /**
+     * make sure asf has been fully inferred
+     * @return
+     */
     private boolean fullyInferred() {
         return !this.asts.stream().anyMatch(a -> !a.inferred());
     }
 
-    public OAST get(String name) {
+    public AST get(String name) {
         return this.asts.stream().filter(a->a.name().equals(name)).findFirst().get();
     }
 }

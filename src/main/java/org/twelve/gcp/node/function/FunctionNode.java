@@ -1,6 +1,6 @@
 package org.twelve.gcp.node.function;
 
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.expression.Expression;
@@ -12,7 +12,7 @@ import java.util.List;
 
 public class FunctionNode extends Expression {
     public static FunctionNode from(FunctionBody funcBody,Argument... arguments ) {
-        OAST ast = funcBody.ast();
+        AST ast = funcBody.ast();
         List<Argument> args = new ArrayList<>();
 //        if(arguments!=null){
             for (Argument argument : arguments) {

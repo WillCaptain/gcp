@@ -1,6 +1,6 @@
 package org.twelve.gcp.outline.adt;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.outline.Outline;
 
@@ -19,7 +19,7 @@ public class Poly extends SumADT {
     /**
      * meta中记录了poly对应个类型的节点和mutable信息
      */
-    private final Map<Outline, Pair<ONode, Boolean>> meta = new HashMap<>();
+    private final Map<Outline, Pair<Node, Boolean>> meta = new HashMap<>();
     /**
      * poly是否mutable
      * 该属性与this.node相关
@@ -37,7 +37,7 @@ public class Poly extends SumADT {
      * @param mutable
      * @param outlines
      */
-    Poly(ONode node, Boolean mutable, Outline... outlines) {
+    Poly(Node node, Boolean mutable, Outline... outlines) {
         super(node, outlines);
         //设置option的mutable属性
         for (Outline outline : outlines) {
@@ -62,7 +62,7 @@ public class Poly extends SumADT {
      * @param outlines 可以poly的类型列表
      * @return 固定option的poly对象
      */
-    public static Poly from(ONode node, Boolean mutable, Outline... outlines) {
+    public static Poly from(Node node, Boolean mutable, Outline... outlines) {
         return new Poly(node, mutable, outlines);
     }
 
@@ -139,7 +139,7 @@ public class Poly extends SumADT {
      * @param outline 目标option
      * @param meta    为该option设置的元数据信息
      */
-    private void attachMeta(Outline outline, Pair<ONode, Boolean> meta) {
+    private void attachMeta(Outline outline, Pair<Node, Boolean> meta) {
         this.meta.put(outline, meta);
     }
 
@@ -152,7 +152,7 @@ public class Poly extends SumADT {
      * @param mutable 该option是否mutable
      * @return 添加是否成功
      */
-    public boolean sum(Outline outline, ONode node, Boolean mutable) {
+    public boolean sum(Outline outline, Node node, Boolean mutable) {
         if (this.node() != null) return false;//有node，说明肯定不是隐式动态poly，不能通过let a = b新增poly.option
         //如果是重复infer，则去掉上一次infer
 //        if (node.parent().parent() instanceof VariableDeclarator) {

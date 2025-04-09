@@ -1,6 +1,6 @@
 package org.twelve.gcp.node.statement;
 
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.common.VariableKind;
@@ -13,7 +13,7 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class MemberNode extends VariableDeclarator {
 
-    public MemberNode(OAST ast, Token name, Expression expression, Boolean mutable) {
+    public MemberNode(AST ast, Token name, Expression expression, Boolean mutable) {
         super(ast,mutable? VariableKind.VAR:VariableKind.LET);
         this.declare(name,expression);
     }

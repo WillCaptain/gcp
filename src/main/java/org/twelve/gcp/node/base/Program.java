@@ -8,12 +8,12 @@ import org.twelve.gcp.node.namespace.NamespaceNode;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Program extends ONode {
+public class Program extends Node {
     private NamespaceNode namespace;
     private ProgramBody body;
     private Token<String> moduleName = null;
 
-    public Program(OAST ast) {
+    public Program(AST ast) {
         super(ast);
         this.namespace = this.addNode(new NamespaceNode(ast,new ArrayList<>()));
         this.body = this.addNode(new ProgramBody(ast));

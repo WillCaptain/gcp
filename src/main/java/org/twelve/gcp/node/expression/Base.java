@@ -1,6 +1,6 @@
 package org.twelve.gcp.node.expression;
 
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -9,7 +9,7 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 public class Base  extends Identifier{
-    public Base(OAST ast, Token token) {
+    public Base(AST ast, Token token) {
         super(ast, token);
     }
 

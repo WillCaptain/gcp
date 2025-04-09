@@ -1,7 +1,7 @@
 package org.twelve.gcp.node;
 
 import org.twelve.gcp.ast.Location;
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.SimpleLocation;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
@@ -10,7 +10,7 @@ import org.twelve.gcp.outline.Outline;
 import java.util.stream.Collectors;
 
 public class LiteralUnionNode extends Expression {
-    public LiteralUnionNode(OAST ast, Expression ... expressions) {
+    public LiteralUnionNode(AST ast, Expression ... expressions) {
         super(ast, null);
         for (Expression expression : expressions) {
             this.addNode(expression);

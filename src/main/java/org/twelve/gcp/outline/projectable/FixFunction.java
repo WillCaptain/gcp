@@ -1,17 +1,17 @@
 package org.twelve.gcp.outline.projectable;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 
 import static org.twelve.gcp.common.Tool.cast;
 
 public class FixFunction  implements Projectable{
     protected long id;
-    protected final ONode node;
+    protected final Node node;
     private final Outline argument;
     private final Outline returns;
 
-    public FixFunction(ONode node,Outline arg, Outline returns) {
+    public FixFunction(Node node, Outline arg, Outline returns) {
         this.node = node;
         this.id = Counter.getAndIncrement();
 
@@ -31,7 +31,7 @@ public class FixFunction  implements Projectable{
     }
 
     @Override
-    public ONode node() {
+    public Node node() {
         return this.node;
     }
 

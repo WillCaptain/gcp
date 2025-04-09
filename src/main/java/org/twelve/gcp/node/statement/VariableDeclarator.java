@@ -1,6 +1,6 @@
 package org.twelve.gcp.node.statement;
 
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.inference.Inferences;
@@ -16,7 +16,7 @@ public class VariableDeclarator extends Statement {
     private final VariableKind kind;
     private List<Assignment> assignments = new ArrayList<>();
 
-    public VariableDeclarator(OAST ast, VariableKind kind) {
+    public VariableDeclarator(AST ast, VariableKind kind) {
         super(ast);
         this.kind = kind;
     }

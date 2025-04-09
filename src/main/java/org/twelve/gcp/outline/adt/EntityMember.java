@@ -1,15 +1,15 @@
 package org.twelve.gcp.outline.adt;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.outline.Outline;
 
 public class EntityMember {
 
-    private final ONode node;
+    private final Node node;
 
-    public static EntityMember from(String name, Outline outline, Modifier modifier, boolean mutable, ONode node) {
+    public static EntityMember from(String name, Outline outline, Modifier modifier, boolean mutable, Node node) {
         return new EntityMember(name, outline, modifier, mutable ? Mutable.True : Mutable.False, node);
     }
 
@@ -29,7 +29,7 @@ public class EntityMember {
     private final Modifier modifier;
     private final Mutable mutable;
 
-    private EntityMember(String name, Outline outline, Modifier modifier, Mutable mutable, ONode node) {
+    private EntityMember(String name, Outline outline, Modifier modifier, Mutable mutable, Node node) {
         this.name = name;
         this.outline = outline;
         this.modifier = modifier;
@@ -45,7 +45,7 @@ public class EntityMember {
         return this.outline;
     }
 
-    public ONode node() {
+    public Node node() {
         return this.node;
     }
 

@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.expression.todo;
 
 import org.twelve.gcp.ast.Location;
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.node.expression.Expression;
 
 /**
@@ -10,7 +10,7 @@ import org.twelve.gcp.node.expression.Expression;
  * a[index]
  */
 public class ArrayAccessor extends Expression {
-    public ArrayAccessor(OAST ast, Location loc) {
+    public ArrayAccessor(AST ast, Location loc) {
         super(ast, loc);
     }
 }

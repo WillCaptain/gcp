@@ -1,8 +1,8 @@
 package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.Location;
-import org.twelve.gcp.ast.OAST;
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
@@ -12,11 +12,10 @@ import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outline.projectable.OperateAble;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
-import static org.twelve.gcp.outline.Outline.Any;
 import static org.twelve.gcp.outline.Outline.Unknown;
 
 public abstract class Assignable extends Expression {
-    public Assignable(OAST ast, Location loc) {
+    public Assignable(AST ast, Location loc) {
         super(ast, loc);
     }
 
@@ -42,7 +41,7 @@ public abstract class Assignable extends Expression {
 
         if(inferred.canBe(this.outline)) return;
 
-        ONode target = inferred.node()==null?this:inferred.node();
+        Node target = inferred.node()==null?this:inferred.node();
         //option处理
         if (this.outline instanceof Option) {
             if(!((Option) this.outline).sum(inferred)){

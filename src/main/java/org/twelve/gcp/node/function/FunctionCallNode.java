@@ -14,11 +14,11 @@ public class FunctionCallNode extends Expression {
     private Expression function;
     private List<Expression> arguments;
 
-    public FunctionCallNode(OAST ast, Token funcName, Expression... arguments) {
+    public FunctionCallNode(AST ast, Token funcName, Expression... arguments) {
         this(ast, new Identifier(ast, funcName), arguments);
     }
 
-    public FunctionCallNode(OAST ast, Expression function, Expression... arguments) {
+    public FunctionCallNode(AST ast, Expression function, Expression... arguments) {
         super(ast, null);
         this.function = function;
         this.addNode(this.function);

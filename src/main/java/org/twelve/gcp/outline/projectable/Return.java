@@ -2,7 +2,7 @@ package org.twelve.gcp.outline.projectable;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
@@ -11,7 +11,7 @@ import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 import static org.twelve.gcp.common.Tool.cast;
 
-public class Return extends Genericable<Return, ONode> {
+public class Return extends Genericable<Return, Node> {
     @Setter
     @Getter
     private Outline argument;
@@ -22,7 +22,7 @@ public class Return extends Genericable<Return, ONode> {
 
     private Outline supposed = Unknown;
 
-    private Return(ONode node, Outline declared) {
+    private Return(Node node, Outline declared) {
         super(node, declared);
     }
 
@@ -30,11 +30,11 @@ public class Return extends Genericable<Return, ONode> {
 //        super(node);
 //    }
 
-    public static Return from(ONode node, Outline declared){
+    public static Return from(Node node, Outline declared){
         return new Return(node,declared);
     }
 
-    public static Return from(ONode node){
+    public static Return from(Node node){
         return new Return(node,Any);
     }
 

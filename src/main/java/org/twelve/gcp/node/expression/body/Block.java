@@ -1,9 +1,9 @@
 package org.twelve.gcp.node.expression.body;
 
-import org.twelve.gcp.ast.OAST;
+import org.twelve.gcp.ast.AST;
 
 public class Block extends Body {
-    public Block(OAST ast) {
+    public Block(AST ast) {
         super(ast);
     }
 }

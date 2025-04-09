@@ -1,9 +1,9 @@
 package org.twelve.gcp.outline.projectable;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 
-public interface OperateAble<T extends ONode> {
+public interface OperateAble<T extends Node> {
     void addDefinedToBe(Outline outline);
 
     T node();

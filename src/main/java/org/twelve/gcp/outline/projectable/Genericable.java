@@ -1,6 +1,6 @@
 package org.twelve.gcp.outline.projectable;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.adt.Entity;
@@ -15,7 +15,7 @@ import java.util.List;
 
 import static org.twelve.gcp.common.Tool.cast;
 
-public abstract class Genericable<G extends Genericable, N extends ONode> implements Projectable, OperateAble<N> {
+public abstract class Genericable<G extends Genericable, N extends Node> implements Projectable, OperateAble<N> {
     protected long id;
     protected final N node;
 

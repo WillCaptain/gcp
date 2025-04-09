@@ -1,6 +1,6 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.LiteralUnionNode;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
@@ -18,8 +18,8 @@ import org.twelve.gcp.node.statement.VariableDeclarator;
 import org.twelve.gcp.outline.Outline;
 
 public interface Inferences {
-    default Outline visit(ONode node){
-        for (ONode child : node.nodes()) {
+    default Outline visit(Node node){
+        for (Node child : node.nodes()) {
             child.infer(this);
         }
         return Outline.Ignore;

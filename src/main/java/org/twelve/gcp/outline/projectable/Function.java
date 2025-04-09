@@ -1,12 +1,12 @@
 package org.twelve.gcp.outline.projectable;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 
 import static org.twelve.gcp.common.Tool.cast;
 
 
-public abstract class Function<T extends ONode,G extends Outline> implements Projectable  {
+public abstract class Function<T extends Node,G extends Outline> implements Projectable  {
     protected long id;
     protected final T node;
 
@@ -69,7 +69,7 @@ public abstract class Function<T extends ONode,G extends Outline> implements Pro
     }
 
     @Override
-    public ONode node() {
+    public Node node() {
         return this.node;
     }
 

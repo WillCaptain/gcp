@@ -1,6 +1,6 @@
 package org.twelve.gcp.outlineenv;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.adt.SumADT;
@@ -15,11 +15,11 @@ public class EnvSymbol {
     private final Long scope;
     private final String name;
     private final long id;
-    private final ONode originNode;
+    private final Node originNode;
     private boolean isDeclared;
     private Outline outline;
 
-    public EnvSymbol(String name, boolean mutable, Outline outline, boolean isDeclared, Long scope, ONode originNode) {
+    public EnvSymbol(String name, boolean mutable, Outline outline, boolean isDeclared, Long scope, Node originNode) {
         this.id = counter.incrementAndGet();
         this.mutable = mutable;
         this.outline = outline;
@@ -74,7 +74,7 @@ public class EnvSymbol {
         return this.outline;
     }
 
-    public ONode originNode() {
+    public Node originNode() {
         return this.originNode;
     }
 

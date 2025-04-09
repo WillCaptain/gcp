@@ -1,94 +1,194 @@
 package org.twelve.gcp.ast;
 
-import com.sun.xml.ws.developer.Serialization;
+import org.twelve.gcp.common.Tool;
+import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.exception.GCPRuntimeException;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.interpreter.Interpreter;
 import org.twelve.gcp.interpreter.Result;
 import org.twelve.gcp.outline.Outline;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-/**
- * node interface in outline ast
- */
-@Serialization
-public interface Node<A extends AST, N extends Node<A,N>> extends Serializable {
+import static org.twelve.gcp.common.Tool.cast;
+import static org.twelve.gcp.outline.Outline.Unknown;
 
-    /**
-     * Unique identifier for the node in the AST.
-     * Used for distinguishing nodes, especially when you may need to reference or manipulate specific nodes.
-     *
-     * @return Long - index of the node
-     */
-    @Serialization
-    Long id();
+public abstract class Node implements Serializable {
+    private final List<Node> nodes = new ArrayList<>();
 
-    /**
-     * Location in the source code where this node appears.
-     * This can be helpful for debugging, error reporting, or source mapping.
-     *
-     * @return Location - represents the location (e.g., line/column number) of the node.
-     */
-    @Serialization
-    Location loc();
+    private final Long id;
+    private final AST ast;
+    private final Location loc;
 
-    /**
-     * Type of the node.
-     * This could represent different kinds of nodes like literals, function definitions, variable declarations, etc.
-     * Helps in identifying what the node represents within the AST.
-     *
-     * @return NodeType - enum describing the type of the node.
-     */
-    @Serialization
-    String type();
+    protected Outline outline;
+    protected Node parent = null;
 
-    /**
-     * Outline means type information for the node.
-     * This reflects the type of the node in Outline’s type system.
-     * For instance, a function node might have an outline like Number -> String.
-     * A literal number might have an outline of Number, and so on.
-     *
-     * @return Outline - the type information for this node, which could be a custom type representing Outline's type system.
-     */
-    @Serialization
-    Outline outline();
-
-    Long scope();
-
-    //<T extends Node> T createNode(NodeCreator<T> creator);
-    String lexeme();
-
-    /**
-     * Get the child nodes of the current node.
-     * Useful for top-down traversal or processing of the AST.
-     *
-     * @return List<Node> - list of child nodes.
-     */
-    List<N> nodes();
-
-    default N get(int index) {
-        return this.nodes().get(index);
+    protected Node(AST ast, Location loc, Outline outline) {
+        this.id = ast.nodeIndexer().getAndIncrement();
+        this.ast = ast;
+        this.loc = loc;
+        this.outline = outline;
     }
 
-    A ast();
+    public Node(AST ast, Location loc) {
+        this(ast, loc, Unknown);
+    }
 
-    <T extends N> T addNode(T node);
-    <T extends N> T addNode(int index, T node);
+    public Node(AST ast) {
+        this(ast, null);
+    }
 
-    boolean removeNode(Node node);
+    public Long id() {
+        return this.id;
+    }
 
-    Node removeNode(int index);
+    public List<Node> nodes() {
+        List<Node> nodes = new ArrayList<>();
+        nodes.addAll(this.nodes);
+        return nodes;
+    }
 
-    Map<String, Object> serialize();
+    public AST ast() {
+        return this.ast;
+    }
 
-    Outline infer(Inferences inference);
+    public <T extends Node> T addNode(T node) {
+        return this.addNode(this.nodes.size(), node);
+    }
 
-    <T> Result<T> interpret(Interpreter interpreter);
+    public <T extends Node> T addNode(int index, T node) {
+        if (node == null) {
+            return null;
+        }
+        if (this.ast != node.ast()) {
+            System.out.println(node.ast());
+            System.out.println(this.ast);
+            ErrorReporter.report(GCPErrCode.NODE_AST_MISMATCH);
+        }
+        this.nodes.add(index, cast(node));
+        node.parent = this;
+        return node;
+    }
 
-    Node parent();
+    public <T extends Node> T replaceNode(Node old, T now) {
+        int index = this.nodes.indexOf(old);
+        this.nodes.remove(old);
+        this.nodes.add(index, cast(now));
+        now.parent = this;
+        old.parent = null;
+        return now;
+    }
 
-    <T extends ONode> T replaceNode(N old, T now);
+    public boolean removeNode(Node node) {
+        return this.nodes.remove(node);
+    }
 
+    public Node removeNode(int index) {
+        return this.nodes.remove(index);
+    }
+
+    public Location loc() {
+        if (loc != null) {
+            return this.loc;
+        } else {
+            List<Node> nodes = nodes().stream()
+                    .filter(n -> !(n.loc().start() == 0 && n.loc().end() == 0))
+                    .collect(Collectors.toList());
+            if (nodes.size() == 0) {
+                return new SimpleLocation(0, 0);
+            } else {
+                return new SimpleLocation(nodes.get(0).loc().start(), nodes.get(nodes.size() - 1).loc().end());
+            }
+        }
+
+    }
+
+    public Node parent() {
+        return this.parent;
+    }
+
+    public Long scope() {
+        return this.parent().scope();
+    }
+
+    public String type() {
+        return this.getClass().getSimpleName();
+    }
+
+    public Outline outline() {
+        return this.outline;
+    }
+
+    @Override
+    public String toString() {
+        return this.lexeme();
+    }
+
+    public String lexeme() {
+        return this.nodes().stream().map(n -> n.lexeme()).collect(Collectors.joining("\n"));
+    }
+
+    public Map<String, Object> serialize() {
+        return Tool.serializeAnnotated(this);
+    }
+
+    public Outline infer(Inferences inferences) {
+        try {
+//            if (this.outline == Unknown) {
+            if (!this.inferred()) {
+                this.ast().symbolEnv().enter(this.scope());
+                this.outline = this.accept(inferences);
+                this.ast().symbolEnv().exit();
+            }
+        } catch (GCPRuntimeException e) {
+            ErrorReporter.report(this, e.errCode());
+        }
+        return outline;
+    }
+
+    public boolean inferred() {
+//        return this.outline.inferred();
+        boolean inferred = this.outline.inferred();;
+        if (!inferred) return false;
+        for (Node node : this.nodes) {
+            inferred = inferred && node.inferred();
+            if (!inferred) return false;
+        }
+        return true;
+    }
+
+    public <T> Result<T> interpret(Interpreter interpreter) {
+        return interpreter.visit(this);
+    }
+
+    protected Outline accept(Inferences inferences) {
+//        try {
+        return inferences.visit(this);
+//        }catch (Exception ex){
+//            ErrorReporter.report(GCPErrCode.UNEXPECTED_ERROR,ex.getStackTrace().toString());
+//            return Unknown;
+//        }
+    }
+
+    public int index() {
+        return this.parent().nodes().indexOf(this);
+    }
+
+    public void markUnknowns() {
+        if(this.outline()==Unknown){
+            ErrorReporter.report(this,GCPErrCode.INFER_ERROR);
+        }
+        for (Node node : this.nodes) {
+            node.markUnknowns();
+        }
+    }
+
+    public Node get(int index) {
+        return this.nodes().get(index);
+    }
 }

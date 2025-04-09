@@ -1,9 +1,8 @@
 package org.twelve.gcp.outline.builtin;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.primitive.Primitive;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +25,7 @@ public class Namespace implements Outline {
     }
 
     @Override
-    public ONode node() {
+    public Node node() {
         return this.node;
     }
 

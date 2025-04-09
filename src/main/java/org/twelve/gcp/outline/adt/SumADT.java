@@ -1,6 +1,6 @@
 package org.twelve.gcp.outline.adt;
 
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.projectable.Function;
 
@@ -19,7 +19,7 @@ public abstract class SumADT extends ADT {
     /**
      * Sum ADT为非标类型，所以有node对应
      */
-    private final ONode node;
+    private final Node node;
     /**
      * 声明类型组，即在Sum ADT声明时规定的类型
      * 声明后的类型不能再动态添加类型
@@ -38,7 +38,7 @@ public abstract class SumADT extends ADT {
      * @param node     对应节点
      * @param outlines 可能的options
      */
-    SumADT(ONode node, Outline... outlines) {
+    SumADT(Node node, Outline... outlines) {
         this.node = node;
 
         for (Outline outline : outlines) {
@@ -95,7 +95,7 @@ public abstract class SumADT extends ADT {
 
     }
 
-    public ONode node() {
+    public Node node() {
         return this.node;
     }
 

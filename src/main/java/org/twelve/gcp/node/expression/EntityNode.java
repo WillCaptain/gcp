@@ -1,8 +1,8 @@
 package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.Location;
-import org.twelve.gcp.ast.OAST;
-import org.twelve.gcp.ast.ONode;
+import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.SimpleLocation;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.ValueNode;
@@ -23,10 +23,10 @@ import java.util.Map;
  */
 public class EntityNode extends ValueNode<EntityNode> {
     private final Map<String, List<MemberNode>> members = new HashMap<>();
-    private final ONode base;
+    private final Node base;
     private final Long scope;
 
-    public EntityNode(OAST ast, List<MemberNode> members, ONode base,Location loc) {
+    public EntityNode(AST ast, List<MemberNode> members, Node base, Location loc) {
         super(ast, loc);
         this.scope = ast.scopeIndexer().incrementAndGet();
         members.forEach(m->{
@@ -40,15 +40,15 @@ public class EntityNode extends ValueNode<EntityNode> {
         });
         this.base = base;
     }
-    public EntityNode(OAST ast, List<MemberNode> members, ONode base){
+    public EntityNode(AST ast, List<MemberNode> members, Node base){
         this(ast,members,base, null);
     }
 
-    public EntityNode(OAST ast, List<MemberNode> members,Location loc) {
+    public EntityNode(AST ast, List<MemberNode> members, Location loc) {
         this(ast,members,null,loc);
     }
 
-    public EntityNode(OAST ast, List<MemberNode> members){
+    public EntityNode(AST ast, List<MemberNode> members){
         this(ast,members,(Location) null);
     }
 
@@ -65,7 +65,7 @@ public class EntityNode extends ValueNode<EntityNode> {
     public String lexeme() {
         StringBuilder sb = new StringBuilder((base==null?"":base.lexeme())+"{\n");
         int index = 0;
-        for (ONode node : this.nodes()) {
+        for (Node node : this.nodes()) {
             String[] lines = node.lexeme().split("\n");
 
             for (int i = 0; i < lines.length; i++) {
@@ -96,7 +96,7 @@ public class EntityNode extends ValueNode<EntityNode> {
         return inferences.visit(this);
     }
 
-    public ONode base() {
+    public Node base() {
         return this.base;
     }
 
