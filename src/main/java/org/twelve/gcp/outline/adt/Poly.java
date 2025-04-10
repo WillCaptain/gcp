@@ -127,7 +127,7 @@ public class Poly extends SumADT {
      */
     public Boolean isMutable(Outline outline, boolean mutable) {
         if (meta.containsKey(outline)) {
-            return meta.get(outline).getValue();
+            return meta.get(outline).value();
         } else {
             return mutable;
         }
@@ -157,7 +157,7 @@ public class Poly extends SumADT {
         //如果是重复infer，则去掉上一次infer
 //        if (node.parent().parent() instanceof VariableDeclarator) {
         for (Outline o : this.meta.keySet()) {
-            if (this.meta.get(o).getKey() == node) {
+            if (this.meta.get(o).key() == node) {
                 this.meta.remove(o);
                 this.options.remove(o);
                 break;

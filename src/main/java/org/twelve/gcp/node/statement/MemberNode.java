@@ -13,14 +13,14 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class MemberNode extends VariableDeclarator {
 
-    public MemberNode(AST ast, Token name, Expression expression, Boolean mutable) {
-        super(ast,mutable? VariableKind.VAR:VariableKind.LET);
-        this.declare(name,expression);
+    public MemberNode(AST ast, Token<String> name, Expression expression, Boolean mutable) {
+        super(ast, VariableKind.from(mutable));
+        this.declare(name, expression);
     }
 
     @Override
-    public Assignment declare(Token varToken, Expression value) {
-        if(this.assignments().size()>0) return null;//member node只能有一个赋值
+    public Assignment declare(Token<String> varToken, Expression value) {
+        if (!this.assignments().isEmpty()) return null;//member node只能有一个赋值
         return super.declare(varToken, value);
     }
 
@@ -31,12 +31,9 @@ public class MemberNode extends VariableDeclarator {
 
     @Override
     public String lexeme() {
-        StringBuilder sb = new StringBuilder(this.mutable() ? "mute " : "");
-        sb.append(this.name().lexeme());
-        sb.append(" = ");
-        sb.append(this.expression().lexeme());
-//        sb.append(",");
-        return sb.toString();
+        return (this.mutable() ? "mute " : "") + this.name().lexeme() +
+                " = " +
+                this.expression().lexeme();
     }
 
     @Override
@@ -46,11 +43,11 @@ public class MemberNode extends VariableDeclarator {
     }
 
     public Identifier name() {
-        return cast(this.assignments().get(0).lhs());
+        return cast(this.assignments().getFirst().lhs());
     }
 
     public Expression expression() {
-        return this.assignments().get(0).rhs();
+        return this.assignments().getFirst().rhs();
     }
 
     public Modifier modifier() {
@@ -58,11 +55,6 @@ public class MemberNode extends VariableDeclarator {
     }
 
     public Boolean mutable() {
-        return this.kind()==VariableKind.VAR;
+        return this.kind().mutable();
     }
-
-//    @Override
-//    public boolean inferred() {
-//        return this.expression.inferred();
-//    }
 }

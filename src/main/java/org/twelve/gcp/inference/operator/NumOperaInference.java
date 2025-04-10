@@ -20,17 +20,17 @@ public class NumOperaInference implements OperatorInference {
         }
         //left and right is number or generic
         if (left instanceof NUMBER && right instanceof OperateAble) {
-            ((OperateAble) right).addDefinedToBe(Outline.Number);
+            ((OperateAble<?>) right).addDefinedToBe(Outline.Number);
             return right;
         }
         if (right instanceof NUMBER && left instanceof OperateAble) {
-            ((OperateAble) left).addDefinedToBe(Outline.Number);
+            ((OperateAble<?>) left).addDefinedToBe(Outline.Number);
             return left;
         }
         //left and right are both generic
         if (left instanceof Generic && right instanceof OperateAble) {
-            ((OperateAble) left).addDefinedToBe(Outline.Number);
-            ((OperateAble) right).addDefinedToBe(Outline.Number);
+            ((OperateAble<?>) left).addDefinedToBe(Outline.Number);
+            ((OperateAble<?>) right).addDefinedToBe(Outline.Number);
             return new NumericAble(left, right, node);
         }
         ErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);

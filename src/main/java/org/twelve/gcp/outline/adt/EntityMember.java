@@ -10,7 +10,7 @@ public class EntityMember {
     private final Node node;
 
     public static EntityMember from(String name, Outline outline, Modifier modifier, boolean mutable, Node node) {
-        return new EntityMember(name, outline, modifier, mutable ? Mutable.True : Mutable.False, node);
+        return new EntityMember(name, outline, modifier, Mutable.from(mutable), node);
     }
 
     /**

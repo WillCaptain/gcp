@@ -65,13 +65,15 @@ public class AST {
     }
 
     // Error Handling
-    public void addError(GCPError error) {
+    public GCPError addError(GCPError error) {
         // Deduplicate errors by node ID and error code
         if (errors.stream().noneMatch(e ->
-                e.node().id() == error.node().id() &&
+                Objects.equals(e.node().id(), error.node().id()) &&
                         e.errorCode() == error.errorCode())) {
             this.errors.add(error);
+            return error;
         }
+        return null;
     }
 
     // Program Structure Manipulation

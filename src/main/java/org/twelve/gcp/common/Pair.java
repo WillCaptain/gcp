@@ -1,15 +1,10 @@
 package org.twelve.gcp.common;
 
-import lombok.Getter;
-
-public class Pair<K,V> {
-    @Getter
-    private final K key;
-    @Getter
-    private final V value;
-
-    public Pair(K key, V value) {
-        this.key = key;
-        this.value = value;
-    }
+/**
+ * An immutable tuple of two elements of potentially different types.
+ * @param <K> the type of the first element (key)
+ * @param <V> the type of the second element (value)
+ * @author huizi 2025
+ */
+public record Pair<K, V>(K key, V value) {
 }

@@ -7,9 +7,9 @@ import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.outline.Outline;
 
 public class BinaryExpression extends Expression{
-    private Expression left;
-    private Expression right;
-    private OperatorNode<BinaryOperator> operatorNode;
+    private final Expression left;
+    private final Expression right;
+    private final OperatorNode<BinaryOperator> operatorNode;
     public BinaryExpression(Expression left, Expression right, OperatorNode<BinaryOperator> operator) {
         super(left.ast(), null);
         this.left = this.addNode(left);

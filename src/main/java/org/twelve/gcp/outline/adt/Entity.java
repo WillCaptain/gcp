@@ -184,7 +184,7 @@ public class Entity extends ProductADT implements Projectable {
 //                session.addProjection(projected, outline);
                 return outline;
             } else {
-                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL);
+                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL,"mismatch "+this);
                 Outline guessed = this.guess();
 //                session.addProjection(projected, guessed);
                 return guessed;

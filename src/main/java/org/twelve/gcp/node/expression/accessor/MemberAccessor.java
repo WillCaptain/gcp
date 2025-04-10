@@ -33,7 +33,7 @@ public class MemberAccessor extends Accessor {
         if (this.outline == Outline.Error) return;
         ProductADT owner = cast(this.entity.outline());
         if (!owner.checkMember(member.token(), inferred)) {
-            ErrorReporter.report(this, GCPErrCode.OUTLINE_MISMATCH);
+            ErrorReporter.report(this, GCPErrCode.OUTLINE_MISMATCH,member.token()+" not found");
         }
     }
 

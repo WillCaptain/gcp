@@ -19,7 +19,7 @@ public class AssignmentInference implements Inference<Assignment> {
 
 
         if (valueOutline == Ignore || valueOutline == Unit) {
-            ErrorReporter.report(GCPErrCode.UNAVAILABLE_OUTLINE_ASSIGNMENT);
+            ErrorReporter.report(node.rhs(), GCPErrCode.UNAVAILABLE_OUTLINE_ASSIGNMENT);
             return Ignore;
         }
         Outline varOutline = node.lhs().infer(inferences);
@@ -29,7 +29,7 @@ public class AssignmentInference implements Inference<Assignment> {
         }
 
 //        try {
-            node.lhs().assign(node.ast().symbolEnv(), valueOutline);
+        node.lhs().assign(node.ast().symbolEnv(), valueOutline);
 //        }catch(GCPRuntimeException e){
 //            ErrorReporter.report(node.rhs(),e.errCode());
 //        }

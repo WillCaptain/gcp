@@ -11,10 +11,10 @@ import java.util.List;
 public class Export extends Node {
     private final List<ExportSpecifier> specifiers = new ArrayList<>();
 
-    public Export(AST ast, List<Pair<Token, Token>> vars) {
+    public Export(AST ast, List<Pair<Token<String>, Token<String>>> vars) {
         super(ast, null);
-        for (Pair<Token, Token> var : vars) {
-            this.specifiers.add(this.addNode(new ExportSpecifier(ast, var.getKey(), var.getValue())));
+        for (Pair<Token<String>, Token<String>> var : vars) {
+            this.specifiers.add(this.addNode(new ExportSpecifier(ast, var.key(), var.value())));
         }
     }
 

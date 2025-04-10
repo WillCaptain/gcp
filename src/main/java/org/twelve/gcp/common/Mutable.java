@@ -19,4 +19,7 @@ public enum Mutable {
     };
 
     public abstract Boolean toBool();
+    public static Mutable from(Boolean mutable){
+        return mutable?True:False;
+    }
 }

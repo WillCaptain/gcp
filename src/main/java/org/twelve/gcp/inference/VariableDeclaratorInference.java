@@ -1,6 +1,5 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Identifier;
@@ -42,7 +41,7 @@ public class VariableDeclaratorInference implements Inference<VariableDeclarator
                         Poly poly = Poly.create();
                         //隐式动态poly重载
                         poly.sum(symbol.outline(), symbol.originNode(), symbol.isMutable());
-                        if (!poly.sum(inferred, var, node.kind() == VariableKind.VAR)) {
+                        if (!poly.sum(inferred, var, node.kind().mutable())) {
                             ErrorReporter.report(node, GCPErrCode.POLY_SUM_FAIL);
                             return Ignore;
                         }
@@ -54,7 +53,7 @@ public class VariableDeclaratorInference implements Inference<VariableDeclarator
                 }
             } else {
                 symbol = oEnv.defineSymbol(var.token(), var.outline(),
-                        node.kind() == VariableKind.VAR, var.isDeclared(), var);
+                        node.kind().mutable(), var.isDeclared(), var);
                 inferAssignment(inferences, assignment, symbol);
                 cache.add(var.id());
             }

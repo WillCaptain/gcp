@@ -28,7 +28,7 @@ public class VariableDeclarator extends Statement {
 
     //let a:B = c;
     public Assignment declare(Token<String> varToken, Outline declareOutline, Expression value) {
-        Identifier var = new Identifier(this.ast(), varToken, declareOutline,this.kind==VariableKind.VAR);
+        Identifier var = new Identifier(this.ast(), varToken, declareOutline,this.kind.mutable());
         Assignment assignment = this.addNode(new Assignment(var, value));
         this.assignments.add(assignment);
         return assignment;

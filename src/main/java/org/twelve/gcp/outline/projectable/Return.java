@@ -3,6 +3,7 @@ package org.twelve.gcp.outline.projectable;
 import lombok.Getter;
 import lombok.Setter;
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
@@ -16,36 +17,28 @@ public class Return extends Genericable<Return, Node> {
     @Getter
     private Outline argument;
 
-    public void setArgument(Outline argument) {
-        this.argument = argument;
-    }
-
     private Outline supposed = Unknown;
 
     private Return(Node node, Outline declared) {
         super(node, declared);
     }
 
-//    public Return(FunctionNode node) {
-//        super(node);
-//    }
-
-    public static Return from(Node node, Outline declared){
-        return new Return(node,declared);
+    public static Return from(Node node, Outline declared) {
+        return new Return(node, declared);
     }
 
-    public static Return from(Node node){
-        return new Return(node,Any);
+    public static Return from(Node node) {
+        return new Return(node, Any);
     }
 
-    public static Return from(Outline declared){
-        return new Return(null,declared);
+    public static Return from(Outline declared) {
+        return new Return(null, declared);
     }
 
     /**
      * for high order function
      */
-    public static Return from(){
+    public static Return from() {
         return from(Any);
     }
 
@@ -77,7 +70,7 @@ public class Return extends Genericable<Return, Node> {
 //            return session.getProjection(this);
 //        }
         if (projected.id() == this.id()) {
-            return this.projectMySelf( projection, session);
+            return this.projectMySelf(projection, session);
         }
         //投影对应的参数时，才真正得到投影值
         if (this.argument.id() == projected.id()) {
@@ -96,12 +89,9 @@ public class Return extends Genericable<Return, Node> {
             return this;
         } else {
             Return result = this.copy();
-            result.extendToBe = tryProject(result.extendToBe, projected, projection, session);
-            result.hasToBe = tryProject(result.hasToBe, projected, projection, session);
-            result.definedToBe = tryProject(result.definedToBe, projected, projection, session);
-            result.supposed = tryProject(result.supposed, projected, projection, session);
+            this.projectConstraints(result,projected,projection,session);
             if (this.supposed != Unknown && (!result.max().is(result.supposed) || !result.supposed.is(result.min()))) {
-                ErrorReporter.report(this.node, GCPErrCode.PROJECT_FAIL);
+                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, CONSTANTS.MISMATCH_STR + this.supposed);
             }
             return result;
         }
@@ -161,7 +151,7 @@ public class Return extends Genericable<Return, Node> {
 
     @Override
     public Outline guess() {
-        return (this.supposed instanceof UNKNOWN) ? super.guess():
-                (this.supposed instanceof Projectable?((Projectable) this.supposed).guess():this.supposed);
+        return (this.supposed instanceof UNKNOWN) ? super.guess() :
+                (this.supposed instanceof Projectable ? ((Projectable) this.supposed).guess() : this.supposed);
     }
 }

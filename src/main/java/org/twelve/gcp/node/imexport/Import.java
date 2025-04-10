@@ -13,11 +13,11 @@ public class Import extends Node {
     private final ModuleNode source;
     private final List<ImportSpecifier> specifiers = new ArrayList<>();
 
-    public Import(AST ast, List<Pair<Token,Token>> vars, List<Token<String>> source) {
+    public Import(AST ast, List<Pair<Token<String>,Token<String>>> vars, List<Token<String>> source) {
         super(ast, null);
         if(vars!=null) {
-            for (Pair<Token, Token> var : vars) {
-                this.specifiers.add(this.addNode(new ImportSpecifier(ast, var.getKey(), var.getValue())));
+            for (Pair<Token<String>, Token<String>> var : vars) {
+                this.specifiers.add(this.addNode(new ImportSpecifier(ast, var.key(), var.value())));
             }
         }
         this.source = this.addNode(new ModuleNode(ast,source));

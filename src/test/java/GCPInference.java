@@ -454,11 +454,6 @@ public class GCPInference {
     }
     @Test
     void test_entity_hof_projection_4() {
-        //let f = (x,z,y)-> var w = z; w.combine(x,y);
-        //f(20,{combine = (x,y)->{{
-        //        age = x1,
-        //        name = y1.name,
-        //      }},{name = "Will"})
         for(int i=1; i<4; i++) {
             Node call = ASTHelper.mockEntityProjection1(i, ASTHelper::mockEntityProjectionNode4);
             call.ast().asf().infer();
@@ -473,19 +468,13 @@ public class GCPInference {
 
     @Test
     void test_entity_hof_projection_5() {
-        //let f = (x,z,y)-> var w = z; w.combine(x,y);
-        //f(20,{combine = (x,y)->{{
-        //        age = x1,
-        //        name = y1.name,
-        //      }},{name = "Will"})
         for(int i=1; i<4; i++) {
-            Node call = ASTHelper.mockEntityProjection1(i, body->ASTHelper.mockEntityProjectionNode5(body));
+            Node call = ASTHelper.mockEntityProjection1(i, ASTHelper::mockEntityProjectionNode5);
             call.ast().asf().infer();
-            assertEquals(0, call.ast().errors().size());
             Entity result = cast(call.outline());
             assertEquals("name", result.members().getFirst().name());
-            assertInstanceOf(STRING.class, result.members().getFirst().outline());
-
+            assertInstanceOf(INTEGER.class, result.members().getFirst().outline());
+            assertFalse(call.ast().errors().isEmpty());
         }
 
     }

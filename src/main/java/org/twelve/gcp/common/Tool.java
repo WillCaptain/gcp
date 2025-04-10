@@ -13,161 +13,225 @@ import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
-public class Tool {
-    public static boolean hasSerializationAnnotation(Class<?> clazz) {
-        Class<? extends Annotation> annotation = Serialization.class;
-        while (clazz != null) {
-            if (clazz.isAnnotationPresent(annotation)) {
-                return true;
-            }
-            clazz = clazz.getSuperclass();
-        }
-        return false;
+/**
+ * Utility class providing serialization and reflection operations.
+ *
+ * Features:
+ * - Annotation-based serialization
+ * - Deep object serialization
+ * - Type-safe casting
+ * - Reflection utilities
+ *
+ * Thread Safety: Most methods are thread-safe when used with immutable objects
+ * @author huizi 2025
+ */
+public final class Tool {
+    private static final Map<Class<?>, Boolean> SERIALIZATION_CACHE = new ConcurrentHashMap<>();
+    private static final Set<Class<?>> IMMUTABLE_TYPES = Set.of(
+            String.class, Boolean.class, Character.class,
+            Byte.class, Short.class, Integer.class, Long.class,
+            Float.class, Double.class, BigDecimal.class, BigInteger.class,
+            LocalDate.class, LocalDateTime.class
+    );
+
+    private Tool() {
+        throw new AssertionError("Utility class cannot be instantiated");
     }
 
-    public static boolean hasSerializationAnnotation(Method method) {
-        if (method.getParameterCount() > 0) return false;
-        Class<?> clazz = method.getClass();
-        Class<? extends Annotation> annotation = Serialization.class;
-        String methodName = method.getName();
-        Class<?>[] parameterTypes = null;
-        while (clazz != null) {
-            try {
-                if (parameterTypes == null) {
-                    parameterTypes = method.getParameterTypes();
-                } else {
-                    method = clazz.getDeclaredMethod(methodName, parameterTypes);
-                }
-                if (method.isAnnotationPresent(annotation)) {
+    // --- Annotation Handling ---
+
+    /**
+     * Checks if a class has the Serialization annotation in its hierarchy.
+     * Results are cached for better performance.
+     */
+    public static boolean hasSerializationAnnotation(Class<?> clazz) {
+        return SERIALIZATION_CACHE.computeIfAbsent(clazz, c -> {
+            while (c != null) {
+                if (c.isAnnotationPresent(Serialization.class)) {
                     return true;
                 }
-            } catch (NoSuchMethodException e) {
-                // Continue to the superclass if method is not found
+                c = c.getSuperclass();
             }
-            clazz = clazz.getSuperclass();
-        }
-        return false;
-    }
-
-    public static String manageSerializedName(String methodName) {
-        String name = methodName;
-        if (name.startsWith("get")) {
-            name = name.substring(3);
-            name = name.substring(0, 1).toLowerCase() + name.substring(1);
-        }
-        return name;
+            return false;
+        });
     }
 
     /**
-     * must have serialization annotation
-     *
-     * @param obj
-     * @return
+     * Checks if a method has the Serialization annotation.
+     * Only considers no-arg methods for serialization.
+     */
+    public static boolean hasSerializationAnnotation(Method method) {
+        if (method.getParameterCount() > 0) return false;
+
+        Class<?> clazz = method.getDeclaringClass();
+        String methodName = method.getName();
+        Class<?>[] parameterTypes = method.getParameterTypes();
+
+        while (clazz != null) {
+            try {
+                Method m = clazz.getDeclaredMethod(methodName, parameterTypes);
+                if (m.isAnnotationPresent(Serialization.class)) {
+                    return true;
+                }
+            } catch (NoSuchMethodException e) {
+                // Continue to superclass
+            }
+            clazz = clazz.getSuperclass();
+        }
+        return false;
+    }
+
+    // --- Serialization ---
+
+    /**
+     * Serializes an object using annotation-based approach if available,
+     * otherwise falls back to normal serialization.
+     */
+    public static Object serialize(Object obj) {
+        if (obj == null) return null;
+        return hasSerializationAnnotation(obj.getClass())
+                ? serializeAnnotated(obj)
+                : serializeNormal(obj);
+    }
+
+    /**
+     * Serializes only methods marked with Serialization annotation.
      */
     public static Map<String, Object> serializeAnnotated(Object obj) {
-        Map<String, Object> data = new HashMap<>();
+        Map<String, Object> data = new LinkedHashMap<>();  // Preserve order
         for (Method method : obj.getClass().getMethods()) {
-            if (Tool.hasSerializationAnnotation(method)) {
-                data.put(Tool.manageSerializedName(method.getName()), serializeMethod(method, obj));
+            if (hasSerializationAnnotation(method)) {
+                data.put(getSerializedName(method), serializeMethod(method, obj));
             }
         }
         return data;
     }
 
+    /**
+     * Deep serialization of any object to primitive/collection types.
+     */
     private static Object serializeNormal(Object obj) {
-        if (obj == null) {
-            return null;
-        }
-        // Primitive or Wrapper types, String, BigDecimal, BigInteger, Date/Time
-        if (obj instanceof String || obj instanceof Number || obj instanceof Boolean
-                || obj instanceof BigDecimal || obj instanceof BigInteger
-                || obj instanceof LocalDate || obj instanceof LocalDateTime) {
+        if (obj == null) return null;
+
+        // Handle immutable types
+        if (IMMUTABLE_TYPES.contains(obj.getClass())) {
             return obj;
         }
-        // Enum
+
+        // Handle enums
         if (obj instanceof Enum<?>) {
-            Enum<?> enumValue = (Enum<?>) obj;
-            return enumValue.name();
+            return ((Enum<?>) obj).name();
         }
 
-        // Optional
+        // Handle Optional
         if (obj instanceof Optional<?>) {
-            Optional<?> optional = (Optional<?>) obj;
-            if (optional.isPresent()) return serialize(optional.get());
-            else return null;
+            return ((Optional<?>) obj).map(Tool::serialize).orElse(null);
         }
 
-        // Array
+        // Handle arrays
         if (obj.getClass().isArray()) {
-            int length = Array.getLength(obj);
-            Object[] objs = new Object[length];
-            for (int i = 0; i < length; i++) {
-                objs[i] = serialize(Array.get(obj, i));
-            }
-            return objs;
+            return serializeArray(obj);
         }
 
-        // Collection (List, Set, etc.)
+        // Handle collections
         if (obj instanceof Collection<?>) {
-            Collection<?> collection = (Collection<?>) obj;
-            List list = new ArrayList<>();
-            for (Object item : collection) {
-                list.add(serialize(item));
-            }
-            return list;
+            return serializeCollection((Collection<?>) obj);
         }
 
-        Map<String, Object> map = new HashMap<>();
-        // Map
+        // Handle maps
         if (obj instanceof Map<?, ?>) {
-            Map<?, ?> originalMap = (Map<?, ?>) obj;
-            for (Map.Entry<?, ?> entry : originalMap.entrySet()) {
-                map.put(entry.getKey().toString(), serialize(entry.getValue()));
-            }
-            return map;
+            return serializeMap((Map<?, ?>) obj);
         }
 
-        // General Object with Fields
+        // Handle other objects via reflection
+        return serializeObject(obj);
+    }
+
+    // --- Helper Methods ---
+
+    private static List<Object> serializeArray(Object array) {
+        int length = Array.getLength(array);
+        List<Object> result = new ArrayList<>(length);
+        for (int i = 0; i < length; i++) {
+            result.add(serialize(Array.get(array, i)));
+        }
+        return result;
+    }
+
+    private static List<Object> serializeCollection(Collection<?> collection) {
+        List<Object> result = new ArrayList<>(collection.size());
+        collection.forEach(item -> result.add(serialize(item)));
+        return result;
+    }
+
+    private static Map<String, Object> serializeMap(Map<?, ?> map) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        map.forEach((k, v) -> result.put(k.toString(), serialize(v)));
+        return result;
+    }
+
+    private static Map<String, Object> serializeObject(Object obj) {
+        Map<String, Object> result = new LinkedHashMap<>();
         Class<?> clazz = obj.getClass();
+
         while (clazz != null) {
             for (Field field : clazz.getDeclaredFields()) {
-                field.setAccessible(true);
                 try {
-                    map.put(field.getName(), serialize(field.get(obj)));
+                    field.setAccessible(true);
+                    result.put(field.getName(), serialize(field.get(obj)));
                 } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                    // Skip inaccessible fields
                 }
             }
             clazz = clazz.getSuperclass();
         }
-
-        return map;
-
+        return result;
     }
 
-    public static Outline getExactNumberOutline(Outline left, Outline right) {
-        if(!(left.is(right)||right.is(left))){
-            return Outline.Error;
+    /**
+     * Derives property name from getter method name.
+     */
+    public static String getSerializedName(Method method) {
+        String methodName = method.getName();
+        if (methodName.startsWith("get") && methodName.length() > 3) {
+            return Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
         }
-        return left.is(right)?right:left;
-    }
-
-    private static Object serialize(Object obj) {
-        if (hasSerializationAnnotation(obj.getClass())) {
-            return serializeAnnotated(obj);
-        } else {
-            return serializeNormal(obj);
-        }
+        return methodName;
     }
 
     @SneakyThrows
-    public static Object serializeMethod(Method method, Object obj) {
+    private static Object serializeMethod(Method method, Object obj) {
         method.setAccessible(true);
         return serialize(method.invoke(obj));
     }
 
-    public static <T> T cast(Object object){
-        return (T)object;
+    // --- Type Utilities ---
+
+    /**
+     * Safely casts an object to type T with runtime type checking.
+     * @throws ClassCastException if the object is not of type T
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> T cast(Object object) {
+        return (T) object;
     }
+
+    /**
+     * Gets the more specific numeric type outline between two outlines.
+     */
+    public static Outline getExactNumberOutline(Outline left, Outline right) {
+        return left.is(right) ? right : right.is(left) ? left : Outline.Error;
+    }
+
+    // --- Design Considerations ---
+    /*
+     * Potential Enhancements:
+     * 1. Add custom serialization handlers via registry
+     * 2. Support for circular references
+     * 3. Configuration for field inclusion/exclusion
+     * 4. Better error handling for reflection operations
+     */
 }

@@ -18,8 +18,6 @@ import static org.twelve.gcp.common.Tool.cast;
 public class FunctionCallInference implements Inference<FunctionCallNode> {
     @Override
     public Outline infer(FunctionCallNode node, Inferences inferences) {
-        LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
-//        Outline supposed = oEnv.lookup(node.function().symbolName()).outline();
         Outline func = node.function().infer(inferences);
         if (func == null) {
             ErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_DEFINED);
@@ -32,32 +30,25 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         //如果有重载方法
         if (func instanceof Poly) {
             result = targetOverride(cast(func), node.arguments(), inferences, node);
-//            if (result == Outline.Error) {
-//                ErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_DEFINED);
-//                return Outline.Error;
-//            }
         } else {
             result = func;
         }
 
-        if(node.arguments().size()>0) {
+        if(node.arguments().isEmpty()) {
+            result = ((Function<?,?>)result).returns().supposedToBe();
+        }else{
             //按顺序投影参数
             for (Expression argument : node.arguments()) {
                 argument.infer(inferences);
                 result = project(result, argument);
-//                if (result == Outline.Error) {
-//                    ErrorReporter.report(argument, GCPErrCode.PROJECT_FAIL);
-//                }
             }
-        }else{
-            result = ((Function)result).returns().supposedToBe();
         }
         return result;
     }
 
     private Outline targetOverride(Poly overwrite, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {
-        List<Function> fs = overwrite.options().stream().filter(o->o instanceof Function).map(o->(Function)o).collect(Collectors.toList());
-        for (Function f : fs) {
+        List<Function<?,?>> fs = overwrite.options().stream().filter(o->o instanceof Function).map(o->(Function<?,?>)o).collect(Collectors.toList());
+        for (Function<?,?> f : fs) {
             if (this.matchFunction(f, arguments, inferences, node)) {
                 return f;
             }
@@ -65,8 +56,8 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         return Outline.Error;
     }
 
-    private boolean matchFunction(Function function, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {
-        Function f = null;
+    private boolean matchFunction(Function<?,?> function, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {
+        Function<?,?> f = null;
         for (Expression argument : arguments) {
             if (f == null) {//匹配第一个参数
                 f = function;
@@ -91,7 +82,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
 //        ProjectSession session = new ProjectSession();
         //hlf function call
         if (target instanceof Genericable) {
-            return project((Genericable) target, argument);
+            return project((Genericable<?,?>) target, argument);
         }
         //normal function call
         if (target instanceof FirstOrderFunction) {
@@ -111,7 +102,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      * @param argument HFL函数调用的参数
      * @return 虚拟的函数返回
      */
-    private Outline project(Genericable generic, Node argument) {
+    private Outline project(Genericable<?,?> generic, Node argument) {
         Return returns = Return.from(generic.node());
         HigherOrderFunction defined = new HigherOrderFunction(generic.node(), cast(argument.outline()), returns);
         generic.addDefinedToBe(defined);
@@ -125,7 +116,6 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      *
      * @param function 实际调用的函数定义
      * @param argument 要投影的参数节点
-     * @return
      */
     private Outline project(FirstOrderFunction function, Node argument) {
         ProjectSession session = function.getSession();

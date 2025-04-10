@@ -113,7 +113,7 @@ public class Option extends SumADT {
                 Outline o = interact(m1.outline(), m2.outline());
                 if (o == Nothing) continue;
                 //交集默认mutable为false，并且没有绑定的node
-                interacted.add(EntityMember.from(m1.name(), o, m1.modifier().max(m2.modifier()), false, null));
+                interacted.add(EntityMember.from(m1.name(), o, m1.modifier().mostPermissive(m2.modifier()), false, null));
             }
         }
 //        members1.forEach((k, v1) -> {

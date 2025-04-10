@@ -1,5 +1,8 @@
 package org.twelve.gcp.common;
 
+/**
+ * constants for system
+ */
 public class CONSTANTS {
     public static final String PREFIX = "prefix";
     public static final String POSTFIX = "postfix";
@@ -20,4 +23,5 @@ public class CONSTANTS {
     public static final long IGNORE_INDEX = 14;
     public static final long NOTHING_INDEX = 15;
     public static final long MODULE_INDEX = 16;
+    public static final String MISMATCH_STR = " mismatch with ";
 }
