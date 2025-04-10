@@ -24,7 +24,7 @@ public class Program extends Node {
 //        return namespace;
 //    }
 
-    public NamespaceNode setNamespace(List<Token> names){
+    public NamespaceNode setNamespace(List<Token<String>> names){
         this.moduleName = names.remove(names.size()-1);
         this.namespace = this.replaceNode(this.namespace,new NamespaceNode(this.ast(),names));
         return this.namespace;

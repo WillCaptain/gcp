@@ -37,7 +37,7 @@ public class AstStructureTest {
     @Test
     void test_namespace() {
         assertEquals(10, this.ast.program().namespace().loc().start());
-        assertEquals(20, this.ast.program().namespace().loc().end());
+        assertEquals(19, this.ast.program().namespace().loc().end());
 
         assertEquals("org", ast.program().namespace().nodes().get(0).lexeme());
         assertEquals("twelve", ast.program().namespace().nodes().get(1).lexeme());
@@ -45,18 +45,18 @@ public class AstStructureTest {
         assertEquals("org.twelve", ast.program().namespace().lexeme());
 
         //like outline of "package org.twelve.test" is unknown before inference
-        assertTrue(ast.program().namespace().outline() instanceof UNKNOWN);
-        Namespace org = cast(ast.program().namespace().nodes().get(0).outline());
+        assertInstanceOf(UNKNOWN.class, ast.program().namespace().outline());
+        Namespace org = cast(ast.program().namespace().nodes().getFirst().outline());
         // but outline of "org" is namespace
-        assertTrue(org instanceof Namespace);
+        assertInstanceOf(Namespace.class, org);
         assertTrue(org.isTop());
-        assertEquals(null, org.parentNamespace());
+        assertNull(org.parentNamespace());
         assertEquals("org", org.namespace());
         //namespace is not assignable, means or can not express alone without tail
         assertFalse(org.reAssignable());
 
         Namespace twelve = cast(ast.program().namespace().nodes().get(1).outline());
-        assertEquals(twelve, org.subNamespaces().get(0));
+        assertEquals(twelve, org.subNamespaces().getFirst());
         assertEquals(org, twelve.parentNamespace());
         assertEquals("twelve", twelve.namespace());
 
@@ -72,42 +72,42 @@ public class AstStructureTest {
 
     @Test
     void test_import() {
-        Import imported = this.ast.program().body().imports().get(0);
+        Import imported = this.ast.program().body().imports().getFirst();
         //check to string
-        assertEquals("import grade as level, school from education;", ast.program().body().imports().get(0).lexeme());
+        assertEquals("import grade as level, school from education;", ast.program().body().imports().getFirst().lexeme());
         //check location
         assertEquals(29, imported.loc().start());
-        assertEquals(53, imported.loc().end());
+        assertEquals(52, imported.loc().end());
         //check source
         assertEquals("education", imported.source().lexeme());
         assertEquals(44, imported.source().loc().start());
-        assertEquals(53, imported.source().loc().end());
-        assertTrue(imported.source().outline() instanceof Module);
+        assertEquals(52, imported.source().loc().end());
+        assertInstanceOf(Module.class, imported.source().outline());
         //check a
-        ImportSpecifier a = imported.specifiers().get(0);
+        ImportSpecifier a = imported.specifiers().getFirst();
         assertEquals("grade as level", a.lexeme());
         assertEquals("grade", a.imported().lexeme());
         assertEquals(29, a.imported().loc().start());
-        assertEquals(34, a.imported().loc().end());
+        assertEquals(33, a.imported().loc().end());
         assertEquals("level", a.local().lexeme());
         assertEquals(34, a.local().loc().start());
-        assertEquals(39, a.local().loc().end());
+        assertEquals(38, a.local().loc().end());
 
-        assertTrue(a.get(0).outline() instanceof UNKNOWN);//outline is not confirmed yet
-        assertTrue(a.get(0).outline() == a.get(1).outline());//outline of b is a reference of a outline
+        assertInstanceOf(UNKNOWN.class, a.get(0).outline());//outline is not confirmed yet
+        assertSame(a.get(0).outline(), a.get(1).outline());//outline of b is a reference of a outline
         //check c
         ImportSpecifier c = imported.specifiers().get(1);
-        assertTrue(c.get(0) == c.get(1));
+        assertSame(c.get(0), c.get(1));
         assertEquals("school", c.lexeme());
         assertEquals("school", c.imported().lexeme());
         assertEquals(37, c.imported().loc().start());
-        assertEquals(43, c.imported().loc().end());
+        assertEquals(42, c.imported().loc().end());
 
         //import * from e
-        List<Token> source = new ArrayList<>();
-        source.add(new Token("e", 22));
-        source.add(new Token("f", 22));
-        source.add(new Token("g", 22));
+        List<Token<String>> source = new ArrayList<>();
+        source.add(new Token<>("e", 22));
+        source.add(new Token<>("f", 22));
+        source.add(new Token<>("g", 22));
         imported = ast.program().body().addImport(new Import(ast, source));
         assertEquals(0, imported.specifiers().size());
         assertEquals("e.f.g", imported.source().lexeme());
@@ -116,39 +116,39 @@ public class AstStructureTest {
 
     @Test
     void test_export() {
-        Export exported = ast.program().body().exports().get(0);
+        Export exported = ast.program().body().exports().getFirst();
         //check to string
-        assertEquals("export height as stature, name;", ast.program().body().exports().get(0).toString());
+        assertEquals("export height as stature, name;", ast.program().body().exports().getFirst().toString());
         //check location
         assertEquals(100, exported.loc().start());
-        assertEquals(120, exported.loc().end());
+        assertEquals(119, exported.loc().end());
         //check a
-        ExportSpecifier a = exported.specifiers().get(0);
+        ExportSpecifier a = exported.specifiers().getFirst();
         assertEquals("height as stature", a.lexeme());
         assertEquals("height", a.local().lexeme());
         assertEquals(100, a.local().loc().start());
-        assertEquals(106, a.local().loc().end());
+        assertEquals(105, a.local().loc().end());
         assertEquals("stature", a.exported().lexeme());
         assertEquals(111, a.exported().loc().start());
-        assertEquals(118, a.exported().loc().end());
+        assertEquals(117, a.exported().loc().end());
 
-        assertTrue(a.get(0).outline() instanceof UNKNOWN);//outline is not confirmed yet
-        assertTrue(a.get(0).outline() == a.get(1).outline());//outline of b is a reference of a outline
+        assertInstanceOf(UNKNOWN.class, a.get(0).outline());//outline is not confirmed yet
+        assertSame(a.get(0).outline(), a.get(1).outline());//outline of b is a reference of a outline
         //check c
         ExportSpecifier c = exported.specifiers().get(1);
-        assertTrue(c.get(0) == c.get(1));
+        assertSame(c.get(0), c.get(1));
         assertEquals("name", c.lexeme());
         assertEquals("name", c.local().lexeme());
         assertEquals(116, c.local().loc().start());
-        assertEquals(120, c.local().loc().end());
+        assertEquals(119, c.local().loc().end());
     }
 
     @Test
     void test_variable_declare() {
         List<Statement> stmts = this.ast.program().body().statements();
-        VariableDeclarator var = cast(stmts.get(0));
+        VariableDeclarator var = cast(stmts.getFirst());
         assertEquals(50, var.loc().start());
-        assertEquals(115, var.loc().end());
+        assertEquals(114, var.loc().end());
         assertEquals("let age: Integer, name = \"Will\", height: Decimal = 1.68, grade = level;",
                 var.toString());
     }
@@ -170,7 +170,7 @@ public class AstStructureTest {
         FunctionBody body = new FunctionBody(ast);
         FunctionNode function = FunctionNode.from(body);
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        declare.declare(new Token("get",0),function);
+        declare.declare(new Token<>("get", 0),function);
         ast.addStatement(declare);
         assertEquals(Token.unit().lexeme(),function.argument().identifier().token());
     }
@@ -178,17 +178,18 @@ public class AstStructureTest {
     @Test
     void test_entity(){
         AST ast = ASTHelper.mockSimplePersonEntity();
-        String expected = "let person = {\n" +
-                "  name = \"Will\",\n" +
-                "  get_name = ()->{\n" +
-                "    this.name\n" +
-                "  },\n" +
-                "  get_my_name = ()->{\n" +
-                "    name\n" +
-                "  },\n" +
-                "};\n" +
-                "let name_1 = person.name;\n" +
-                "let name_2 = person.get_name();";
+        String expected = """
+                let person = {
+                  name = "Will",
+                  get_name = ()->{
+                    this.name
+                  },
+                  get_my_name = ()->{
+                    name
+                  },
+                };
+                let name_1 = person.name;
+                let name_2 = person.get_name();""";
         assertEquals(expected,ast.lexeme());
     }
 

@@ -3,6 +3,7 @@ package org.twelve.gcp.node.expression;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.node.ValueNode;
+import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.primitive.*;
 
@@ -11,45 +12,39 @@ import java.math.BigDecimal;
 /**
  * literal node
  */
-public class LiteralNode<T, O extends Primitive> extends ValueNode<LiteralNode<?,?>> {
+public class LiteralNode<T> extends ValueNode<LiteralNode<?>> {
 
-    public static LiteralNode parse(AST ast, Token token) {
-        Object value = token.data();// LiteralParser.parse(token.lexeme());
-        if (value instanceof String) {
-            LiteralNode node = new LiteralNode<>(ast, token,  (String) value);
-            return node.setOutline(new STRING(node));
-        }
-        if (value instanceof BigDecimal) {
-            LiteralNode node = new LiteralNode<>(ast, token, (BigDecimal) value);
-            return node.setOutline(new DECIMAL(node));
-        }
-        if (value instanceof Double) {
-            LiteralNode node = new LiteralNode<>(ast, token, (Double) value);
-            return node.setOutline(new DOUBLE(node));
-        }
-        if (value instanceof Float) {
-            LiteralNode node =  new LiteralNode<>(ast, token, (Float) value);
-            return node.setOutline(new FLOAT(node));
-        }
-        if (value instanceof Long) {
-            LiteralNode node =  new LiteralNode<>(ast, token, (Long) value);
-            return node.setOutline(new LONG(node));
-        }
-        if (value instanceof Integer) {
-            LiteralNode node =  new LiteralNode<>(ast, token, (Integer) value);
-            return node.setOutline(new INTEGER(node));
-        }
-        return null;
+    public static <D> LiteralNode<D> parse(AST ast, Token<D> token) {
+        return new LiteralNode<>(ast, token);
     }
 
-    private final Token token;
-    private final T value;
+    private final Token<T> token;
 
-    private LiteralNode(AST ast, Token token, T value) {
+    private LiteralNode(AST ast, Token<T> token) {
         super(ast, token.loc());
         this.token = token;
-        this.value = value;
-//        this.outline = outline;
+        this.setOutline(this.createOutline(this.value()));
+    }
+    private ProductADT createOutline(T value){
+        if (value instanceof String) {
+            return new STRING(this);
+        }
+        if (value instanceof BigDecimal) {
+            return new DECIMAL(this);
+        }
+        if (value instanceof Double) {
+            return new DOUBLE(this);
+        }
+        if (value instanceof Float) {
+            return new FLOAT(this);
+        }
+        if (value instanceof Long) {
+            return new LONG(this);
+        }
+        if (value instanceof Integer) {
+            return new INTEGER(this);
+        }
+        return Outline.String;
     }
 
     @Override
@@ -61,17 +56,17 @@ public class LiteralNode<T, O extends Primitive> extends ValueNode<LiteralNode<?
         }
     }
 
-    public LiteralNode setOutline(ProductADT outline){
+    public LiteralNode<T> setOutline(ProductADT outline){
         this.outline = outline;
         return this;
     }
 
     public T value() {
-        return this.value;
+        return this.token.data();
     }
 
     @Override
     public boolean isSame(LiteralNode obj) {
-        return obj.value.equals(this.value);
+        return obj.value().equals(this.value());
     }
 }

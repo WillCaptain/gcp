@@ -143,7 +143,7 @@ public abstract class ProductADT extends ADT {
      * @return
      */
     private boolean addMember(EntityMember member) {
-        member.outline().updateHost(this);
+//        member.outline().updateHost(this);
         //查询是否有同名成员
         EntityMember m = this.members.get(member.name());
         if (m == null) {//没有重载,或者第n次infer，覆盖前一次infer结果

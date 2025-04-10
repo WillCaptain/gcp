@@ -22,19 +22,19 @@ public class VariableDeclarator extends Statement {
     }
 
     //let a:B;
-    public Assignment declare(Token varToken, Outline declareOutline) {
+    public Assignment declare(Token<String> varToken, Outline declareOutline) {
         return this.declare(varToken, declareOutline, null);
     }
 
     //let a:B = c;
-    public Assignment declare(Token varToken, Outline declareOutline, Expression value) {
+    public Assignment declare(Token<String> varToken, Outline declareOutline, Expression value) {
         Identifier var = new Identifier(this.ast(), varToken, declareOutline,this.kind==VariableKind.VAR);
         Assignment assignment = this.addNode(new Assignment(var, value));
         this.assignments.add(assignment);
         return assignment;
     }
 
-    public Assignment declare(Token varToken, Expression value) {
+    public Assignment declare(Token<String> varToken, Expression value) {
         return this.declare(varToken, ProductADT.Unknown, value);
     }
 

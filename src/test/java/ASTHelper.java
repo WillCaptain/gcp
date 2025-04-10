@@ -36,7 +36,7 @@ import static org.twelve.gcp.common.Tool.cast;
 public class ASTHelper {
     public static void fillHumanAst(AST ast) {
         //namespace org.twelve.human
-        List<Token> namespace = new ArrayList<>();
+        List<Token<String>> namespace = new ArrayList<>();
         namespace.add(new Token("org", 10));
         namespace.add(new Token("twelve", 14));
         namespace.add(new Token("human", 21));
@@ -47,7 +47,7 @@ public class ASTHelper {
         List<Pair<Token, Token>> vars = new ArrayList<>();
         vars.add(new Pair<>(new Token("grade", offset + 7), new Token("level", offset + 12)));
         vars.add(new Pair<>(new Token("school", offset + 15), null));
-        List<Token> source = new ArrayList<>();
+        List<Token<String>> source = new ArrayList<>();
         source.add(new Token("education", offset + 22));
         ast.addImport(new Import(ast, vars, source));
 
@@ -75,7 +75,7 @@ public class ASTHelper {
 
     public static void fillEducationAst(AST ast) {
         //namespace org.twelve.education
-        List<Token> namespace = new ArrayList<>();
+        List<Token<String>> namespace = new ArrayList<>();
         namespace.add(new Token("org", 10));
         namespace.add(new Token("twelve", 14));
         namespace.add(new Token("education", 21));
@@ -303,8 +303,8 @@ public class ASTHelper {
     private static AST mockTestAst() {
         ASF asf = new ASF();
         AST ast = asf.newAST();
-        List<Token> namespace = new ArrayList<>();
-        namespace.add(new Token("test"));
+        List<Token<String>> namespace = new ArrayList<>();
+        namespace.add(new Token<>("test"));
         ast.setNamespace(namespace);
         return ast;
     }
@@ -363,7 +363,7 @@ public class ASTHelper {
         //      }},{name = "Will"})
         ASF asf = new ASF();
         AST ast = asf.newAST();
-        List<Token> namespace = new ArrayList<>();
+        List<Token<String>> namespace = new ArrayList<>();
         namespace.add(new Token("test"));
         ast.setNamespace(namespace);
 

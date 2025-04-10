@@ -12,10 +12,10 @@ public class ModuleNode extends Node {
     private final Identifier name;
     private NamespaceNode namespace = null;
 
-    public ModuleNode(AST ast, List<Token> source) {
+    public ModuleNode(AST ast, List<Token<String>> source) {
         super(ast,null, new Module());
-        Token module = source.remove(source.size() - 1);
-        if(source.size()>0) {
+        Token<String> module = source.removeLast();
+        if(!source.isEmpty()) {
             this.namespace = this.addNode(new NamespaceNode(ast, source));
         }
         this.name = this.addNode(new Identifier(ast,module));

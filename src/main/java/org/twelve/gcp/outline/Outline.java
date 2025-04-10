@@ -114,8 +114,4 @@ public interface Outline extends Serializable {
     }
 
     long id();
-
-    default void updateHost(ProductADT product){
-
-    }
 }

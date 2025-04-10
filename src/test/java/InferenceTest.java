@@ -50,7 +50,7 @@ public class InferenceTest {
         ASF asf = new ASF();
         AST ast = asf.newAST();
 
-        List<Token> namespace = new ArrayList<>();
+        List<Token<String>> namespace = new ArrayList<>();
         namespace.add(new Token("module", 10));
         ast.program().setNamespace(namespace);
 
@@ -70,7 +70,7 @@ public class InferenceTest {
         LiteralNode str = LiteralNode.parse(ast, new Token("some"));
         LiteralNode num = LiteralNode.parse(ast, new Token(100));
 
-        List<Token> namespace = new ArrayList<>();
+        List<Token<String>> namespace = new ArrayList<>();
         namespace.add(new Token("module", 10));
         ast.program().setNamespace(namespace);
 
@@ -92,7 +92,7 @@ public class InferenceTest {
         LiteralNode str = LiteralNode.parse(ast, new Token("some"));
         LiteralNode num = LiteralNode.parse(ast, new Token(100));
 
-        List<Token> namespace = new ArrayList<>();
+        List<Token<String>> namespace = new ArrayList<>();
         namespace.add(new Token("module", 10));
         ast.program().setNamespace(namespace);
 
@@ -316,11 +316,10 @@ public class InferenceTest {
 
     }
 
-    @Test
     private static AST mockGCPTestAst() {
         ASF asf = new ASF();
         AST ast = asf.newAST();
-        List<Token> namespace = new ArrayList<>();
+        List<Token<String>> namespace = new ArrayList<>();
         namespace.add(new Token("test"));
         ast.setNamespace(namespace);
         return ast;

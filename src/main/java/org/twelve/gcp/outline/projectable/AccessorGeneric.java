@@ -13,7 +13,7 @@ import java.util.Optional;
 import static org.twelve.gcp.common.Tool.cast;
 
 public class AccessorGeneric extends Genericable<AccessorGeneric, Accessor> {
-    private Outline projected;
+    private final Outline projected;
 
     public AccessorGeneric(Accessor node) {
         this(node, null);

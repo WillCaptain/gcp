@@ -1,21 +1,21 @@
 package org.twelve.gcp.ast;
 
-public class SimpleLocation implements Location{
-    private final long start;
-    private final long end;
+import java.util.Objects;
 
-    public SimpleLocation(long start, long end) {
-        this.start = start;
-        this.end = end;
+public record SimpleLocation(long start, long end) implements Location {
+    public SimpleLocation {
+        if (end < start) throw new IllegalArgumentException("End cannot precede start");
     }
 
     @Override
-    public long start() {
-        return this.start;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Location that)) return false;
+        return start() == that.start() && end() == that.end();
     }
 
     @Override
-    public long end() {
-        return this.end;
+    public int hashCode() {
+        return Objects.hash(start(), end());
     }
 }
