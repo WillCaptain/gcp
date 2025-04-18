@@ -1,43 +1,49 @@
 package org.twelve.gcp.node.expression.conditions;
 
 import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Location;
+import org.twelve.gcp.common.SELECTION_TYPE;
+import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.adt.Option;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * unify if, match, ternary to same structure with
+ * selections contains multi arms
+ * each arm has its own predicate and consequence
+ * @author huizi 2025
+ */
 public class Selections extends Expression {
-    private List<Arm> arms = new ArrayList<>();
+    private final List<Arm> arms = new ArrayList<>();
+    private final SELECTION_TYPE selectionType;
 
-    private Expression others = null;
-
-    public Selections(AST ast) {
-        super(ast, null);
-    }
-
-    public Selections addArm(Arm arm) {
-        this.arms.add(arm);
-        return this;
-    }
-
-    public void setOthers(Expression others) {
-        this.others = others;
+    public Selections(AST ast, Location loc, SELECTION_TYPE selectionType,Arm... arms) {
+        super(ast, loc);
+        this.selectionType = selectionType;
+        for (Arm arm : arms) {
+            this.arms.add(arm);
+            this.addNode(arm);
+        }
     }
 
     @Override
-    public Outline outline() {
-        this.outline = null;
-        for (Arm arm : this.arms) {
-            if (this.outline == null) {
-                this.outline = arm.outline();
-            } else {
-                if (this.outline.equals(arm.outline())) continue;
-                this.outline = Option.from(this,this.outline, arm.outline());
-            }
-        }
-        return Option.from(this,this.outline, others == null ? ProductADT.Ignore : others.outline());
+    protected Outline accept(Inferences inferences) {
+        return inferences.visit(this);
+    }
+
+    public SELECTION_TYPE selectionType(){
+        return this.selectionType;
+    }
+
+    public List<Arm> arms(){
+        return new ArrayList<>(this.arms);
+    }
+
+    @Override
+    public String lexeme() {
+        return this.selectionType.lexeme(this);
     }
 }

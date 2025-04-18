@@ -3,6 +3,7 @@ package org.twelve.gcp.inference.operator;
 import org.twelve.gcp.node.expression.BinaryExpression;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Option;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.primitive.STRING;
 import org.twelve.gcp.outline.primitive.NUMBER;
 import org.twelve.gcp.outline.projectable.Addable;
@@ -14,8 +15,8 @@ public class AddInference implements OperatorInference {
     public Outline infer(Outline left, Outline right, BinaryExpression node) {
         //left and right is number or string
         if ((left instanceof STRING && right instanceof STRING)
-                || (left instanceof STRING && right instanceof NUMBER)
-                || (left instanceof NUMBER && right instanceof STRING)) {
+                || (left instanceof STRING && right.is(Option.StringOrNumber))
+                || (left.is(Option.StringOrNumber) && right instanceof STRING)) {
             return Outline.String;
         }
         if (left instanceof NUMBER && right instanceof NUMBER) {
@@ -41,7 +42,7 @@ public class AddInference implements OperatorInference {
             return new Addable(node, left, right);
         }
 
-        if(left==Outline.Unknown || right==Outline.Unknown){
+        if((left instanceof UNKNOWN) || (right instanceof UNKNOWN)){
             return Outline.Unknown;
         }
 

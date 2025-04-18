@@ -124,8 +124,8 @@ public class Entity extends ProductADT implements Projectable {
                     members.remove(found.get());
                     Poly overwrite = Poly.create();
 
-                    overwrite.sum(member.outline(), member.node(), member.mutable().toBool());
-                    overwrite.sum(found.get().outline(), found.get().node(), found.get().mutable().toBool());
+                    overwrite.sum(member.outline(), member.mutable().toBool());
+                    overwrite.sum(found.get().outline(), found.get().mutable().toBool());
                     members.add(EntityMember.from(member.name(), overwrite, member.modifier()));
                 }
             } else {

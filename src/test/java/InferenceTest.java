@@ -11,15 +11,15 @@ import org.twelve.gcp.node.statement.*;
 import org.twelve.gcp.outline.adt.*;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.primitive.DOUBLE;
+import org.twelve.gcp.outline.primitive.INTEGER;
 import org.twelve.gcp.outline.primitive.STRING;
 import org.twelve.gcp.outline.projectable.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.twelve.gcp.common.Tool.cast;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.twelve.gcp.outline.Outline.Ignore;
 
 public class InferenceTest {
@@ -51,15 +51,15 @@ public class InferenceTest {
         AST ast = asf.newAST();
 
         List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token("module", 10));
+        namespace.add(new Token<>("module", 10));
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Token("age"), Outline.Integer, LiteralNode.parse(ast, new Token("some")));
+        var.declare(new Token<>("age"), Outline.Integer, LiteralNode.parse(ast, new Token("some")));
         ast.program().body().addStatement(var);
         asf.infer();
         assertEquals(1, ast.errors().size());
-        assertEquals(var.assignments().get(0).rhs(), ast.errors().get(0).node());
+        assertEquals(var.assignments().getFirst().lhs(), ast.errors().getFirst().node());
     }
 
     @Test
@@ -67,15 +67,15 @@ public class InferenceTest {
         ASF asf = new ASF();
         AST ast = asf.newAST();
 
-        LiteralNode str = LiteralNode.parse(ast, new Token("some"));
-        LiteralNode num = LiteralNode.parse(ast, new Token(100));
+        LiteralNode<String> str = LiteralNode.parse(ast, new Token<>("some"));
+        LiteralNode<Integer> num = LiteralNode.parse(ast, new Token<>(100));
 
         List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token("module", 10));
+        namespace.add(new Token<>("module", 10));
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Token("age"),str);
+        var.declare(new Token<>("age"),str);
         ast.program().body().addStatement(var);
         Assignment assignment = new Assignment(new Identifier(ast, new Token("age")), num);
         ast.addStatement(assignment);
@@ -93,17 +93,17 @@ public class InferenceTest {
         LiteralNode num = LiteralNode.parse(ast, new Token(100));
 
         List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token("module", 10));
+        namespace.add(new Token<>("module", 10));
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Token("age"),Poly.from(var,true,Outline.String), str);
+        var.declare(new Token<>("age"),Poly.from(var,true,Outline.String), str);
         ast.program().body().addStatement(var);
-        Assignment assignment = new Assignment(new Identifier(ast, new Token("age")), num);
+        Assignment assignment = new Assignment(new Identifier(ast, new Token<>("age")), num);
         ast.addStatement(assignment);
         asf.infer();
         assertEquals(1, ast.errors().size());
-        assertEquals(GCPErrCode.OUTLINE_MISMATCH, ast.errors().get(0).errorCode());
+        assertEquals(GCPErrCode.OUTLINE_MISMATCH, ast.errors().getFirst().errorCode());
     }
 
 
@@ -275,17 +275,17 @@ public class InferenceTest {
     void test_simple_person_entity_with_override_member() {
         AST ast = ASTHelper.mockSimplePersonEntityWithOverrideMember();
         ast.asf().infer();
-        VariableDeclarator var = cast(ast.program().body().statements().get(0));
-        Entity person = cast(var.assignments().get(0).lhs().outline());
+        VariableDeclarator var = cast(ast.program().body().statements().getFirst());
+        Entity person = cast(var.assignments().getFirst().lhs().outline());
         assertEquals(3, person.members().size());
         EntityMember getName = person.members().get(1);
-        assertTrue(getName.outline() instanceof Poly);
+        assertInstanceOf(Poly.class, getName.outline());
         Poly outline = cast(getName.outline());
-        Function f1 = cast(outline.options().get(0));
-        assertTrue(f1.returns().supposedToBe() instanceof STRING);
+        Function<?,?> f1 = cast(outline.options().get(0));
+        assertInstanceOf(STRING.class, f1.returns().supposedToBe());
         FirstOrderFunction f2 = cast(outline.options().get(1));
-        assertTrue(f2.argument().definedToBe() instanceof Option);
-        assertTrue(f2.returns().supposedToBe() instanceof Addable);
+        assertInstanceOf(Option.class, f2.argument().definedToBe());
+        assertInstanceOf(STRING.class, f2.returns().supposedToBe());
     }
 
 
@@ -304,15 +304,20 @@ public class InferenceTest {
     void test_inherited_person_entity_with_override_member() {
         AST ast = ASTHelper.mockInheritedPersonEntityWithOverrideMember();
         ast.asf().infer();
-        Entity person = cast(ast.program().body().statements().get(3).nodes().get(0).nodes().get(0).outline());
+        Entity person = cast(ast.program().body().statements().get(3).nodes().getFirst().nodes().getFirst().outline());
         List<EntityMember> members = person.members();
-        assertEquals(3, members.size());
-        assertTrue(members.get(0).outline() instanceof STRING);
-        assertTrue(members.get(1).outline() instanceof Poly);
-        Poly getName = cast(members.get(1).outline());
-        assertTrue(((Generic)((Function)getName.options().get(0)).argument()).declaredToBe()== Outline.Unit);
-        assertTrue(((Generic)((Function)getName.options().get(1)).argument()).definedToBe() instanceof Option);
-        //todo: override members
+        assertEquals(4, members.size());
+        assertInstanceOf(STRING.class, members.get(1).outline());
+        assertInstanceOf(Poly.class, members.get(2).outline());
+        Poly getName = cast(members.get(2).outline());
+        assertSame(Outline.Unit, ((Generic) ((Function<?,?>) getName.options().get(0)).argument()).declaredToBe());
+        Function<?,?> overrides = cast(getName.options().get(1));
+        assertInstanceOf(Option.class, ((Generic) overrides.argument()).definedToBe());
+        assertInstanceOf(INTEGER.class, overrides.returns().supposedToBe());
+        assertTrue(ast.errors().isEmpty());
+    }
+    @Test
+    void test_inherited_person_entity_with_override_call() {
 
     }
 

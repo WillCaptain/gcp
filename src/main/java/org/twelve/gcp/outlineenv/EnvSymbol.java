@@ -4,10 +4,9 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.adt.SumADT;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 import java.util.concurrent.atomic.AtomicLong;
-
-import static org.twelve.gcp.outline.Outline.Unknown;
 
 public class EnvSymbol {
     private static AtomicLong counter = new AtomicLong();
@@ -37,7 +36,7 @@ public class EnvSymbol {
         return this.name;
     }
 
-    public boolean isMutable() {
+    public boolean mutable() {
         return this.mutable;
     }
 
@@ -48,7 +47,8 @@ public class EnvSymbol {
      * @return 是否定义成功
      */
     public boolean update(Outline outline) {
-        if (this.outline != Unknown) return false;
+        //todo:waiting for issue #5
+        if (!(this.outline instanceof UNKNOWN)) return false;
         if (outline == null) return false;
         this.outline = outline;
         //如果对方是poly或者option，说明是简约显式声明，应记为declare sum adt，后续不可以动态加option

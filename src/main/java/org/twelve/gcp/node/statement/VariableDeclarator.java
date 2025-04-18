@@ -1,6 +1,7 @@
 package org.twelve.gcp.node.statement;
 
 import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.inference.Inferences;
@@ -56,7 +57,6 @@ public class VariableDeclarator extends Statement {
     protected Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
-
     public VariableKind kind() {
         return this.kind;
     }

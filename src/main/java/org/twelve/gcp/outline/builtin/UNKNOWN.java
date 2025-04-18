@@ -12,7 +12,7 @@ public class UNKNOWN implements BuildInOutline {
         return _instance;
     }
 
-    private UNKNOWN(){
+    public UNKNOWN(){
         super();
     }
     @Override

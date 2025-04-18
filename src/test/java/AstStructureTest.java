@@ -3,6 +3,7 @@ import org.junit.jupiter.api.Test;
 import org.twelve.gcp.ast.ASF;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
+import org.twelve.gcp.common.SELECTION_TYPE;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.function.FunctionNode;
@@ -205,5 +206,19 @@ public class AstStructureTest {
         AST ast = ASTHelper.mockDefinedLiteralUnion();
         String expected = "var union = 100|\"some\";";
         assertEquals(expected,ast.lexeme());
+    }
+
+    @Test
+    void test_if(){
+        AST ast = ASTHelper.mockIf(SELECTION_TYPE.IF);
+        String expected = """
+                if(name=="Will"){
+                  name
+                } else {
+                  "Someone"
+                };""";
+        assertEquals(expected,ast.lexeme());
+        ast = ASTHelper.mockIf(SELECTION_TYPE.TERNARY);
+        assertEquals("name==\"Will\"? name: \"Someone\";",ast.lexeme());
     }
 }

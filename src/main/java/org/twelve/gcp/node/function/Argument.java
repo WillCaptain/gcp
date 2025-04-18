@@ -9,6 +9,7 @@ import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.Generic;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -85,7 +86,7 @@ public class Argument extends Node {
 
     @Override
     public void markUnknowns() {
-        if (this.outline == Unknown) {
+        if (this.outline instanceof UNKNOWN) {
             ErrorReporter.report(this, GCPErrCode.INFER_ERROR);
         }
     }

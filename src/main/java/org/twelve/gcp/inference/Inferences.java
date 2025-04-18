@@ -6,6 +6,9 @@ import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.Block;
 import org.twelve.gcp.node.expression.body.FunctionBody;
+import org.twelve.gcp.node.expression.conditions.Arm;
+import org.twelve.gcp.node.expression.conditions.Consequence;
+import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
@@ -46,4 +49,6 @@ public interface Inferences {
     Outline visit(Base base);
     Outline visit(PolyNode poly);
     Outline visit(LiteralUnionNode union);
+    Outline visit(Selections selections);
+    Outline visit(Arm arm);
 }

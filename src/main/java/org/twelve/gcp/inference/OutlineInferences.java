@@ -5,6 +5,9 @@ import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.Block;
 import org.twelve.gcp.node.expression.body.FunctionBody;
+import org.twelve.gcp.node.expression.conditions.Arm;
+import org.twelve.gcp.node.expression.conditions.Consequence;
+import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
@@ -15,6 +18,7 @@ import org.twelve.gcp.node.statement.ExpressionStatement;
 import org.twelve.gcp.node.statement.ReturnStatement;
 import org.twelve.gcp.node.statement.VariableDeclarator;
 import org.twelve.gcp.outline.Outline;
+
 
 public class OutlineInferences implements Inferences {
     @Override
@@ -110,6 +114,16 @@ public class OutlineInferences implements Inferences {
     @Override
     public Outline visit(LiteralUnionNode union) {
         return new LiteralUnionInference().infer(union,this);
+    }
+
+    @Override
+    public Outline visit(Selections selections) {
+        return new SelectionsInference().infer(selections,this);
+    }
+
+    @Override
+    public Outline visit(Arm arm) {
+        return new ArmInference().infer(arm,this);
     }
 
     @Override

@@ -50,7 +50,7 @@ public class AST {
         this.inference = inference;
         this.id = nodeIndexer.incrementAndGet();  // Assign unique ID
         this.program = new Program(this);  // Initialize root Program node
-        this.symbolEnv = new LocalSymbolEnvironment(this.program.scope());
+        this.symbolEnv = new LocalSymbolEnvironment(this);
         this.asf = asf;
     }
 
@@ -148,5 +148,4 @@ public class AST {
     public void setNamespace(List<Token<String>> names) {
         this.program.setNamespace(names);
     }
-
 }

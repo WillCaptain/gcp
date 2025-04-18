@@ -11,6 +11,7 @@ import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.builtin.ANY;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 import java.util.List;
 
@@ -39,7 +40,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         this.node = node;
         this.id = Counter.getAndIncrement();
 
-        this.declaredToBe = declaredToBe == Unknown ? Any : declaredToBe;
+        this.declaredToBe = (declaredToBe instanceof UNKNOWN) ? Any : declaredToBe;
         if (this.declaredToBe instanceof Poly) {
             this.extendToBe = this.declaredToBe.copy();//poly is declared确定了poly必须得到所有可能类型
             this.hasToBe = Poly.create();//declared is poly确定了空Poly为最泛化基类
@@ -74,7 +75,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
 
         if (this.extendToBe instanceof Poly) {
-            ((Poly) this.extendToBe).sum(outline, null, true);
+            ((Poly) this.extendToBe).sum(outline, true);
             return;
         }
         if (this.extendToBe instanceof Option) {
@@ -113,7 +114,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         }
 
         if (this.hasToBe instanceof Poly) {
-            ((Poly) this.hasToBe).sum(outline, null, true);
+            ((Poly) this.hasToBe).sum(outline, true);
             return;
         }
 

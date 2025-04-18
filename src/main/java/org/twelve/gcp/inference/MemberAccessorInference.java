@@ -9,6 +9,7 @@ import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.ANY;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.AccessorGeneric;
 import org.twelve.gcp.outline.projectable.Genericable;
 
@@ -22,7 +23,7 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
     @Override
     public Outline infer(MemberAccessor node, Inferences inferences) {
         Outline outline = node.entity().infer(inferences);
-        if (outline == Outline.Unknown) return Outline.Unknown;//可能需要下一次推导
+        if (outline instanceof UNKNOWN) return outline;//可能需要下一次推导
 
         //泛化匹配
         if(outline instanceof Genericable){
@@ -48,11 +49,11 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
         }
         ProductADT entity = cast(outline);
         List<EntityMember> found = entity.members().stream().filter(m -> m.name().equals(node.member().token())).collect(Collectors.toList());
-        if (found.size() == 0) {
+        if (found.isEmpty()) {
             ErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
             return Outline.Error;
         } else {
-            return found.get(0).outline();
+            return found.getFirst().outline();
         }
 //        if(found.size()==1){
 //            return found.get(0).outline();

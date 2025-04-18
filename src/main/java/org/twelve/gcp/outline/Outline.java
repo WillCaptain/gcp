@@ -18,14 +18,15 @@ public interface Outline extends Serializable {
     FLOAT Float = new FLOAT(null);
     INTEGER Integer = new INTEGER(null);
     LONG Long = new LONG(null);
+    BOOL Boolean = new BOOL(null);
     UNIT Unit = UNIT.instance();
     IGNORE Ignore = IGNORE.instance();
     UNKNOWN Unknown = UNKNOWN.instance();
     NOTHING Nothing = NOTHING.instance();
-    BOOL Boolean = BOOL.instance();
     NUMBER Number = NUMBER.instance();
     ANY Any = ANY.instance();
     ERROR Error = ERROR.instance();
+//    UNKNOWN UnknownThis = new UNKNOWN();
 
     Node node();
 
@@ -110,7 +111,7 @@ public interface Outline extends Serializable {
     }
 
     default boolean inferred() {
-        return this != Unknown;
+        return !(this instanceof UNKNOWN);
     }
 
     long id();

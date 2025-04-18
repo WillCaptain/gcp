@@ -8,6 +8,7 @@ import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Option;
+import org.twelve.gcp.outline.builtin.IGNORE;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -43,11 +44,11 @@ public class Return extends Genericable<Return, Node> {
     }
 
     public boolean addReturn(Outline returns) {
-        if (!returns.is(this.declaredToBe)) {
+        if (!(returns instanceof IGNORE) && !returns.is(this.declaredToBe)) {
             ErrorReporter.report(this.node, GCPErrCode.OUTLINE_MISMATCH);
             return false;
         }
-        if (supposed == Unknown) {
+        if (supposed instanceof UNKNOWN) {
             supposed = returns;
         } else {
             supposed = Option.from(this.node, supposed, returns);
@@ -57,7 +58,7 @@ public class Return extends Genericable<Return, Node> {
 
     @Override
     public boolean tryIamYou(Outline another) {
-        if (this.supposed == Unknown) {
+        if (this.supposed instanceof UNKNOWN) {
             return super.tryIamYou(another);
         } else {
             return this.supposed.is(another);
@@ -74,7 +75,7 @@ public class Return extends Genericable<Return, Node> {
         }
         //投影对应的参数时，才真正得到投影值
         if (this.argument.id() == projected.id()) {
-            if (supposed == Unknown) {//投影HOF返回值
+            if (supposed instanceof UNKNOWN) {//投影HOF返回值
 //                return this.projectLambda(this, cast(projection), session);
                 return this.projectLambda(cast(this.node().outline()), cast(projection), session);
             } else {//投影FOF返回值
@@ -85,12 +86,12 @@ public class Return extends Genericable<Return, Node> {
                 }
             }
         } //投影关联类型，不实例化投影
-        if (supposed == Unknown) {
+        if (supposed instanceof UNKNOWN) {
             return this;
         } else {
             Return result = this.copy();
-            this.projectConstraints(result,projected,projection,session);
-            if (this.supposed != Unknown && (!result.max().is(result.supposed) || !result.supposed.is(result.min()))) {
+            this.projectConstraints(result, projected, projection, session);
+            if (!(this.supposed instanceof UNKNOWN) && (!result.max().is(result.supposed) || !result.supposed.is(result.min()))) {
                 ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, CONSTANTS.MISMATCH_STR + this.supposed);
             }
             return result;
@@ -100,10 +101,7 @@ public class Return extends Genericable<Return, Node> {
     @Override
     public boolean equals(Outline another) {
         if (!(another instanceof Return)) return false;
-        if (this.supposed != Unknown || another != Unknown) {
-            return this.supposed.equals(((Return) another).supposed);
-        }
-        return super.equals(another);
+        return this.supposed.equals(((Return) another).supposed);
     }
 
     @Override
@@ -151,7 +149,8 @@ public class Return extends Genericable<Return, Node> {
 
     @Override
     public Outline guess() {
-        return (this.supposed instanceof UNKNOWN) ? super.guess() :
-                (this.supposed instanceof Projectable ? ((Projectable) this.supposed).guess() : this.supposed);
+//        return (this.supposed instanceof UNKNOWN) ? super.guess() :
+//                (this.supposed instanceof Projectable ? ((Projectable) this.supposed).guess() : this.supposed);
+        return this.supposed instanceof Projectable ? ((Projectable) this.supposed).guess() : this.supposed;
     }
 }

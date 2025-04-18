@@ -62,7 +62,7 @@ public abstract class SumADT extends ADT {
      */
     protected boolean sum(Outline outline) {
         //declared seals add Option
-        if (this.declared.size() > 0) {
+        if (!this.declared.isEmpty()) {
 //            return this.declared.stream().anyMatch(o -> outline.is(o));
             return false;
         }

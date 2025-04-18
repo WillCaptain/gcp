@@ -2,6 +2,7 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
 import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outline.projectable.Return;

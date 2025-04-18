@@ -2,6 +2,7 @@ package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
+import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.ValueNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.ProductADT;
@@ -44,6 +45,9 @@ public class LiteralNode<T> extends ValueNode<LiteralNode<?>> {
         if (value instanceof Integer) {
             return new INTEGER(this);
         }
+        if (value instanceof Boolean) {
+            return new BOOL(this);
+        }
         return Outline.String;
     }
 
@@ -56,10 +60,14 @@ public class LiteralNode<T> extends ValueNode<LiteralNode<?>> {
         }
     }
 
-    public LiteralNode<T> setOutline(ProductADT outline){
+    private void setOutline(ProductADT outline){
         this.outline = outline;
-        return this;
     }
+
+//    @Override
+//    protected Outline accept(Inferences inferences) {
+//        return this.outline;
+//    }
 
     public T value() {
         return this.token.data();

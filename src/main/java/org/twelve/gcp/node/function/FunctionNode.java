@@ -11,32 +11,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FunctionNode extends Expression {
-    public static FunctionNode from(FunctionBody funcBody,Argument... arguments ) {
+    public static FunctionNode from(FunctionBody funcBody, Argument... arguments) {
         AST ast = funcBody.ast();
         List<Argument> args = new ArrayList<>();
-//        if(arguments!=null){
-            for (Argument argument : arguments) {
-                args.add(argument.setIndex(args.size()));
-            }
-//        }
+        for (Argument argument : arguments) {
+            args.add(argument.setIndex(args.size()));
+        }
 
-        if (args.size() == 0) {
+        if (args.isEmpty()) {
             args.add(Argument.unit(ast));
         }
-        Argument arg = args.remove(args.size() - 1);
+        Argument arg = args.removeLast();
         FunctionNode function = new FunctionNode(arg, funcBody);
-        while (args.size() > 0) {
-            arg = args.remove(args.size() - 1);
+        while (!args.isEmpty()) {
+            arg = args.removeLast();
             FunctionBody body = new FunctionBody(ast);
             body.addStatement(new ReturnStatement(function));
             function = new FunctionNode(arg, body);
         }
         return function;
     }
-
-//    public static FunctionNode from(FunctionBody funcBody) {
-//        return from(funcBody,null);
-//    }
 
     private final Argument argument;
     private final FunctionBody body;
@@ -58,10 +52,7 @@ public class FunctionNode extends Expression {
 
     @Override
     public String lexeme() {
-        StringBuilder sb = new StringBuilder(argument().lexeme()+"->");
-//        sb.append(argument().lexeme()+"->");
-        sb.append(body().lexeme());
-        return sb.toString();
+        return argument().lexeme() + "->" + body().lexeme();
     }
 
     @Override

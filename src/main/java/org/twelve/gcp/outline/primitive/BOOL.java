@@ -1,14 +1,12 @@
 package org.twelve.gcp.outline.primitive;
 
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.builtin.Bool_;
 
 public class BOOL extends Primitive{
-    private static BOOL _instance = new BOOL();
-    public static BOOL instance(){
-        return _instance;
-    }
+    private final static Bool_ int_ = new Bool_();
 
-    private  BOOL(){
-        super(new Bool_());
+    public  BOOL(Node node){
+        super(int_,node);
     }
 }

@@ -4,7 +4,7 @@ import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.outline.Outline;
 
 public class UNIT implements BuildInOutline {
-    private static UNIT _instance = new UNIT();
+    private static final UNIT _instance = new UNIT();
     public static UNIT instance(){
         return _instance;
     }

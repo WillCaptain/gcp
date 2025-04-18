@@ -1,7 +1,6 @@
 package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.HashMap;
@@ -19,7 +18,8 @@ public class Poly extends SumADT {
     /**
      * meta中记录了poly对应个类型的节点和mutable信息
      */
-    private final Map<Outline, Pair<Node, Boolean>> meta = new HashMap<>();
+//    private final Map<Outline, Pair<Node, Boolean>> meta = new HashMap<>();
+    private final Map<Long, Boolean> meta = new HashMap<>();
     /**
      * poly是否mutable
      * 该属性与this.node相关
@@ -33,23 +33,19 @@ public class Poly extends SumADT {
      * 声明式定义的poly类型这
      * 声明定义意味着该poly不能runtime sum更多类型，所以该poly的所有类型的对应节点和mutable属性是一致的
      *
-     * @param node
-     * @param mutable
-     * @param outlines
      */
     Poly(Node node, Boolean mutable, Outline... outlines) {
         super(node, outlines);
         //设置option的mutable属性
-        for (Outline outline : outlines) {
-            if (outline instanceof Poly) {
-                for (Outline option : ((Poly) outline).options) {
-                    this.attachMeta(option, new Pair<>(node, mutable));
-                }
-            } else {
-                this.attachMeta(outline, new Pair<>(node, mutable));
-
-            }
-        }
+//        for (Outline outline : outlines) {
+//            if (outline instanceof Poly) {
+//                for (Outline option : ((Poly) outline).options) {
+//                    this.attachMeta(option.node().id(), mutable);
+//                }
+//            } else {
+//                this.attachMeta(outline.node().id(), mutable);
+//            }
+//        }
         this.mutable = mutable;
     }
 
@@ -126,21 +122,17 @@ public class Poly extends SumADT {
      * @return 要寻找的outline option是否mutable
      */
     public Boolean isMutable(Outline outline, boolean mutable) {
-        if (meta.containsKey(outline)) {
-            return meta.get(outline).value();
-        } else {
-            return mutable;
-        }
+        if(outline.node()==null) return mutable;
+        return meta.getOrDefault(outline.node().id(), mutable);
     }
 
     /**
      * 为poly里某个option添加关联节点，是否mutable元数据支持
      *
-     * @param outline 目标option
-     * @param meta    为该option设置的元数据信息
+     * @param id option node id
      */
-    private void attachMeta(Outline outline, Pair<Node, Boolean> meta) {
-        this.meta.put(outline, meta);
+    private void attachMeta(Long id, boolean mutable) {
+        this.meta.put(id, mutable);
     }
 
     /**
@@ -148,33 +140,33 @@ public class Poly extends SumADT {
      * 此方法用于隐性动态poly声明时： let a = x->x; let a = (x,y)->x+y;
      *
      * @param outline 要添加的option
-     * @param node    对应的node
      * @param mutable 该option是否mutable
      * @return 添加是否成功
      */
-    public boolean sum(Outline outline, Node node, Boolean mutable) {
+    public boolean sum(Outline outline, Boolean mutable) {
         if (this.node() != null) return false;//有node，说明肯定不是隐式动态poly，不能通过let a = b新增poly.option
+        Node node = outline.node();
         //如果是重复infer，则去掉上一次infer
-//        if (node.parent().parent() instanceof VariableDeclarator) {
-        for (Outline o : this.meta.keySet()) {
-            if (this.meta.get(o).key() == node) {
-                this.meta.remove(o);
-                this.options.remove(o);
-                break;
+        if(node !=null) {
+            for (Long id : this.meta.keySet()) {
+                if (id.equals(node.id())) {
+                    this.meta.remove(id);
+                    this.options.removeIf(o -> o.node().id().equals(id));
+                    break;
+                }
             }
         }
-//        }
         boolean result = super.sum(outline);
         if (!result) return false;
         if (outline instanceof Poly) {
-//            if (((Poly) outline).node() == null) {
-//                return false;
-//            }
             for (Outline option : ((Poly) outline).options) {
-                this.attachMeta(option, ((Poly) outline).meta.get(option));
+                if(option.node()==null) continue;
+                this.attachMeta(option.node().id(), ((Poly) outline).meta.get(option.node().id()));
             }
         } else {
-            this.attachMeta(outline, new Pair(node, mutable));
+            if(outline.node()!=null) {
+                this.attachMeta(outline.node().id(), mutable);
+            }
         }
         return true;
     }
@@ -189,7 +181,7 @@ public class Poly extends SumADT {
     @Override
     public boolean sum(Outline outline) {
         if (this.node() == null) return false;//隐式动态poly，退出
-        if (this.declared.size() > 0) return false;//显示静态poly，退出
+        if (!this.declared.isEmpty()) return false;//显示静态poly，退出
 
         if (outline instanceof Poly) {
             Poly poly = cast(outline);
@@ -197,9 +189,7 @@ public class Poly extends SumADT {
             for (Outline option : poly.options) {
                 result = result && this.sum(this.options, option);
             }
-            poly.meta.forEach((k, v) -> {
-                this.meta.put(k, v);
-            });
+            this.meta.putAll(poly.meta);
             return result;
         } else {
             return this.sum(this.options, outline);
@@ -208,6 +198,6 @@ public class Poly extends SumADT {
 
     @Override
     public String toString() {
-        return options.stream().map(o -> o.toString()).collect(Collectors.joining("$"));
+        return options.stream().map(Object::toString).collect(Collectors.joining("&"));
     }
 }

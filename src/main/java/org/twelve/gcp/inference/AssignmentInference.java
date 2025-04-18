@@ -2,9 +2,15 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.statement.Assignment;
+import org.twelve.gcp.node.statement.VariableDeclarator;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.IGNORE;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
+import org.twelve.gcp.outlineenv.EnvSymbol;
 
+import static org.twelve.gcp.common.Tool.cast;
 import static org.twelve.gcp.outline.Outline.*;
 
 /**
@@ -15,6 +21,7 @@ import static org.twelve.gcp.outline.Outline.*;
 public class AssignmentInference implements Inference<Assignment> {
     @Override
     public Outline infer(Assignment node, Inferences inferences) {
+//        node.ast().errors().removeIf(e->e.node()==node.rhs() || e.node()==node.lhs());
         Outline valueOutline = node.rhs() == null ? Nothing : node.rhs().infer(inferences);
 
 
@@ -22,17 +29,23 @@ public class AssignmentInference implements Inference<Assignment> {
             ErrorReporter.report(node.rhs(), GCPErrCode.UNAVAILABLE_OUTLINE_ASSIGNMENT);
             return Ignore;
         }
-        Outline varOutline = node.lhs().infer(inferences);
-        if (varOutline == Nothing) {
-            ErrorReporter.report(node.lhs(), GCPErrCode.VARIABLE_NOT_DEFINED);
+        if (valueOutline instanceof UNKNOWN) {
+            ErrorReporter.report(node.rhs(), GCPErrCode.NOT_INITIALIZED);
             return Ignore;
         }
-
-//        try {
-        node.lhs().assign(node.ast().symbolEnv(), valueOutline);
-//        }catch(GCPRuntimeException e){
-//            ErrorReporter.report(node.rhs(),e.errCode());
-//        }
+        if(node.parent() instanceof VariableDeclarator){
+            Identifier var = cast(node.lhs());
+            EnvSymbol symbol = node.ast().symbolEnv().current().lookup(var.token());
+            symbol.update(valueOutline);
+            var.assign(valueOutline);
+        }else {
+            Outline varOutline = node.lhs().infer(inferences);
+            if (varOutline == Nothing) {
+                ErrorReporter.report(node.lhs(), GCPErrCode.VARIABLE_NOT_DEFINED);
+                return Ignore;
+            }
+            node.lhs().assign(node.ast().symbolEnv(), valueOutline);
+        }
         return Ignore;
     }
 }

@@ -29,32 +29,33 @@ public class EntityNode extends ValueNode<EntityNode> {
     public EntityNode(AST ast, List<MemberNode> members, Node base, Location loc) {
         super(ast, loc);
         this.scope = ast.scopeIndexer().incrementAndGet();
-        members.forEach(m->{
+        members.forEach(m -> {
             this.addNode(m);
             List<MemberNode> member = this.members.get(m.name().token());
-            if(member==null) {
+            if (member == null) {
                 member = new ArrayList<>();
-                this.members.put(m.name().token(),member);
+                this.members.put(m.name().token(), member);
             }
             member.add(m);
         });
         this.base = base;
     }
-    public EntityNode(AST ast, List<MemberNode> members, Node base){
-        this(ast,members,base, null);
+
+    public EntityNode(AST ast, List<MemberNode> members, Node base) {
+        this(ast, members, base, null);
     }
 
     public EntityNode(AST ast, List<MemberNode> members, Location loc) {
-        this(ast,members,null,loc);
+        this(ast, members, null, loc);
     }
 
-    public EntityNode(AST ast, List<MemberNode> members){
-        this(ast,members,(Location) null);
+    public EntityNode(AST ast, List<MemberNode> members) {
+        this(ast, members, (Location) null);
     }
 
     @Override
     public Location loc() {
-        if(super.loc()!=null) return super.loc();
+        if (super.loc() != null) return super.loc();
 
         Long min = this.nodes().stream().map(m -> m.loc().start()).min((m1, m2) -> m1 < m2 ? -1 : 1).get();
         Long max = this.nodes().stream().map(m -> m.loc().start()).min((m1, m2) -> m1 > m2 ? -1 : 1).get();
@@ -63,7 +64,7 @@ public class EntityNode extends ValueNode<EntityNode> {
 
     @Override
     public String lexeme() {
-        StringBuilder sb = new StringBuilder((base==null?"":base.lexeme())+"{\n");
+        StringBuilder sb = new StringBuilder((base == null ? "" : base.lexeme()) + "{\n");
         int index = 0;
         for (Node node : this.nodes()) {
             String[] lines = node.lexeme().split("\n");
@@ -74,7 +75,7 @@ public class EntityNode extends ValueNode<EntityNode> {
                 if (i == lines.length - 1) break;
                 sb.append("\n");
             }
-                sb.append(",\n");
+            sb.append(",\n");
 //            index++;
 //            if (index < this.members.keySet().size()) {
 //                sb.append(",\n");

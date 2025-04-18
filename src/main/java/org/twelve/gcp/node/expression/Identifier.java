@@ -13,6 +13,7 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.builtin.Namespace;
 import org.twelve.gcp.outline.builtin.UNIT;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
@@ -21,30 +22,30 @@ import static org.twelve.gcp.outline.adt.ProductADT.Error;
 import static org.twelve.gcp.outline.adt.ProductADT.Unknown;
 
 public class Identifier extends Assignable {
-    private final Token token;
+    private final Token<String> token;
     private final Boolean mutable;
     private Boolean declared;
 
     // import a as b, b is the reference
-    public Identifier(AST ast, Token token) {
+    public Identifier(AST ast, Token<String> token) {
         this(ast, token, Unknown, true);
     }
 
-    public Identifier(AST ast, Token token, Outline declared, Boolean mutable) {
+    public Identifier(AST ast, Token<String> token, Outline declared, Boolean mutable) {
         super(ast, null);
         this.token = token;
         this.outline = declared;
-        this.declared = declared != Unknown;
+        this.declared = !(declared instanceof UNKNOWN);
         this.mutable = mutable;
     }
 
     @Override
     public String lexeme() {
-        if (this.outline() == Unknown || this.outline instanceof UNIT || this.outline() instanceof Namespace) {
+        if ((this.outline() instanceof UNKNOWN) || this.outline instanceof UNIT || this.outline() instanceof Namespace) {
             return this.token.lexeme();
         }
 
-        if (this.parent().parent() != null && this.parent().parent() instanceof VariableDeclarator && ((Assignment)this.parent()).lhs()==this) {
+        if (this.parent().parent() != null && this.parent().parent() instanceof VariableDeclarator && ((Assignment) this.parent()).lhs() == this) {
             return this.token.lexeme() + ": " + this.outline().toString();
         }
         return this.token.lexeme();
@@ -97,7 +98,7 @@ public class Identifier extends Assignable {
         EnvSymbol symbol = env.lookup(this.token());
         if (symbol == null) return;
         //第一次赋值
-        if (this.outline == Unknown) {
+        if (this.outline  instanceof UNKNOWN) {
             symbol.update(inferred);
             this.outline = inferred;
             return;
@@ -114,7 +115,7 @@ public class Identifier extends Assignable {
                     return;
                 }
 
-                if (!poly.isMutable(matched, symbol.isMutable())) {//匹配到了，但是不可赋值
+                if (!poly.isMutable(matched, symbol.mutable())) {//匹配到了，但是不可赋值
                     ErrorReporter.report(this, GCPErrCode.NOT_ASSIGNABLE);
                     return;
                 }
@@ -123,7 +124,7 @@ public class Identifier extends Assignable {
                 return;
             }
         } else {
-            if (!symbol.isMutable() && !inferred.is(this.outline)) {//不可赋值
+            if (!symbol.mutable() && !inferred.is(this.outline)) {//不可赋值
                 ErrorReporter.report(this, GCPErrCode.NOT_ASSIGNABLE);
                 return;
             }
@@ -133,5 +134,13 @@ public class Identifier extends Assignable {
 
     public Modifier modifier() {
         return this.lexeme().startsWith("_") ? Modifier.PRIVATE : Modifier.PUBLIC;
+    }
+
+    public void assign(Outline outline) {
+        if(this.isDeclared() && !this.outline.tryYouCanBeMe(outline)){
+            ErrorReporter.report(this,GCPErrCode.OUTLINE_MISMATCH);
+            return;
+        }
+        this.outline = outline;
     }
 }

@@ -12,7 +12,7 @@ import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outline.projectable.OperateAble;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
-import static org.twelve.gcp.outline.Outline.Unknown;
+import static org.twelve.gcp.outline.Outline.*;
 
 public abstract class Assignable extends Expression {
     public Assignable(AST ast, Location loc) {
@@ -22,10 +22,10 @@ public abstract class Assignable extends Expression {
 //    public abstract EnvSymbol symbol();
 
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
-        if (inferred == Unknown) {
-            ErrorReporter.report(this, GCPErrCode.OUTLINE_MISMATCH, "unknown can't be assigned");
-            return;
-        }
+//        if (inferred == Unknown || inferred == Ignore || inferred == Unit) {
+//            ErrorReporter.report(this, GCPErrCode.OUTLINE_MISMATCH, inferred.name() + " can't be assigned");
+//            return;
+//        }
 
         //generic处理
         if (this.outline instanceof Generic) {
@@ -69,7 +69,7 @@ public abstract class Assignable extends Expression {
             }
         }
         if (!inferred.is(this.outline)) {
-            ErrorReporter.report(target, GCPErrCode.OUTLINE_MISMATCH," with "+this.outline);
+            ErrorReporter.report(target, GCPErrCode.OUTLINE_MISMATCH, " with " + this.outline);
         }
     }
 }

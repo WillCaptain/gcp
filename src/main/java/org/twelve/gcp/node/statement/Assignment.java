@@ -1,5 +1,6 @@
 package org.twelve.gcp.node.statement;
 
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.expression.Assignable;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
@@ -47,7 +48,6 @@ public class Assignment extends Statement {
     protected Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
-
     public void setInferred() {
         this.outline = Outline.Ignore;
     }

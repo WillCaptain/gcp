@@ -8,6 +8,7 @@ import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.interpreter.Interpreter;
 import org.twelve.gcp.interpreter.Result;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -111,13 +112,13 @@ public abstract class Node implements Serializable {
 
         List<Node> locatedNodes = nodes().stream()
                 .filter(n -> !(n.loc().start() == 0 && n.loc().end() == 0))
-                .collect(Collectors.toList());
+                .toList();
 
         return locatedNodes.isEmpty() ?
                 new SimpleLocation(0, 0) :
                 new SimpleLocation(
-                        locatedNodes.get(0).loc().start(),
-                        locatedNodes.get(locatedNodes.size() - 1).loc().end());
+                        locatedNodes.getFirst().loc().start(),
+                        locatedNodes.getLast().loc().end());
 
     }
 
@@ -130,14 +131,41 @@ public abstract class Node implements Serializable {
     public Outline infer(Inferences inferences) {
         try {
             if (!this.inferred()) {
-                this.ast().symbolEnv().enter(this.scope());
-                this.outline = this.accept(inferences);
+                this.ast().symbolEnv().enter(this);
+                try {
+                    this.clearError();
+                    this.outline = this.accept(inferences);
+                }catch (Exception ex){
+                    if(this.ast().asf().isLastInfer()){
+                        throw ex;
+                    }else {
+                        this.outline = Unknown;
+                    }
+                }
                 this.ast().symbolEnv().exit();
             }
         } catch (GCPRuntimeException e) {
             ErrorReporter.report(this, e.errCode(),"exception occurs in outline inference");
         }
         return outline;
+    }
+
+    public void clearError() {
+        this.ast().errors().removeIf(e->e.node()==this);
+//        for (Node node : this.nodes()) {
+//            node.clearError();
+//        }
+    }
+
+    public Long parentScope() {
+        Node parent = this;
+        Long scope=this.scope();
+        while(scope.equals(this.scope())){
+            parent = parent.parent();
+            if(parent==null) break;
+            scope = parent.scope();
+        }
+        return scope;
     }
 
     /**
@@ -160,7 +188,7 @@ public abstract class Node implements Serializable {
      * Marks unresolved nodes with inference errors.
      */
     public void markUnknowns() {
-        if (this.outline() == Unknown) {
+        if (this.outline()  instanceof UNKNOWN) {
             ErrorReporter.report(this, GCPErrCode.INFER_ERROR);
         }
         this.nodes.forEach(Node::markUnknowns);

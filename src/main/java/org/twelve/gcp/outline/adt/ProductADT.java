@@ -155,16 +155,16 @@ public abstract class ProductADT extends ADT {
 
 
         if (m.outline() instanceof Poly) {//第n次重载
-            return ((Poly) m.outline()).sum(member.outline(), member.node(), member.mutable().toBool());
+            return ((Poly) m.outline()).sum(member.outline(), member.mutable().toBool());
         } else {//第一次重载
             if (m.node() == member.node()) {
                 this.members.put(member.name(), member);
                 return true;
             }
             Poly overwrite = Poly.create();
-            overwrite.sum(m.outline(), m.node(), m.mutable().toBool());
-            overwrite.sum(member.outline(), member.node(), member.mutable().toBool());
-            if (overwrite.sum(member.outline(), member.node(), member.mutable().toBool())) {
+            overwrite.sum(m.outline(), m.mutable().toBool());
+            overwrite.sum(member.outline(), member.mutable().toBool());
+            if (overwrite.sum(member.outline(), member.mutable().toBool())) {
                 this.members.put(member.name(), EntityMember.from(m.name(), overwrite, m.modifier()));
                 return true;
             } else {

@@ -35,7 +35,11 @@ import static org.twelve.gcp.common.Tool.cast;
 public class GCPInference {
     @Test
     void test_gcp_declare_to_be() {
-        //let f = x->x
+        /*
+        let f = x:Integer->x;
+        f("some");
+        f(100);
+         */
         AST ast = mockGCPTestAst();
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
@@ -74,7 +78,14 @@ public class GCPInference {
 
     @Test
     void test_gcp_extend_to_be() {
-        //let f = fn(x){x=10; x}
+        /*
+         let f = x->{
+           x = 10;
+           x
+         };
+         f("some");
+         f(100);
+         */
         AST ast = mockGCPTestAst();
         Argument x = new Argument(ast, new Token<>("x"));
         FunctionBody body = new FunctionBody(ast);
@@ -111,7 +122,15 @@ public class GCPInference {
 
     @Test
     void test_gcp_has_to_be() {
-        //let f = fn(x){var y="str"; y = x; x}
+        /*
+        let f = x->{
+            var y = "str";
+            y = x;
+            x
+        };
+        f("some");
+        f(100);
+         */
         AST ast = mockGCPTestAst();
         Argument x = new Argument(ast, new Token<>("x"));
         FunctionBody body = new FunctionBody(ast);
@@ -153,7 +172,13 @@ public class GCPInference {
 
     @Test
     void test_gcp_defined_to_be() {
-        //let f = x->x+1
+        /*
+         let f = x->{
+         x+1
+         };
+         f("some");
+         f(100);
+         */
         AST ast = mockGCPTestAst();
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
@@ -243,6 +268,15 @@ public class GCPInference {
 
     @Test
     void test_generic_refer_each_other() {
+        /*
+        let f = (x,y,z)->{
+            y = x;
+            z = y;
+            x+y+z
+        };
+        f("some","people",10.0);
+        f(10,10,10);
+         */
         AST ast = mockGCPTestAst();
         //f = (x,y,z)->{y = x; z=y; x+y;}
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
@@ -283,7 +317,10 @@ public class GCPInference {
 
     @Test
     void test_gcp_hof_projection_1() {
-        //let f = (x,y)->y(x)
+        /*
+        let f = (x,y)->y(x);
+        f(10,x->x*5);
+         */
         AST ast = mockGCPTestAst();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         Argument x = new Argument(ast, new Token<>("x"));
@@ -312,7 +349,10 @@ public class GCPInference {
 
     @Test
     void test_gcp_hof_projection_2() {
-        //let f = (y,x)->y(x)
+        /*
+        let f = (y,x)->y(x);
+        f(x->x+5,"10");
+         */
         AST ast = mockGCPTestAst();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         Argument x = new Argument(ast, new Token<>("x"));
@@ -341,7 +381,10 @@ public class GCPInference {
 
     @Test
     void test_gcp_hof_projection_3() {
-        //let f = (x,y,z)->z(y(x))
+        /*
+        let f = (x,y,z)->z(y(x));
+        f(10,x->x+"some",y->y+100);
+         */
         AST ast = mockGCPTestAst();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         Argument x = new Argument(ast, new Token<>("x"));
@@ -381,7 +424,10 @@ public class GCPInference {
 
     @Test
     void test_gcp_hof_projection_4() {
-        //let f = (z,y,x)->z(y(x))
+        /*
+        let f = (z,y,x)->z(y(x));
+        f(y->y+100,x->x,10);
+         */
         AST ast = mockGCPTestAst();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         Argument x = new Argument(ast, new Token<>("x"));
@@ -419,12 +465,11 @@ public class GCPInference {
 
     @Test
     void test_entity_hof_projection_1() {
-        //let f = (x,z,y)-> z.combine(x,y);
-        //f(20,{combine = (x,y)->{{
-        //        age = x1,
-        //        name = y1.name,
-        //      }},{name = "Will"})
-        for(int i=1; i<4; i++) {
+        /*
+        let f = (x,z,y)->z.combine(x,y);
+        f(20,{combine = (x,y)->{{age = x,name = y.name}},{name = "Will"})
+         */
+        for (int i = 1; i < 4; i++) {
             Node call = ASTHelper.mockEntityProjection1(i, ASTHelper::mockEntityProjectionNode1);
             call.ast().asf().infer();
             Entity result = cast(call.outline());
@@ -435,26 +480,44 @@ public class GCPInference {
         }
 
     }
+
     @Test
     void test_entity_hof_projection_2() {
-        for(int i=1; i<4; i++) {
+        /*
+        let f = (x,z,y)->z.combine(x,y).name;
+        f(20,{combine = (x,y)->{{age = x,name = y.name}},{name = "Will",})
+         */
+        for (int i = 1; i < 4; i++) {
             Node call = ASTHelper.mockEntityProjection1(i, ASTHelper::mockEntityProjectionNode2);
             call.ast().asf().infer();
             assertInstanceOf(STRING.class, call.outline());
         }
     }
+
     @Test
     void test_entity_hof_projection_3() {
-        for(int i=1; i<4; i++) {
+        /*
+        let f = (x,z,y)->z.combine(x,y).gender;
+        f(20,{combine = (x,y)->{{age = x,name = y.name}},{name = "Will"})
+         */
+        for (int i = 1; i < 4; i++) {
             Node call = ASTHelper.mockEntityProjection1(i, ASTHelper::mockEntityProjectionNode3);
             call.ast().asf().infer();
             assertFalse(call.ast().errors().isEmpty());
             assertInstanceOf(AccessorGeneric.class, call.outline());
         }
     }
+
     @Test
     void test_entity_hof_projection_4() {
-        for(int i=1; i<4; i++) {
+        /*
+        let f = (x,z,y)->{
+          var w = z;
+          w.combine(x,y)
+        };
+        f(20,{combine = (x,y)->{{age = x,name = y.name}},{name = "Will"})
+         */
+        for (int i = 1; i < 4; i++) {
             Node call = ASTHelper.mockEntityProjection1(i, ASTHelper::mockEntityProjectionNode4);
             call.ast().asf().infer();
             Entity result = cast(call.outline());
@@ -468,7 +531,14 @@ public class GCPInference {
 
     @Test
     void test_entity_hof_projection_5() {
-        for(int i=1; i<4; i++) {
+        /*
+        let f = (x,z,y)->{
+          var w: {combine: Integer->{name: Integer}->{name: Integer}} = z;
+          w.combine(x,y)
+        };
+        f(20,{combine = (x,y)->{{age = x,name = y.name}},{name = "Will"})
+         */
+        for (int i = 1; i < 4; i++) {
             Node call = ASTHelper.mockEntityProjection1(i, ASTHelper::mockEntityProjectionNode5);
             call.ast().asf().infer();
             Entity result = cast(call.outline());
@@ -480,7 +550,14 @@ public class GCPInference {
     }
 
     @Test
-    void test_gcp_complicated_hof_projection() {
+    void test_gcp_recursive_projection(){
+        /*
+        let chain = (f, x) -> x>0?chain(f, f(x)):“done”;
+        chain(x->x-1,100);
+        chain(x->x-1,"100");
+         */
+        AST ast = ASTHelper.mockRecursive();
+        ast.asf().infer();
 //todo
     }
 

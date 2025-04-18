@@ -1,5 +1,6 @@
 package org.twelve.gcp.ast;
 
+import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.inference.OutlineInferences;
 import org.twelve.gcp.outlineenv.GlobalSymbolEnvironment;
@@ -24,6 +25,7 @@ public class ASF {
     private List<AST> asts = new ArrayList<>();  // All ASTs in this forest
     private Inferences inferences = new OutlineInferences();  // Inference rules/utilities
     private GlobalSymbolEnvironment globalSymbolEnvironment = new GlobalSymbolEnvironment();  // Shared symbol table
+    private int leftTimes = CONSTANTS.MAX_INFER_TIMES;
 
     /**
      * Creates a new AST and adds it to the forest.
@@ -57,26 +59,27 @@ public class ASF {
         });
 
         // Fixed-point iteration (up to 4 times)
-        int maxIterations = 4;
+//        int maxIterations = 4;
         while (!this.fullyInferred()) {
             for (AST ast : this.asts) {
                 ast.infer();  // Refine inferences
             }
-            if (--maxIterations == 0) {
+            this.leftTimes--;
+            if (this.leftTimes == 0) {
                 // ErrorReporter.report(GCPErrCode.POSSIBLE_ENDLESS_LOOP);
                 break;  // Prevents infinite loops for circular dependencies
             }
         }
 
         // Flag unresolved nodes as errors
-        this.asts.forEach(AST::markUnknowns);
+        //this.asts.forEach(AST::markUnknowns);
     }
 
     /**
      * Checks if all ASTs in the forest have fully resolved inferences.
      */
     private boolean fullyInferred() {
-        return !this.asts.stream().anyMatch(a -> !a.inferred());
+        return this.asts.stream().allMatch(AST::inferred);
     }
 
     /**
@@ -87,5 +90,9 @@ public class ASF {
                 .filter(a -> a.name().equals(name))
                 .findFirst()
                 .get();  // Risk: Throws if absent. Consider .orElse(null) for graceful handling.
+    }
+
+    public boolean isLastInfer() {
+        return this.leftTimes==1;
     }
 }

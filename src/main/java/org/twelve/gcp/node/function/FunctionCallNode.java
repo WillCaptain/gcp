@@ -5,6 +5,7 @@ import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +15,7 @@ public class FunctionCallNode extends Expression {
     private Expression function;
     private List<Expression> arguments;
 
-    public FunctionCallNode(AST ast, Token funcName, Expression... arguments) {
+    public FunctionCallNode(AST ast, Token<String> funcName, Expression... arguments) {
         this(ast, new Identifier(ast, funcName), arguments);
     }
 
@@ -48,7 +49,14 @@ public class FunctionCallNode extends Expression {
 
     @Override
     public String lexeme() {
-        String args = this.arguments.stream().map(a -> a.lexeme()).collect(Collectors.joining(","));
-        return function.lexeme() + "(" + args + ")" + (this.outline == Outline.Unknown ? "" : (" : " + this.outline.toString()));
+        String args = this.arguments.stream().map(Node::lexeme).collect(Collectors.joining(","));
+        return function.lexeme() + "(" + args + ")" + ((this.outline  instanceof UNKNOWN) ? "" : (" : " + this.outline.toString()));
+    }
+    @Override
+    public void clearError() {
+        super.clearError();
+        for (Node node : this.nodes()) {
+            node.clearError();
+        }
     }
 }

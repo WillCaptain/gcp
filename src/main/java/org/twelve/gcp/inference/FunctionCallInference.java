@@ -7,8 +7,8 @@ import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.*;
-import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,20 +23,30 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             ErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_DEFINED);
             return Outline.Error;
         }
-        if(func==Outline.Unknown){
+        if (func == Outline.Unknown) {//recursive
             return func;
         }
-        Outline result;
+
+        Outline result = Outline.Unknown;
         //如果有重载方法
         if (func instanceof Poly) {
             result = targetOverride(cast(func), node.arguments(), inferences, node);
         } else {
+//            if (!(func instanceof Function<?, ?> && !this.matchFunction((Function<?, ?>) func, node.arguments(), inferences, node))) {
+//                result = func;
+//            }
             result = func;
+
+        }
+//        if (result == Outline.Unknown && !node.ast().asf().isLastInfer()) {
+        if (result == Outline.Unknown) {
+            ErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_FOUND);
+            return result;
         }
 
-        if(node.arguments().isEmpty()) {
-            result = ((Function<?,?>)result).returns().supposedToBe();
-        }else{
+        if (node.arguments().isEmpty()) {
+            result = ((Function<?, ?>) result).returns().supposedToBe();
+        } else {
             //按顺序投影参数
             for (Expression argument : node.arguments()) {
                 argument.infer(inferences);
@@ -47,17 +57,17 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
     }
 
     private Outline targetOverride(Poly overwrite, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {
-        List<Function<?,?>> fs = overwrite.options().stream().filter(o->o instanceof Function).map(o->(Function<?,?>)o).collect(Collectors.toList());
-        for (Function<?,?> f : fs) {
+        List<Function<?, ?>> fs = overwrite.options().stream().filter(o -> o instanceof Function).map(o -> (Function<?, ?>) o).collect(Collectors.toList());
+        for (Function<?, ?> f : fs) {
             if (this.matchFunction(f, arguments, inferences, node)) {
                 return f;
             }
         }
-        return Outline.Error;
+        return Outline.Unknown;
     }
 
-    private boolean matchFunction(Function<?,?> function, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {
-        Function<?,?> f = null;
+    private boolean matchFunction(Function<?, ?> function, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {
+        Function<?, ?> f = null;
         for (Expression argument : arguments) {
             if (f == null) {//匹配第一个参数
                 f = function;
@@ -65,13 +75,13 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
                 if (function.returns().supposedToBe() instanceof Function) {
                     f = cast(function.returns().supposedToBe());
                 } else {
-                    ErrorReporter.report(node, GCPErrCode.ARGUMENT_MISMATCH);
+                    //ErrorReporter.report(node, GCPErrCode.ARGUMENT_MISMATCH);
                     return false;
                 }
             }
             Outline arg = argument.infer(inferences);
             if (!arg.is(f.argument())) {
-                ErrorReporter.report(node, GCPErrCode.ARGUMENT_MISMATCH);
+                //ErrorReporter.report(node, GCPErrCode.ARGUMENT_MISMATCH);
                 return false;
             }
         }
@@ -82,11 +92,11 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
 //        ProjectSession session = new ProjectSession();
         //hlf function call
         if (target instanceof Genericable) {
-            return project((Genericable<?,?>) target, argument);
+            return project((Genericable<?, ?>) target, argument);
         }
         //normal function call
         if (target instanceof FirstOrderFunction) {
-            return  project((FirstOrderFunction) target, argument);
+            return project((FirstOrderFunction) target, argument);
 
         }
         ErrorReporter.report(argument, GCPErrCode.NOT_A_FUNCTION);
@@ -102,7 +112,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      * @param argument HFL函数调用的参数
      * @return 虚拟的函数返回
      */
-    private Outline project(Genericable<?,?> generic, Node argument) {
+    private Outline project(Genericable<?, ?> generic, Node argument) {
         Return returns = Return.from(generic.node());
         HigherOrderFunction defined = new HigherOrderFunction(generic.node(), cast(argument.outline()), returns);
         generic.addDefinedToBe(defined);
@@ -119,7 +129,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      */
     private Outline project(FirstOrderFunction function, Node argument) {
         ProjectSession session = function.getSession();
-        if(session==null){
+        if (session == null) {
             //开始一个projection session
             session = new ProjectSession();
         }
@@ -131,7 +141,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
 //        }
         //再投影返回值
         Outline result = function.returns().project(function.argument(), projectedArg, session);
-        if(result instanceof FirstOrderFunction){
+        if (result instanceof FirstOrderFunction) {
             ((FirstOrderFunction) result).setSession(session);
         }
         return result;

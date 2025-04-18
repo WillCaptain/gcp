@@ -16,7 +16,7 @@ public class Option extends SumADT {
     public static Option StringOrNumber = new Option(null, Outline.String, Outline.Number);
 
 
-    public static Outline from(Node node, Outline... outlines) {
+    public static Option from(Node node, Outline... outlines) {
         return new Option(node, outlines);
     }
 
