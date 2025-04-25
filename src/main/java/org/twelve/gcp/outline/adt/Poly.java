@@ -179,7 +179,7 @@ public class Poly extends SumADT {
      * @return
      */
     @Override
-    public boolean sum(Outline outline) {
+    protected boolean sum(Outline outline) {
         if (this.node() == null) return false;//隐式动态poly，退出
         if (!this.declared.isEmpty()) return false;//显示静态poly，退出
 

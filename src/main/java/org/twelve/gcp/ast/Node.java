@@ -210,7 +210,10 @@ public abstract class Node implements Serializable {
     public AST ast() { return ast; }
     public Node parent() { return parent; }
     public Outline outline() { return outline; }
-    public List<Node> nodes() { return new ArrayList<>(nodes); }
+    public List<Node> nodes() {
+//        return new ArrayList<>(nodes);
+        return nodes;
+    }
     public Long scope() {
         return this.parent().scope();
     }
@@ -240,5 +243,10 @@ public abstract class Node implements Serializable {
      */
     public <T> Result<T> interpret(Interpreter interpreter) {
         return interpreter.visit(this);
+    }
+
+    public Node invalidate() {
+        this.outline =Unknown;
+        return this;
     }
 }

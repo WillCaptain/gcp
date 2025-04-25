@@ -28,7 +28,7 @@ public class Option extends SumADT {
 
 
     @Override
-    public boolean sum(Outline outline) {
+    protected boolean sum(Outline outline) {
         if (!super.sum(outline)) return false;
         //添加新的option
         List<Outline> os = new ArrayList<>();
@@ -50,11 +50,11 @@ public class Option extends SumADT {
         return true;
     }
 
-    public void sum(List<Outline> outlines) {
-        for (Outline outline : outlines) {
-            this.sum(outline);
-        }
-    }
+//    public void sum(List<Outline> outlines) {
+//        for (Outline outline : outlines) {
+//            this.sum(outline);
+//        }
+//    }
 
     @Override
     public Option copy() {

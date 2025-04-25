@@ -124,6 +124,7 @@ public class ASTHelper {
         //fn(x)->(fn(y)->x+y)
         FunctionNode addxy = FunctionNode.from(body, new Argument(ast, new Token<>("x", 0)), new Argument(ast, new Token<>("y", 0)));
 
+
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         declare.declare(new Token<>("add", 0), addxy);
         ast.program().body().addStatement(declare);
@@ -146,11 +147,13 @@ public class ASTHelper {
 //        args.add(new Argument(ast,new Token<>("x",0)));
 //        args.add(new Argument(ast,new Token<>("y",0)));
         //fn(x)->(fn(y)->x+y)
-        FunctionNode addxy = FunctionNode.from(body, new Argument(ast, new Token<>("x", 0)),
+        FunctionNode addxyz = FunctionNode.from(body, new Argument(ast, new Token<>("x", 0)),
                 new Argument(ast, new Token<>("y", 0)), new Argument(ast, new Token<>("z", 0)));
+        FunctionNode addxy = cast(ast.program().body().nodes().get(0).nodes().get(0).nodes().get(1));
+        ast.program().body().nodes().clear();
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.VAR);
-        declare.declare(new Token<>("add", 0), addxy);
+        declare.declare(new Token<>("add", 0), new PolyNode(ast,addxy,addxyz));
         ast.program().body().addStatement(declare);
 
         return ast;
@@ -161,10 +164,10 @@ public class ASTHelper {
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.VAR);
         declare.declare(new Token<>("forError", 0), LiteralNode.parse(ast, new Token<>("any")));
         ast.program().body().addStatement(declare);
-        Expression add1 = cast(ast.program().body().nodes().getFirst().nodes().getFirst().nodes().get(1));
-        Assignment assignment1 = new Assignment(new Identifier(ast, new Token<>("add", 0)), add1);
+//        Expression add1 = cast(ast.program().body().nodes().getFirst().nodes().getFirst().nodes().get(1));
+//        Assignment assignment1 = new Assignment(new Identifier(ast, new Token<>("add", 0)), add1);
         Assignment assignment2 = new Assignment(new Identifier(ast, new Token<>("add", 0)), new Identifier(ast, new Token<>("forError")));
-        ast.addStatement(assignment1);
+//        ast.addStatement(assignment1);
         ast.addStatement(assignment2);
         return ast;
     }
@@ -183,8 +186,6 @@ public class ASTHelper {
         //let name_2 = person.get_name();
         AST ast = mockTestAst();
         List<MemberNode> members = new ArrayList<>();
-        members.add(new MemberNode(ast, new Token<>("name"),
-                LiteralNode.parse(ast, new Token<>("Will", 0)), false));
 
 
         FunctionBody body = new FunctionBody(ast);
@@ -197,6 +198,9 @@ public class ASTHelper {
         body.addStatement(new ReturnStatement(new Identifier(ast, new Token<>("name"))));
         members.add(new MemberNode(ast, new Token<>("get_my_name"),
                 FunctionNode.from(body), false));
+        members.add(new MemberNode(ast, new Token<>("name"),
+                LiteralNode.parse(ast, new Token<>("Will", 0)), false));
+
 
         EntityNode entity = new EntityNode(ast, members);
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
@@ -219,7 +223,7 @@ public class ASTHelper {
     public static AST mockSimplePersonEntityWithOverrideMember() {
         AST ast = mockSimplePersonEntity();
         FunctionBody body = new FunctionBody(ast);
-        Pair<Node, Modifier> getName = new Pair<>(FunctionNode.from(body, new Argument(ast, new Token<>("last_name"))), Modifier.PUBLIC);
+//        Pair<Node, Modifier> getName = new Pair<>(FunctionNode.from(body, new Argument(ast, new Token<>("last_name"))), Modifier.PUBLIC);
         body.addStatement(new ReturnStatement(
                 new BinaryExpression(
                         new MemberAccessor(ast, new This(ast, new Token<>("this")), new Identifier(ast, new Token<>("name"))),
@@ -227,11 +231,12 @@ public class ASTHelper {
                         new OperatorNode<>(ast, BinaryOperator.ADD))));
         VariableDeclarator var = cast(ast.program().body().statements().getFirst());
         EntityNode person = cast(var.assignments().getFirst().rhs());
+        Expression getName = person.members().get("get_name").expression();
         MemberNode node = new MemberNode(ast, new Token<>("get_name"),
-                FunctionNode.from(body, new Argument(ast, new Token<>("last_name"))), true);
-        person.members().get("get_name").add(node);
+                new PolyNode(ast,getName,FunctionNode.from(body, new Argument(ast, new Token<>("last_name")))), true);
 //        person.members().get("get_name").add(getName);//重载get_name方法
 //        person.addNode(getName.getKey());
+        person.nodes().remove(1);
         person.addNode(node);
         return ast;
     }

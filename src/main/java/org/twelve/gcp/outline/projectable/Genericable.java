@@ -78,10 +78,10 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             ((Poly) this.extendToBe).sum(outline, true);
             return;
         }
-        if (this.extendToBe instanceof Option) {
-            ((Option) this.extendToBe).sum(outline);
-            return;
-        }
+//        if (this.extendToBe instanceof Option) {
+//            ((Option) this.extendToBe).sum(outline);
+//            return;
+//        }
         //留下基类
         if (this.extendToBe.is(outline)) {
             this.extendToBe = outline;

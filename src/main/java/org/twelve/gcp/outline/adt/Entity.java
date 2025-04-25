@@ -149,12 +149,13 @@ public class Entity extends ProductADT implements Projectable {
 
     @Override
     public boolean inferred() {
-        for (EntityMember member : this.members()) {
-            if (!member.outline.inferred()) {
-                return false;
-            }
-        }
-        return true;
+        return this.members().stream().allMatch(m->m.outline().inferred());
+//        for (EntityMember member : this.members()) {
+//            if (!member.outline.inferred()) {
+//                return false;
+//            }
+//        }
+//        return true;
     }
 
     @Override

@@ -151,6 +151,7 @@ public class Return extends Genericable<Return, Node> {
     public Outline guess() {
 //        return (this.supposed instanceof UNKNOWN) ? super.guess() :
 //                (this.supposed instanceof Projectable ? ((Projectable) this.supposed).guess() : this.supposed);
-        return this.supposed instanceof Projectable ? ((Projectable) this.supposed).guess() : this.supposed;
+        Outline outline = this.supposed instanceof Projectable ? ((Projectable) this.supposed).guess() : this.supposed;
+        return (outline instanceof UNKNOWN)?this.declaredToBe():outline;
     }
 }

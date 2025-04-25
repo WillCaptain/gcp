@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.twelve.gcp.common.Tool.cast;
+
 /**
  * entity是有成员变量的object
  * 但是基础类型都可以有成员变量，都可表现为Product ADT
@@ -22,22 +24,26 @@ import java.util.Map;
  * 2. 基础类型扩展出来的object： String{size:Integer}
  */
 public class EntityNode extends ValueNode<EntityNode> {
-    private final Map<String, List<MemberNode>> members = new HashMap<>();
+//    private final Map<String, MemberNode> members = new HashMap<>();
     private final Node base;
     private final Long scope;
 
     public EntityNode(AST ast, List<MemberNode> members, Node base, Location loc) {
         super(ast, loc);
         this.scope = ast.scopeIndexer().incrementAndGet();
-        members.forEach(m -> {
-            this.addNode(m);
-            List<MemberNode> member = this.members.get(m.name().token());
-            if (member == null) {
-                member = new ArrayList<>();
-                this.members.put(m.name().token(), member);
-            }
-            member.add(m);
-        });
+        for (MemberNode member : members) {
+            this.addNode(member);
+        }
+//        members.forEach(m -> {
+//            this.addNode(m);
+//            this.members.put(m.name().token(),m);
+//            List<MemberNode> member = this.members.get(m.name().token());
+//            if (member == null) {
+//                member = new ArrayList<>();
+//                this.members.put(m.name().token(), member);
+//            }
+//            member.add(m);
+//        });
         this.base = base;
     }
 
@@ -101,8 +107,13 @@ public class EntityNode extends ValueNode<EntityNode> {
         return this.base;
     }
 
-    public Map<String, List<MemberNode>> members() {
-        return this.members;
+    public Map<String, MemberNode> members() {
+        Map<String, MemberNode> ms = new HashMap<>();
+        for (Node node : this.nodes()) {
+            MemberNode m = cast(node);
+            ms.put(m.name().token(),m);
+        }
+        return ms;
     }
 
     @Override

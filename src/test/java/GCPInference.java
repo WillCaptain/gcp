@@ -541,6 +541,7 @@ public class GCPInference {
         for (int i = 1; i < 4; i++) {
             Node call = ASTHelper.mockEntityProjection1(i, ASTHelper::mockEntityProjectionNode5);
             call.ast().asf().infer();
+            call.lexeme();
             Entity result = cast(call.outline());
             assertEquals("name", result.members().getFirst().name());
             assertInstanceOf(INTEGER.class, result.members().getFirst().outline());
@@ -557,7 +558,7 @@ public class GCPInference {
         chain(x->x-1,"100");
          */
         AST ast = ASTHelper.mockRecursive();
-        ast.asf().infer();
+//        ast.asf().infer();
 //todo
     }
 

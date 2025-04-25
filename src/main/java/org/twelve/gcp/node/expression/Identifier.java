@@ -41,11 +41,12 @@ public class Identifier extends Assignable {
 
     @Override
     public String lexeme() {
+
         if ((this.outline() instanceof UNKNOWN) || this.outline instanceof UNIT || this.outline() instanceof Namespace) {
             return this.token.lexeme();
         }
 
-        if (this.parent().parent() != null && this.parent().parent() instanceof VariableDeclarator && ((Assignment) this.parent()).lhs() == this) {
+        if (this.isDeclared() ||(this.parent().parent() != null && this.parent().parent() instanceof VariableDeclarator && ((Assignment) this.parent()).lhs() == this)) {
             return this.token.lexeme() + ": " + this.outline().toString();
         }
         return this.token.lexeme();
@@ -95,10 +96,11 @@ public class Identifier extends Assignable {
     @Override
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
         if (this.outline == Error) return;
-        EnvSymbol symbol = env.lookup(this.token());
+        EnvSymbol symbol = env.current().lookup(this.token());
         if (symbol == null) return;
         //第一次赋值
-        if (this.outline  instanceof UNKNOWN) {
+//        if (this.outline  instanceof UNKNOWN) {
+        if (!symbol.outline().inferred()) {
             symbol.update(inferred);
             this.outline = inferred;
             return;

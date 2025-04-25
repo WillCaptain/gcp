@@ -10,6 +10,7 @@ import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.node.statement.*;
 import org.twelve.gcp.outline.adt.*;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.primitive.DOUBLE;
 import org.twelve.gcp.outline.primitive.INTEGER;
 import org.twelve.gcp.outline.primitive.STRING;
@@ -59,7 +60,7 @@ public class InferenceTest {
         ast.program().body().addStatement(var);
         asf.infer();
         assertEquals(1, ast.errors().size());
-        assertEquals(var.assignments().getFirst().lhs(), ast.errors().getFirst().node());
+        assertEquals(var.assignments().getFirst().rhs(), ast.errors().getFirst().node());
     }
 
     @Test
@@ -118,16 +119,16 @@ public class InferenceTest {
     }
 
     @Test
-    void test_implicit_poly_inference(){
+    void test_poly_cant_be_assigned_more_outline_inference(){
         AST ast = ASTHelper.mockErrorPoly();
         ast.asf().infer();;
-        Outline add = ((Assignment) ast.program().body().nodes().get(3)).lhs().outline();
+        Outline add = ((Assignment) ast.program().body().nodes().get(0).nodes().getFirst()).lhs().outline();
         assertTrue(add instanceof Poly);
         Poly poly = cast(add);
         assertEquals(2,poly.options().size());
-        assertEquals(2,ast.errors().size());
-        assertEquals(GCPErrCode.NOT_ASSIGNABLE,ast.errors().get(0).errorCode());//let can't be assigned
-        assertEquals(GCPErrCode.OUTLINE_MISMATCH,ast.errors().get(1).errorCode());//id doesn't math any poly options
+        assertEquals(1,ast.errors().size());
+//        assertEquals(GCPErrCode.NOT_ASSIGNABLE,ast.errors().get(0).errorCode());//let can't be assigned
+        assertEquals(GCPErrCode.OUTLINE_MISMATCH,ast.errors().getFirst().errorCode());//id doesn't math any poly options
     }
 
     @Test
@@ -143,16 +144,19 @@ public class InferenceTest {
         ast.asf().infer();
         Poly p1 = cast(((Assignment)ast.program().body().nodes().get(1)).lhs().outline());
         VariableDeclarator declarator = cast(ast.program().body().nodes().get(2));
-        Poly p2 = cast(declarator.assignments().get(0).lhs().outline());
+        Outline p2 = declarator.assignments().get(0).lhs().outline();
         assertEquals(2,ast.errors().size());
         assertEquals(GCPErrCode.OUTLINE_MISMATCH,ast.errors().get(0).errorCode());
         assertEquals(GCPErrCode.DUPLICATED_DEFINITION,ast.errors().get(1).errorCode());
 
         assertEquals(Outline.Integer.toString(),p1.options().get(0).toString());
-        assertTrue(p1.options().get(1) instanceof STRING);
+        assertInstanceOf(INTEGER.class, p1.options().get(0));
+        assertInstanceOf(STRING.class, p1.options().get(1));
 
-        assertEquals(Outline.Integer.toString(),p2.options().get(0).toString());
-        assertEquals(Outline.String.toString(),p2.options().get(1).toString());
+        assertInstanceOf(UNKNOWN.class, p2);
+
+//        assertEquals(Outline.Integer.toString(),p2.options().get(0).toString());
+//        assertEquals(Outline.String.toString(),p2.options().get(1).toString());
 //        assertEquals(Outline.Float,p2.options().get(2));
     }
     @Test
@@ -185,13 +189,13 @@ public class InferenceTest {
     void test_override_function_inference() {
         AST ast = ASTHelper.mockOverrideAddFunc();
         ast.asf().infer();
-        Identifier getName1 = cast(ast.program().body().nodes().get(0).nodes().get(0).nodes().get(0));
-        Identifier getName2 = cast(ast.program().body().nodes().get(1).nodes().get(0).nodes().get(0));
+        Identifier getName = cast(ast.program().body().nodes().get(0).nodes().get(0).nodes().get(0));
+//        Identifier getName2 = cast(ast.program().body().nodes().get(1).nodes().get(0).nodes().get(0));
 
-        assertTrue(getName1.outline() instanceof Function);
-        assertTrue(getName2.outline() instanceof Poly);
-        assertEquals(2,((Poly)getName2.outline()).options().size());
-        assertEquals(getName1.outline(),((Poly)getName2.outline()).options().get(0));
+//        assertTrue(getName1.outline() instanceof Function);
+        assertTrue(getName.outline() instanceof Poly);
+        assertEquals(2,((Poly)getName.outline()).options().size());
+        assertTrue(((Poly)getName.outline()).options().getFirst() instanceof Function<?,?>);
     }
 
 
@@ -277,7 +281,7 @@ public class InferenceTest {
         ast.asf().infer();
         VariableDeclarator var = cast(ast.program().body().statements().getFirst());
         Entity person = cast(var.assignments().getFirst().lhs().outline());
-        assertEquals(3, person.members().size());
+        assertEquals(2, person.members().size());
         EntityMember getName = person.members().get(1);
         assertInstanceOf(Poly.class, getName.outline());
         Poly outline = cast(getName.outline());

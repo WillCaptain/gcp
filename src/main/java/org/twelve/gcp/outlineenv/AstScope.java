@@ -80,6 +80,6 @@ public class AstScope implements Scope {
     }
 
     public EnvSymbol lookup(String key) {
-        return this.lookup(key, false);
+        return symbols.get(key);
     }
 }

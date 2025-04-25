@@ -65,9 +65,9 @@ public class FunctionNode extends Expression {
         return inferences.visit(this);
     }
 
-    @Override
-    public boolean inferred() {
-        return this.outline.inferred();
-    }
+//    @Override
+//    public boolean inferred() {
+//        return this.outline.inferred();
+//    }
 
 }

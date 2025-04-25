@@ -35,11 +35,11 @@ public class EntityInference implements Inference<EntityNode> {
             entity = cast(node.outline());
         }
         //infer my members
-        node.members().forEach((k, vs) -> {
-            for (MemberNode v : vs) {
+        node.members().forEach((k, v) -> {
+//            for (MemberNode v : vs) {
                 Outline outline = v.infer(inferences);
                 entity.addMember(k, outline, v.modifier(), v.mutable(), v);
-            }
+//            }
         });
         return entity;
     }

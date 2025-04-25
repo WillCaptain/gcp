@@ -79,10 +79,10 @@ public class Argument extends Node {
         return this;
     }
 
-//    @Override
-//    public boolean inferred() {
-//        return this.outline != Unknown;
-//    }
+    @Override
+    public boolean inferred() {
+        return this.outline.inferred();
+    }
 
     @Override
     public void markUnknowns() {

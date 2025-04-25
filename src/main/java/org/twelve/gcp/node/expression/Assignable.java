@@ -44,20 +44,20 @@ public abstract class Assignable extends Expression {
         Node target = inferred.node() == null ? this : inferred.node();
         final String FAIL_SUM = "fail to sum in ";
         //option处理
-        if (this.outline instanceof Option) {
-            if (!((Option) this.outline).sum(inferred)) {
-                ErrorReporter.report(target, GCPErrCode.OUTLINE_MISMATCH, FAIL_SUM + this.outline);
-            }
-            return;
-        }
+//        if (this.outline instanceof Option) {
+//            if (!((Option) this.outline).sum(inferred)) {
+//                ErrorReporter.report(target, GCPErrCode.OUTLINE_MISMATCH, FAIL_SUM + this.outline);
+//            }
+//            return;
+//        }
         //poly处理
-        if (this.outline instanceof Poly) {
-            //此处sum只有在函数参数f(x:Poly)情况下有效
-            if (!((Poly) this.outline).sum(inferred)) {
-                ErrorReporter.report(target, GCPErrCode.OUTLINE_MISMATCH, FAIL_SUM + this.outline);
-            }
-            return;
-        }
+//        if (this.outline instanceof Poly) {
+//            //此处sum只有在函数参数f(x:Poly)情况下有效
+//            if (!((Poly) this.outline).sum(inferred)) {
+//                ErrorReporter.report(target, GCPErrCode.OUTLINE_MISMATCH, FAIL_SUM + this.outline);
+//            }
+//            return;
+//        }
         if (inferred instanceof OperateAble) {
             OperateAble you = (OperateAble) inferred;
             if (this.outline instanceof Generic) {

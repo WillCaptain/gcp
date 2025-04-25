@@ -129,9 +129,6 @@ public abstract class SumADT extends ADT {
 
     @Override
     public boolean inferred() {
-        for (Outline option : this.options) {
-            if(!option.inferred()) return false;
-        }
-        return true;
+        return this.options.stream().allMatch(Outline::inferred);
     }
 }

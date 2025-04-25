@@ -181,13 +181,13 @@ public class AstStructureTest {
         AST ast = ASTHelper.mockSimplePersonEntity();
         String expected = """
                 let person = {
-                  name = "Will",
                   get_name = ()->{
                     this.name
                   },
                   get_my_name = ()->{
                     name
                   },
+                  name = "Will",
                 };
                 let name_1 = person.name;
                 let name_2 = person.get_name();""";

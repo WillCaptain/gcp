@@ -48,7 +48,7 @@ public class EnvSymbol {
      */
     public boolean update(Outline outline) {
         //todo:waiting for issue #5
-        if (!(this.outline instanceof UNKNOWN)) return false;
+//        if (!(this.outline instanceof UNKNOWN)) return false;
         if (outline == null) return false;
         this.outline = outline;
         //如果对方是poly或者option，说明是简约显式声明，应记为declare sum adt，后续不可以动态加option

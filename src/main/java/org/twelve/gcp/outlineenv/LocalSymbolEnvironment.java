@@ -89,6 +89,7 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
 //        return symbol;
     }
 
+
     public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, Node originNode) {
         return this.current.defineSymbol(key, outline, mutable, false, originNode);
     }

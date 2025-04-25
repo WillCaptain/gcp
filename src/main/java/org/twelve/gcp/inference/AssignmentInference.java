@@ -33,19 +33,19 @@ public class AssignmentInference implements Inference<Assignment> {
             ErrorReporter.report(node.rhs(), GCPErrCode.NOT_INITIALIZED);
             return Ignore;
         }
-        if(node.parent() instanceof VariableDeclarator){
-            Identifier var = cast(node.lhs());
-            EnvSymbol symbol = node.ast().symbolEnv().current().lookup(var.token());
-            symbol.update(valueOutline);
-            var.assign(valueOutline);
-        }else {
+//        if(node.parent() instanceof VariableDeclarator){
+//            Identifier var = cast(node.lhs());
+//            EnvSymbol symbol = node.ast().symbolEnv().current().lookup(var.token());
+//            symbol.update(valueOutline);
+//            var.assign(valueOutline);
+//        }else {
             Outline varOutline = node.lhs().infer(inferences);
             if (varOutline == Nothing) {
                 ErrorReporter.report(node.lhs(), GCPErrCode.VARIABLE_NOT_DEFINED);
                 return Ignore;
             }
             node.lhs().assign(node.ast().symbolEnv(), valueOutline);
-        }
+//        }
         return Ignore;
     }
 }

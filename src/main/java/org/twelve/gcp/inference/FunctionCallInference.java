@@ -18,7 +18,7 @@ import static org.twelve.gcp.common.Tool.cast;
 public class FunctionCallInference implements Inference<FunctionCallNode> {
     @Override
     public Outline infer(FunctionCallNode node, Inferences inferences) {
-        Outline func = node.function().infer(inferences);
+        Outline func = node.function().invalidate().infer(inferences);
         if (func == null) {
             ErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_DEFINED);
             return Outline.Error;
@@ -32,10 +32,11 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         if (func instanceof Poly) {
             result = targetOverride(cast(func), node.arguments(), inferences, node);
         } else {
-//            if (!(func instanceof Function<?, ?> && !this.matchFunction((Function<?, ?>) func, node.arguments(), inferences, node))) {
-//                result = func;
-//            }
-            result = func;
+            if ((func instanceof Function<?, ?> &&
+                    this.matchFunction((Function<?, ?>) func, node.arguments(), inferences, node))
+                    || node.ast().asf().isLastInfer()) {
+                result = func;
+            }
 
         }
 //        if (result == Outline.Unknown && !node.ast().asf().isLastInfer()) {
