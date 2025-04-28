@@ -4,6 +4,7 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.common.SCOPE_TYPE;
+import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.*;
 import org.twelve.gcp.outline.builtin.Module;
@@ -90,11 +91,11 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
     }
 
 
-    public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, Node originNode) {
+    public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, Identifier originNode) {
         return this.current.defineSymbol(key, outline, mutable, false, originNode);
     }
 
-    public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, boolean isDeclared, Node originNode) {
+    public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, boolean isDeclared, Identifier originNode) {
         return this.current.defineSymbol(key, outline, mutable, isDeclared, originNode);
     }
 

@@ -5,6 +5,7 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
@@ -178,7 +179,7 @@ public abstract class ProductADT extends ADT {
         return this.addMember(name,outline,removed.modifier(),removed.mutable()== Mutable.True,removed.node());
     }
 
-    public boolean addMember(String name, Outline outline, Modifier modifier, Boolean mutable, Node node) {
+    public boolean addMember(String name, Outline outline, Modifier modifier, Boolean mutable, Identifier node) {
         return this.addMember(EntityMember.from(name, outline, modifier, mutable, node));
     }
 

@@ -7,12 +7,10 @@ import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.statement.Assignment;
 import org.twelve.gcp.node.statement.VariableDeclarator;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
-import java.util.Objects;
 import java.util.Set;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -30,7 +28,7 @@ public class VariableDeclaratorInference implements Inference<VariableDeclarator
             Identifier var = cast(assignment.lhs());
             EnvSymbol symbol = oEnv.current().lookup(var.token());//find the symbol in current scope
             if (symbol != null) {//there is symbol in current scope,can't have duplicate declaration
-                if (symbol.originNode() != var && !(node.parent() instanceof EntityNode)) {
+                if (symbol.node() != var && !(node.parent() instanceof EntityNode)) {
                     ErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
                     return Ignore;
                 }
@@ -70,16 +68,16 @@ public class VariableDeclaratorInference implements Inference<VariableDeclarator
         return Ignore;
     }
 
-    private static void inferAssignment(Inferences inferences, Assignment assignment, EnvSymbol symbol) {
-        Outline valueOutline = assignment.rhs() == null ? Nothing : assignment.rhs().infer(inferences);
-        if (valueOutline == Ignore || valueOutline == Unit) {
-            ErrorReporter.report(assignment.rhs(), GCPErrCode.UNAVAILABLE_OUTLINE_ASSIGNMENT);
-            valueOutline = Error;
-        }
-        if (valueOutline instanceof UNKNOWN) {
-            ErrorReporter.report(assignment.rhs(), GCPErrCode.NOT_INITIALIZED);
-        }
-        symbol.update(valueOutline);
-//        assignment.infer(inferences);
-    }
+//    private static void inferAssignment(Inferences inferences, Assignment assignment, EnvSymbol symbol) {
+//        Outline valueOutline = assignment.rhs() == null ? Nothing : assignment.rhs().infer(inferences);
+//        if (valueOutline == Ignore || valueOutline == Unit) {
+//            ErrorReporter.report(assignment.rhs(), GCPErrCode.UNAVAILABLE_OUTLINE_ASSIGNMENT);
+//            valueOutline = Error;
+//        }
+//        if (valueOutline instanceof UNKNOWN) {
+//            ErrorReporter.report(assignment.rhs(), GCPErrCode.NOT_INITIALIZED);
+//        }
+//        symbol.update(valueOutline);
+////        assignment.infer(inferences);
+//    }
 }

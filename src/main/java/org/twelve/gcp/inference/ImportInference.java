@@ -7,6 +7,7 @@ import org.twelve.gcp.node.imexport.ImportSpecifier;
 import org.twelve.gcp.node.namespace.NamespaceNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.Module;
+import org.twelve.gcp.outlineenv.EnvSymbol;
 
 import static org.twelve.gcp.outline.Outline.Ignore;
 
@@ -25,11 +26,12 @@ public class ImportInference implements Inference<Import> {
         Module module = node.ast().asf().globalEnv().lookup(namespace, moduleSymbol);
         for (ImportSpecifier _import : node.specifiers()) {
             if(_import.imported().lexeme().equals(CONSTANTS.STAR)){
-                node.ast().symbolEnv().defineSymbol(moduleSymbol.token(),module,false,moduleSymbol);
+                node.ast().symbolEnv().defineSymbol(moduleSymbol.token(), module, false, moduleSymbol);
             }else{
                 Outline outline = module.lookup(_import.imported());
                 node.ast().symbolEnv().defineSymbol(_import.local().token(),outline,false,moduleSymbol);
             }
+            _import.infer(inferences);
         }
         return Ignore;
     }

@@ -14,7 +14,7 @@ public interface Outline extends Serializable {
     AtomicLong Counter = new AtomicLong(100);
     STRING String = new STRING(null);
     DECIMAL Decimal = new DECIMAL(null);
-    //    DOUBLE Double = new DOUBLE(null);
+    DOUBLE Double = new DOUBLE(null);
     FLOAT Float = new FLOAT(null);
     INTEGER Integer = new INTEGER(null);
     LONG Long = new LONG(null);

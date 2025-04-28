@@ -60,7 +60,7 @@ public class ASF {
 
         // Fixed-point iteration (up to 4 times)
 //        int maxIterations = 4;
-        while (!this.fullyInferred()) {
+        while (!this.inferred()) {
             for (AST ast : this.asts) {
                 ast.infer();  // Refine inferences
             }
@@ -78,7 +78,7 @@ public class ASF {
     /**
      * Checks if all ASTs in the forest have fully resolved inferences.
      */
-    private boolean fullyInferred() {
+    public boolean inferred() {
         return this.asts.stream().allMatch(AST::inferred);
     }
 

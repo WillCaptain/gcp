@@ -5,6 +5,7 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.builtin.Module;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 import java.util.List;
 
@@ -36,5 +37,10 @@ public class ModuleNode extends Node {
 
     public  NamespaceNode namespace(){
         return this.namespace;
+    }
+
+    @Override
+    public boolean inferred() {
+        return !(this.outline() instanceof UNKNOWN);
     }
 }

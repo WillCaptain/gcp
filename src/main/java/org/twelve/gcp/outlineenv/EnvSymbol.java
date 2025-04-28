@@ -1,11 +1,11 @@
 package org.twelve.gcp.outlineenv;
 
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.adt.SumADT;
-import org.twelve.gcp.outline.builtin.UNKNOWN;
 
+import java.io.ObjectOutput;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class EnvSymbol {
@@ -13,21 +13,22 @@ public class EnvSymbol {
     private final boolean mutable;
     private final Long scope;
     private final String name;
-    private final long id;
-    private final Node originNode;
+    private final Identifier identifier;
     private boolean isDeclared;
     private Outline outline;
 
-    public EnvSymbol(String name, boolean mutable, Outline outline, boolean isDeclared, Long scope, Node originNode) {
-        this.id = counter.incrementAndGet();
+    public EnvSymbol(String name, boolean mutable, Outline outline, boolean isDeclared, Long scope, Identifier identifier) {
         this.mutable = mutable;
         this.outline = outline;
         this.name = name;
         this.isDeclared = isDeclared;
         this.scope = scope;
-        this.originNode = originNode;
+        this.identifier = identifier;
     }
 
+    public Long id(){
+        return this.identifier.id();
+    }
     public Long scope() {
         return this.scope;
     }
@@ -74,12 +75,16 @@ public class EnvSymbol {
         return this.outline;
     }
 
-    public Node originNode() {
-        return this.originNode;
+    public Identifier node() {
+        return this.identifier;
     }
 
     public boolean isDeclared() {
-        return this.isDeclared;
+        return this.identifier.isDeclared();
+    }
+
+    public Outline declared(){
+        return this.identifier.declared();
     }
 
     @Override

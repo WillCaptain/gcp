@@ -24,7 +24,7 @@ import static org.twelve.gcp.outline.adt.ProductADT.Unknown;
 public class Identifier extends Assignable {
     private final Token<String> token;
     private final Boolean mutable;
-    private Boolean declared;
+    private Outline declared;
 
     // import a as b, b is the reference
     public Identifier(AST ast, Token<String> token) {
@@ -35,7 +35,7 @@ public class Identifier extends Assignable {
         super(ast, null);
         this.token = token;
         this.outline = declared;
-        this.declared = !(declared instanceof UNKNOWN);
+        this.declared = declared;
         this.mutable = mutable;
     }
 
@@ -46,7 +46,7 @@ public class Identifier extends Assignable {
             return this.token.lexeme();
         }
 
-        if (this.isDeclared() ||(this.parent().parent() != null && this.parent().parent() instanceof VariableDeclarator && ((Assignment) this.parent()).lhs() == this)) {
+        if (this.isDeclared() || (this.parent().parent() != null && this.parent().parent() instanceof VariableDeclarator && ((Assignment) this.parent()).lhs() == this)) {
             return this.token.lexeme() + ": " + this.outline().toString();
         }
         return this.token.lexeme();
@@ -58,7 +58,7 @@ public class Identifier extends Assignable {
     }
 
     public Boolean isDeclared() {
-        return this.declared;
+        return !(this.declared instanceof UNKNOWN);
     }
 
     public Boolean isMutable() {
@@ -98,9 +98,12 @@ public class Identifier extends Assignable {
         if (this.outline == Error) return;
         EnvSymbol symbol = env.current().lookup(this.token());
         if (symbol == null) return;
-        //第一次赋值
-//        if (this.outline  instanceof UNKNOWN) {
-        if (!symbol.outline().inferred()) {
+        if(!inferred.canBe(symbol.declared())){
+            ErrorReporter.report(inferred.node(), GCPErrCode.OUTLINE_MISMATCH);
+            return;
+        }
+        //infer is not finished yet
+        if (!symbol.outline().inferred()|| symbol.isDeclared()) {
             symbol.update(inferred);
             this.outline = inferred;
             return;
@@ -139,10 +142,14 @@ public class Identifier extends Assignable {
     }
 
     public void assign(Outline outline) {
-        if(this.isDeclared() && !this.outline.tryYouCanBeMe(outline)){
-            ErrorReporter.report(this,GCPErrCode.OUTLINE_MISMATCH);
+        if (this.isDeclared() && !this.outline.tryYouCanBeMe(outline)) {
+            ErrorReporter.report(this, GCPErrCode.OUTLINE_MISMATCH);
             return;
         }
         this.outline = outline;
+    }
+
+    public Outline declared() {
+        return this.declared;
     }
 }

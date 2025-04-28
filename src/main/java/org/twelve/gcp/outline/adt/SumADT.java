@@ -114,7 +114,9 @@ public abstract class SumADT extends ADT {
      */
     public Outline match(Outline outline) {
         List<Outline> matched = this.options.stream().filter(o -> outline.canBe(o)).collect(Collectors.toList());
-        if(matched.size()==0) return null;//未能匹配
+        if(matched.size()==0) {
+            return null;//未能匹配
+        }
         if(matched.size()==1) {
             return matched.get(0);
         }else {

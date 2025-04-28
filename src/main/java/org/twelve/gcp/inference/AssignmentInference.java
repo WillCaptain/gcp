@@ -21,8 +21,11 @@ import static org.twelve.gcp.outline.Outline.*;
 public class AssignmentInference implements Inference<Assignment> {
     @Override
     public Outline infer(Assignment node, Inferences inferences) {
-//        node.ast().errors().removeIf(e->e.node()==node.rhs() || e.node()==node.lhs());
-        Outline valueOutline = node.rhs() == null ? Nothing : node.rhs().infer(inferences);
+        if(node.rhs()==null){
+            ErrorReporter.report(node.lhs(), GCPErrCode.NOT_INITIALIZED);
+            return Ignore;
+        }
+        Outline valueOutline = node.rhs() == null ? Unknown : node.rhs().infer(inferences);
 
 
         if (valueOutline == Ignore || valueOutline == Unit) {

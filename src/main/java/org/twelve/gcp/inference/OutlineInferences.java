@@ -12,7 +12,9 @@ import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.node.imexport.Export;
+import org.twelve.gcp.node.imexport.ExportSpecifier;
 import org.twelve.gcp.node.imexport.Import;
+import org.twelve.gcp.node.imexport.ImportSpecifier;
 import org.twelve.gcp.node.statement.Assignment;
 import org.twelve.gcp.node.statement.ExpressionStatement;
 import org.twelve.gcp.node.statement.ReturnStatement;
@@ -125,6 +127,17 @@ public class OutlineInferences implements Inferences {
     public Outline visit(Arm arm) {
         return new ArmInference().infer(arm,this);
     }
+
+    @Override
+    public Outline visit(ImportSpecifier importSpecifier) {
+        return new ImportSpecifierInference().infer(importSpecifier,this);
+    }
+
+    @Override
+    public Outline visit(ExportSpecifier exportSpecifier) {
+        return new ExportSpecifierInference().infer(exportSpecifier,this);
+    }
+
 
     @Override
     public Outline visit(FunctionNode function) {

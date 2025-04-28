@@ -4,6 +4,7 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 public abstract class ImportExportSpecifier extends Node {
     public ImportExportSpecifier(AST ast, Token a, Token b) {
@@ -25,5 +26,10 @@ public abstract class ImportExportSpecifier extends Node {
         }else{
             return this.nodes().get(0)+" as "+this.nodes().get(1);
         }
+    }
+
+    @Override
+    public boolean inferred() {
+        return !(this.outline() instanceof UNKNOWN);
     }
 }

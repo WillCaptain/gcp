@@ -28,7 +28,7 @@ public class EntityInference implements Inference<EntityNode> {
                     ErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);
                     return Outline.Error;
                 }
-                node.ast().symbolEnv().defineSymbol("base", base, false, base.node());
+                node.ast().symbolEnv().defineSymbol("base", base, false, null);
             }
             entity = Entity.from(node, cast(base), new ArrayList<>());
         } else {//第n次infer
@@ -38,7 +38,7 @@ public class EntityInference implements Inference<EntityNode> {
         node.members().forEach((k, v) -> {
 //            for (MemberNode v : vs) {
                 Outline outline = v.infer(inferences);
-                entity.addMember(k, outline, v.modifier(), v.mutable(), v);
+                entity.addMember(k, outline, v.modifier(), v.mutable(), v.name());
 //            }
         });
         return entity;

@@ -75,7 +75,7 @@ public class AstStructureTest {
     void test_import() {
         Import imported = this.ast.program().body().imports().getFirst();
         //check to string
-        assertEquals("import grade as level, school from education;", ast.program().body().imports().getFirst().lexeme());
+        assertEquals("import grade as level, college as school from education;", ast.program().body().imports().getFirst().lexeme());
         //check location
         assertEquals(29, imported.loc().start());
         assertEquals(52, imported.loc().end());
@@ -98,11 +98,11 @@ public class AstStructureTest {
         assertSame(a.get(0).outline(), a.get(1).outline());//outline of b is a reference of a outline
         //check c
         ImportSpecifier c = imported.specifiers().get(1);
-        assertSame(c.get(0), c.get(1));
-        assertEquals("school", c.lexeme());
-        assertEquals("school", c.imported().lexeme());
+        assertEquals("school", c.get(1).toString());
+        assertEquals("college as school", c.lexeme());
+        assertEquals("college", c.imported().lexeme());
         assertEquals(37, c.imported().loc().start());
-        assertEquals(42, c.imported().loc().end());
+        assertEquals(43, c.imported().loc().end());
 
         //import * from e
         List<Token<String>> source = new ArrayList<>();
@@ -150,7 +150,7 @@ public class AstStructureTest {
         VariableDeclarator var = cast(stmts.getFirst());
         assertEquals(50, var.loc().start());
         assertEquals(114, var.loc().end());
-        assertEquals("let age: Integer, name = \"Will\", height: Decimal = 1.68, grade = level;",
+        assertEquals("let age: Integer, name = \"Will\", height: Double = 1.68, grade = level;",
                 var.toString());
     }
 
@@ -213,12 +213,12 @@ public class AstStructureTest {
         AST ast = ASTHelper.mockIf(SELECTION_TYPE.IF);
         String expected = """
                 if(name=="Will"){
-                  name
+                  name: String
                 } else {
                   "Someone"
                 };""";
         assertEquals(expected,ast.lexeme());
         ast = ASTHelper.mockIf(SELECTION_TYPE.TERNARY);
-        assertEquals("name==\"Will\"? name: \"Someone\";",ast.lexeme());
+        assertEquals("name==\"Will\"? name: String: \"Someone\";",ast.lexeme());
     }
 }

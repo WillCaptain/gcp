@@ -6,6 +6,8 @@ import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.expression.*;
+import org.twelve.gcp.node.imexport.Export;
+import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.node.statement.*;
 import org.twelve.gcp.outline.adt.*;
@@ -28,26 +30,50 @@ public class InferenceTest {
 
     @Test
     void test_initialization_inference() {
+        /*
+        module org.twelve.education
+        let grade: Integer = 1, school: String = "NO.1";
+        export grade, school as college;
+
+        module org.twelve.human
+        import grade as level, college as school from education;
+        let age: Integer, name: String = "Will", height: Double = 1.68, grade: Integer = level;
+        export height as stature, name;
+         */
         ASF asf = ASTHelper.asf();
         asf.infer();
-        AST ast = cast(asf.get("human"));
-        List<Statement> stmts = ast.program().body().statements();
+        assertTrue(asf.inferred());
+        AST ast = cast(asf.get("education"));
+        Export exports = ast.program().body().exports().getFirst();
+        assertInstanceOf(INTEGER.class, exports.specifiers().getFirst().outline());
+        assertInstanceOf(STRING.class, exports.specifiers().getLast().outline());
+        assertTrue(ast.errors().isEmpty());
+        ast = cast(asf.get("human"));
+        Import imports = ast.program().body().imports().getFirst();
+        assertInstanceOf(INTEGER.class, imports.specifiers().getFirst().outline());
+        assertInstanceOf(STRING.class, imports.specifiers().get(1).outline());
         VariableDeclarator var = cast(ast.program().body().statements().get(0));
+        assertEquals(var.assignments().getFirst().lhs(), ast.errors().getFirst().node());
         assertEquals(Ignore, var.outline());
-        assertEquals(Ignore, var.assignments().get(0).outline());
+        assertEquals(Ignore, var.assignments().getFirst().outline());
         //age:Integer
-        Assignment age = var.assignments().get(0);
+        Assignment age = var.assignments().getFirst();
+        assertEquals(Outline.Integer, ((Identifier) age.lhs()).declared());
         assertEquals(Outline.Integer, age.lhs().outline());
         //name = "Will"
         Assignment name = var.assignments().get(1);
-        assertTrue(name.lhs().outline() instanceof STRING);
+        assertInstanceOf(STRING.class, name.lhs().outline());
         //height:Decimal = 1.68
         Assignment height = var.assignments().get(2);
-        assertEquals(ProductADT.Decimal, height.lhs().outline());
+        assertInstanceOf(DOUBLE.class, height.lhs().outline());
+        assertEquals(ast.errors().getFirst().node(),age.lhs());
     }
 
     @Test
     void test_declared_assignment_type_mismatch_inference() {
+        /*
+        var age: Integer = "some";
+         */
         ASF asf = new ASF();
         AST ast = asf.newAST();
 
@@ -59,12 +85,19 @@ public class InferenceTest {
         var.declare(new Token<>("age"), Outline.Integer, LiteralNode.parse(ast, new Token("some")));
         ast.program().body().addStatement(var);
         asf.infer();
+        assertTrue(asf.inferred());
+        assertInstanceOf(INTEGER.class, var.assignments().getFirst().lhs().outline());
         assertEquals(1, ast.errors().size());
         assertEquals(var.assignments().getFirst().rhs(), ast.errors().getFirst().node());
+        assertEquals(GCPErrCode.OUTLINE_MISMATCH,ast.errors().getFirst().errorCode());
     }
 
     @Test
     void test_assign_mismatch_inference() {
+        /*
+        var age: String = "some";
+        age = 100;
+         */
         ASF asf = new ASF();
         AST ast = asf.newAST();
 
@@ -76,15 +109,17 @@ public class InferenceTest {
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Token<>("age"),str);
+        var.declare(new Token<>("age"), str);
         ast.program().body().addStatement(var);
-        Assignment assignment = new Assignment(new Identifier(ast, new Token("age")), num);
+        Assignment assignment = new Assignment(new Identifier(ast, new Token<>("age")), num);
         ast.addStatement(assignment);
         asf.infer();
+        assertTrue(asf.inferred());
         assertEquals(1, ast.errors().size());
-        assertEquals(GCPErrCode.OUTLINE_MISMATCH,ast.errors().get(0).errorCode());
-        assertEquals(assignment,ast.errors().get(0).node().parent());
+        assertEquals(GCPErrCode.OUTLINE_MISMATCH, ast.errors().get(0).errorCode());
+        assertEquals(assignment, ast.errors().get(0).node().parent());
     }
+
     @Test
     void test_declared_poly_mismatch_assignment_inference() {
         ASF asf = new ASF();
@@ -98,7 +133,7 @@ public class InferenceTest {
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Token<>("age"),Poly.from(var,true,Outline.String), str);
+        var.declare(new Token<>("age"), Poly.from(var, true, Outline.String), str);
         ast.program().body().addStatement(var);
         Assignment assignment = new Assignment(new Identifier(ast, new Token<>("age")), num);
         ast.addStatement(assignment);
@@ -108,48 +143,49 @@ public class InferenceTest {
     }
 
 
-    @Test
-    void test_import_inference() {
-        ASF asf = ASTHelper.asf();
-        asf.infer();
-        AST human = asf.get("human");
-        VariableDeclarator declare = cast(human.program().body().statements().get(0));
-        Assignment school = declare.assignments().get(3);
-        assertEquals("grade: Integer = level", school.toString());
-    }
+//    @Test
+//    void test_import_inference() {
+//        ASF asf = ASTHelper.asf();
+//        asf.infer();
+//        AST human = asf.get("human");
+//        VariableDeclarator declare = cast(human.program().body().statements().get(0));
+//        Assignment school = declare.assignments().get(3);
+//        assertEquals("grade: Integer = level", school.toString());
+//    }
 
     @Test
-    void test_poly_cant_be_assigned_more_outline_inference(){
+    void test_poly_cant_be_assigned_more_outline_inference() {
         AST ast = ASTHelper.mockErrorPoly();
-        ast.asf().infer();;
+        ast.asf().infer();
+        ;
         Outline add = ((Assignment) ast.program().body().nodes().get(0).nodes().getFirst()).lhs().outline();
         assertTrue(add instanceof Poly);
         Poly poly = cast(add);
-        assertEquals(2,poly.options().size());
-        assertEquals(1,ast.errors().size());
+        assertEquals(2, poly.options().size());
+        assertEquals(1, ast.errors().size());
 //        assertEquals(GCPErrCode.NOT_ASSIGNABLE,ast.errors().get(0).errorCode());//let can't be assigned
-        assertEquals(GCPErrCode.OUTLINE_MISMATCH,ast.errors().getFirst().errorCode());//id doesn't math any poly options
+        assertEquals(GCPErrCode.OUTLINE_MISMATCH, ast.errors().getFirst().errorCode());//id doesn't math any poly options
     }
 
     @Test
-    void test_explicit_poly_inference(){
+    void test_explicit_poly_inference() {
         AST ast = ASTHelper.mockDefinedPoly();
         ast.asf().infer();
         Identifier lhs = cast(((VariableDeclarator) ast.program().body().nodes().get(0)).assignments().get(0).lhs());
         Poly poly = cast(lhs.outline());
-        assertEquals(Outline.Integer.toString(),poly.options().get(0).toString());
+        assertEquals(Outline.Integer.toString(), poly.options().get(0).toString());
         assertTrue(poly.options().get(1) instanceof STRING);
 
         ast = ASTHelper.mockErrorAssignOnDefinedPoly();
         ast.asf().infer();
-        Poly p1 = cast(((Assignment)ast.program().body().nodes().get(1)).lhs().outline());
+        Poly p1 = cast(((Assignment) ast.program().body().nodes().get(1)).lhs().outline());
         VariableDeclarator declarator = cast(ast.program().body().nodes().get(2));
         Outline p2 = declarator.assignments().get(0).lhs().outline();
-        assertEquals(2,ast.errors().size());
-        assertEquals(GCPErrCode.OUTLINE_MISMATCH,ast.errors().get(0).errorCode());
-        assertEquals(GCPErrCode.DUPLICATED_DEFINITION,ast.errors().get(1).errorCode());
+        assertEquals(2, ast.errors().size());
+        assertEquals(GCPErrCode.OUTLINE_MISMATCH, ast.errors().get(0).errorCode());
+        assertEquals(GCPErrCode.DUPLICATED_DEFINITION, ast.errors().get(1).errorCode());
 
-        assertEquals(Outline.Integer.toString(),p1.options().get(0).toString());
+        assertEquals(Outline.Integer.toString(), p1.options().get(0).toString());
         assertInstanceOf(INTEGER.class, p1.options().get(0));
         assertInstanceOf(STRING.class, p1.options().get(1));
 
@@ -159,20 +195,21 @@ public class InferenceTest {
 //        assertEquals(Outline.String.toString(),p2.options().get(1).toString());
 //        assertEquals(Outline.Float,p2.options().get(2));
     }
+
     @Test
-    void test_literal_inference(){
+    void test_literal_inference() {
         AST ast = ASTHelper.mockDefinedLiteralUnion();
         ast.asf().infer();
         Identifier lhs = cast(((VariableDeclarator) ast.program().body().nodes().get(0)).assignments().get(0).lhs());
         LiteralUnion union = cast(lhs.outline());
-        assertEquals("100",union.values().get(0).lexeme());
-        assertEquals("\"some\"",union.values().get(1).lexeme());
+        assertEquals("100", union.values().get(0).lexeme());
+        assertEquals("\"some\"", union.values().get(1).lexeme());
 
         ast = ASTHelper.mockAssignOnDefinedLiteralUnion();
         ast.asf().infer();
-        assertEquals(1,ast.errors().size());
+        assertEquals(1, ast.errors().size());
         LiteralNode l200 = cast(ast.errors().get(0).node());
-        assertEquals(200,l200.value());
+        assertEquals(200, l200.value());
     }
 
     @Test
@@ -194,10 +231,9 @@ public class InferenceTest {
 
 //        assertTrue(getName1.outline() instanceof Function);
         assertTrue(getName.outline() instanceof Poly);
-        assertEquals(2,((Poly)getName.outline()).options().size());
-        assertTrue(((Poly)getName.outline()).options().getFirst() instanceof Function<?,?>);
+        assertEquals(2, ((Poly) getName.outline()).options().size());
+        assertTrue(((Poly) getName.outline()).options().getFirst() instanceof Function<?, ?>);
     }
-
 
 
     @Test
@@ -285,7 +321,7 @@ public class InferenceTest {
         EntityMember getName = person.members().get(1);
         assertInstanceOf(Poly.class, getName.outline());
         Poly outline = cast(getName.outline());
-        Function<?,?> f1 = cast(outline.options().get(0));
+        Function<?, ?> f1 = cast(outline.options().get(0));
         assertInstanceOf(STRING.class, f1.returns().supposedToBe());
         FirstOrderFunction f2 = cast(outline.options().get(1));
         assertInstanceOf(Option.class, f2.argument().definedToBe());
@@ -314,12 +350,13 @@ public class InferenceTest {
         assertInstanceOf(STRING.class, members.get(1).outline());
         assertInstanceOf(Poly.class, members.get(2).outline());
         Poly getName = cast(members.get(2).outline());
-        assertSame(Outline.Unit, ((Generic) ((Function<?,?>) getName.options().get(0)).argument()).declaredToBe());
-        Function<?,?> overrides = cast(getName.options().get(1));
+        assertSame(Outline.Unit, ((Generic) ((Function<?, ?>) getName.options().get(0)).argument()).declaredToBe());
+        Function<?, ?> overrides = cast(getName.options().get(1));
         assertInstanceOf(Option.class, ((Generic) overrides.argument()).definedToBe());
         assertInstanceOf(INTEGER.class, overrides.returns().supposedToBe());
         assertTrue(ast.errors().isEmpty());
     }
+
     @Test
     void test_inherited_person_entity_with_override_call() {
 

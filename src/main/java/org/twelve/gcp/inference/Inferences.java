@@ -13,7 +13,9 @@ import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.node.imexport.Export;
+import org.twelve.gcp.node.imexport.ExportSpecifier;
 import org.twelve.gcp.node.imexport.Import;
+import org.twelve.gcp.node.imexport.ImportSpecifier;
 import org.twelve.gcp.node.statement.Assignment;
 import org.twelve.gcp.node.statement.ExpressionStatement;
 import org.twelve.gcp.node.statement.ReturnStatement;
@@ -51,4 +53,6 @@ public interface Inferences {
     Outline visit(LiteralUnionNode union);
     Outline visit(Selections selections);
     Outline visit(Arm arm);
+    Outline visit(ImportSpecifier importSpecifier);
+    Outline visit(ExportSpecifier exportSpecifier);
 }

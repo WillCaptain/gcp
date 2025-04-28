@@ -45,7 +45,7 @@ public class Program extends Node {
         StringBuilder sb = new StringBuilder();
         String namespace = this.namespace.lexeme();
         if(namespace!=null && !namespace.trim().equals("")) {
-            sb.append("module " + this.namespace.lexeme()+"\n\n");
+            sb.append("module " + this.namespace.lexeme()+"."+this.moduleName.lexeme()+"\n\n");
         }
         sb.append(this.body().lexeme());
         return sb.toString();

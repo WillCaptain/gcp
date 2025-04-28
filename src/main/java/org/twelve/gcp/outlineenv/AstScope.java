@@ -3,6 +3,7 @@ package org.twelve.gcp.outlineenv;
 import lombok.Setter;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.SCOPE_TYPE;
+import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Poly;
@@ -43,7 +44,7 @@ public class AstScope implements Scope {
     }
 
 
-    public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, boolean isDeclared, Node originNode) {
+    public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, boolean isDeclared, Identifier originNode) {
         if (this.symbols.containsKey(key)) {
             return this.symbols.get(key);
         }
@@ -71,7 +72,7 @@ public class AstScope implements Scope {
                         Poly poly = Poly.create();
                         poly.sum(symbol.outline(),false);
                         poly.sum(member.get().outline(),false);
-                        return new EnvSymbol(key, symbol.mutable(), poly, true, symbol.originNode().scope(), symbol.originNode());
+                        return new EnvSymbol(key, symbol.mutable(), poly, true, symbol.node().scope(), symbol.node());
                     }
                 }
             }

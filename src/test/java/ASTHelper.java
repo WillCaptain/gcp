@@ -45,7 +45,7 @@ public class ASTHelper {
         int offset = 22;
         List<Pair<Token<String>, Token<String>>> vars = new ArrayList<>();
         vars.add(new Pair<>(new Token<>("grade", offset + 7), new Token<>("level", offset + 12)));
-        vars.add(new Pair<>(new Token<>("school", offset + 15), null));
+        vars.add(new Pair<>(new Token<>("college", offset + 15), new Token<>("school", offset + 21)));
         List<Token<String>> source = new ArrayList<>();
         source.add(new Token<>("education", offset + 22));
         ast.addImport(new Import(ast, vars, source));
@@ -58,7 +58,7 @@ public class ASTHelper {
         //name = "Will"
         var.declare(new Token<>("name", offset + 19), LiteralNode.parse(ast, new Token<>("Will", offset + 26)));
         //height:Float = 1.68
-        var.declare(new Token<>("height", offset + 34), ProductADT.Decimal, LiteralNode.parse(ast, new Token<>(1.68, offset + 50)));
+        var.declare(new Token<>("height", offset + 34), ProductADT.Double, LiteralNode.parse(ast, new Token<>(1.68, offset + 50)));
         //my_school = school
         var.declare(new Token<>("grade", offset + 52), new Identifier(ast, new Token<>("level", offset + 64)));
 
@@ -91,7 +91,7 @@ public class ASTHelper {
         offset = 61;
         List<Pair<Token<String>, Token<String>>> vars = new ArrayList<>();
         vars.add(new Pair<>(new Token<>("grade", offset), null));
-        vars.add(new Pair<>(new Token<>("school", offset + 5), null));
+        vars.add(new Pair<>(new Token<>("school", offset + 5), new Token<>("college", offset + 11)));
         ast.addExport(new Export(ast, vars));
     }
 
