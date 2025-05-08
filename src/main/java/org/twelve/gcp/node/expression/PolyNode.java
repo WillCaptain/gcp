@@ -2,6 +2,7 @@ package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.SimpleLocation;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.outline.Outline;
@@ -29,7 +30,11 @@ public class PolyNode extends Expression{
 
     @Override
     public String lexeme() {
-        return this.nodes().stream().map(n->n.lexeme()).collect(Collectors.joining("&"));
+        if(this.nodes().size()==1){
+            return this.nodes().getFirst().lexeme();
+        }else {
+            return this.nodes().stream().map(Node::lexeme).collect(Collectors.joining("&"));
+        }
     }
 
     @Override

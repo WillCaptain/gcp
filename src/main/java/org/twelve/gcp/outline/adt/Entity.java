@@ -1,6 +1,7 @@
 package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -185,10 +186,9 @@ public class Entity extends ProductADT implements Projectable {
 //                session.addProjection(projected, outline);
                 return outline;
             } else {
-                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL,"mismatch "+this);
-                Outline guessed = this.guess();
-//                session.addProjection(projected, guessed);
-                return guessed;
+                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL,
+                        projection.node()+ CONSTANTS.MISMATCH_STR +this);
+                return this.guess();
             }
         } else {//project possible members
             Entity outline = Entity.from(this.node());

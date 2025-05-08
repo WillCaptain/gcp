@@ -6,6 +6,7 @@ import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.primitive.*;
 
 import java.io.Serializable;
+import java.nio.channels.AcceptPendingException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -21,11 +22,12 @@ public interface Outline extends Serializable {
     BOOL Boolean = new BOOL(null);
     UNIT Unit = UNIT.instance();
     IGNORE Ignore = IGNORE.instance();
-    UNKNOWN Unknown = UNKNOWN.instance();
+    UNKNOWN Unknown = new UNKNOWN();
     NOTHING Nothing = NOTHING.instance();
     NUMBER Number = NUMBER.instance();
     ANY Any = ANY.instance();
     ERROR Error = ERROR.instance();
+    UNKNOWN Pending = new UNKNOWN();
 //    UNKNOWN UnknownThis = new UNKNOWN();
 
     Node node();

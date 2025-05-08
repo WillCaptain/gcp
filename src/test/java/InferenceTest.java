@@ -40,7 +40,7 @@ public class InferenceTest {
         let age: Integer, name: String = "Will", height: Double = 1.68, grade: Integer = level;
         export height as stature, name;
          */
-        ASF asf = ASTHelper.asf();
+        ASF asf = ASTHelper.educationAndHuman();
         asf.infer();
         assertTrue(asf.inferred());
         AST ast = cast(asf.get("education"));
@@ -66,19 +66,20 @@ public class InferenceTest {
         //height:Decimal = 1.68
         Assignment height = var.assignments().get(2);
         assertInstanceOf(DOUBLE.class, height.lhs().outline());
-        assertEquals(ast.errors().getFirst().node(),age.lhs());
+        assertEquals(ast.errors().getFirst().node(), age.lhs());
     }
 
     @Test
     void test_declared_assignment_type_mismatch_inference() {
         /*
+        module me
         var age: Integer = "some";
          */
         ASF asf = new ASF();
         AST ast = asf.newAST();
 
         List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token<>("module", 10));
+        namespace.add(new Token<>("me", 10));
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
@@ -88,14 +89,15 @@ public class InferenceTest {
         assertTrue(asf.inferred());
         assertInstanceOf(INTEGER.class, var.assignments().getFirst().lhs().outline());
         assertEquals(1, ast.errors().size());
-        assertEquals(var.assignments().getFirst().rhs(), ast.errors().getFirst().node());
-        assertEquals(GCPErrCode.OUTLINE_MISMATCH,ast.errors().getFirst().errorCode());
+        assertEquals(var.assignments().getFirst(), ast.errors().getFirst().node());
+        assertEquals(GCPErrCode.OUTLINE_MISMATCH, ast.errors().getFirst().errorCode());
     }
 
     @Test
     void test_assign_mismatch_inference() {
         /*
-        var age: String = "some";
+        module me
+        var age = "some";
         age = 100;
          */
         ASF asf = new ASF();
@@ -105,7 +107,7 @@ public class InferenceTest {
         LiteralNode<Integer> num = LiteralNode.parse(ast, new Token<>(100));
 
         List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token<>("module", 10));
+        namespace.add(new Token<>("me", 10));
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
@@ -116,68 +118,75 @@ public class InferenceTest {
         asf.infer();
         assertTrue(asf.inferred());
         assertEquals(1, ast.errors().size());
-        assertEquals(GCPErrCode.OUTLINE_MISMATCH, ast.errors().get(0).errorCode());
-        assertEquals(assignment, ast.errors().get(0).node().parent());
+        assertEquals(GCPErrCode.OUTLINE_MISMATCH, ast.errors().getFirst().errorCode());
+        assertEquals(assignment, ast.errors().getFirst().node());
     }
 
     @Test
     void test_declared_poly_mismatch_assignment_inference() {
+        /*
+        module me
+        var age = "some"&100;
+        age = 100.0;
+         */
         ASF asf = new ASF();
         AST ast = asf.newAST();
 
-        LiteralNode str = LiteralNode.parse(ast, new Token("some"));
-        LiteralNode num = LiteralNode.parse(ast, new Token(100));
+        LiteralNode<String> str = LiteralNode.parse(ast, new Token<>("some"));
+        LiteralNode<Float> f = LiteralNode.parse(ast, new Token<>(100f));
+        LiteralNode<Integer> i = LiteralNode.parse(ast, new Token<>(100));
 
         List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token<>("module", 10));
+        namespace.add(new Token<>("me", 10));
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Token<>("age"), Poly.from(var, true, Outline.String), str);
+        var.declare(new Token<>("age"), new PolyNode(ast, str, i));
         ast.program().body().addStatement(var);
-        Assignment assignment = new Assignment(new Identifier(ast, new Token<>("age")), num);
+        Assignment assignment = new Assignment(new Identifier(ast, new Token<>("age")), f);
         ast.addStatement(assignment);
         asf.infer();
         assertEquals(1, ast.errors().size());
         assertEquals(GCPErrCode.OUTLINE_MISMATCH, ast.errors().getFirst().errorCode());
     }
 
-
-//    @Test
-//    void test_import_inference() {
-//        ASF asf = ASTHelper.asf();
-//        asf.infer();
-//        AST human = asf.get("human");
-//        VariableDeclarator declare = cast(human.program().body().statements().get(0));
-//        Assignment school = declare.assignments().get(3);
-//        assertEquals("grade: Integer = level", school.toString());
-//    }
-
     @Test
     void test_poly_cant_be_assigned_more_outline_inference() {
+        /*
+        var add = (x,y)->y->x+y & (x,y,z)->x+y+z;
+        var forError = "any";
+        add = forError;
+         */
         AST ast = ASTHelper.mockErrorPoly();
         ast.asf().infer();
-        ;
-        Outline add = ((Assignment) ast.program().body().nodes().get(0).nodes().getFirst()).lhs().outline();
-        assertTrue(add instanceof Poly);
+        Assignment assignment = cast(ast.program().body().nodes().get(0).nodes().getFirst());
+        Outline add = assignment.lhs().outline();
+        assertInstanceOf(Poly.class, add);
         Poly poly = cast(add);
         assertEquals(2, poly.options().size());
         assertEquals(1, ast.errors().size());
-//        assertEquals(GCPErrCode.NOT_ASSIGNABLE,ast.errors().get(0).errorCode());//let can't be assigned
         assertEquals(GCPErrCode.OUTLINE_MISMATCH, ast.errors().getFirst().errorCode());//id doesn't math any poly options
+        assertEquals(ast.program().body().nodes().get(2),ast.errors().getFirst().node());
     }
 
     @Test
     void test_explicit_poly_inference() {
+        /*
+        module default
+        var poly: Integer&String = 100&"some";
+        poly = 10.0;//poly doesn't have float
+        let poly = 10.0;//duplicated definition
+         */
         AST ast = ASTHelper.mockDefinedPoly();
         ast.asf().infer();
         Identifier lhs = cast(((VariableDeclarator) ast.program().body().nodes().get(0)).assignments().get(0).lhs());
         Poly poly = cast(lhs.outline());
         assertEquals(Outline.Integer.toString(), poly.options().get(0).toString());
-        assertTrue(poly.options().get(1) instanceof STRING);
+        assertInstanceOf(STRING.class, poly.options().get(1));
 
         ast = ASTHelper.mockErrorAssignOnDefinedPoly();
         ast.asf().infer();
+        assertFalse(ast.asf().inferred());
         Poly p1 = cast(((Assignment) ast.program().body().nodes().get(1)).lhs().outline());
         VariableDeclarator declarator = cast(ast.program().body().nodes().get(2));
         Outline p2 = declarator.assignments().get(0).lhs().outline();
@@ -190,14 +199,17 @@ public class InferenceTest {
         assertInstanceOf(STRING.class, p1.options().get(1));
 
         assertInstanceOf(UNKNOWN.class, p2);
-
-//        assertEquals(Outline.Integer.toString(),p2.options().get(0).toString());
-//        assertEquals(Outline.String.toString(),p2.options().get(1).toString());
-//        assertEquals(Outline.Float,p2.options().get(2));
     }
 
     @Test
     void test_literal_inference() {
+        /*
+        module default
+        var union = 100|"some";//union can only be 100 or "some"
+        union = 100;
+        union = "some";
+        union = 200;//literal union doesn't match
+         */
         AST ast = ASTHelper.mockDefinedLiteralUnion();
         ast.asf().infer();
         Identifier lhs = cast(((VariableDeclarator) ast.program().body().nodes().get(0)).assignments().get(0).lhs());
@@ -207,32 +219,38 @@ public class InferenceTest {
 
         ast = ASTHelper.mockAssignOnDefinedLiteralUnion();
         ast.asf().infer();
+        assertTrue(ast.asf().inferred());
         assertEquals(1, ast.errors().size());
-        LiteralNode l200 = cast(ast.errors().get(0).node());
-        assertEquals(200, l200.value());
+        assertEquals(ast.program().body().statements().get(3), ast.errors().getFirst().node());
     }
 
     @Test
-    void test_function_inference() {
+    void test_function_definition_inference() {
+        /*
+        module default
+        let add = (x,y)->x+y;
+         */
         AST ast = ASTHelper.mockAddFunc();
         ast.infer();
-        VariableDeclarator declare = cast(ast.program().body().statements().get(0));
-        Assignment assign = declare.assignments().get(0);
-        assign.lhs().toString();
-        assertTrue(assign.lhs().outline() instanceof FirstOrderFunction);
+        assertTrue(ast.asf().inferred());
+        VariableDeclarator declare = cast(ast.program().body().statements().getFirst());
+        Assignment assign = declare.assignments().getFirst();
+        assertInstanceOf(FirstOrderFunction.class, assign.lhs().outline());
     }
 
     @Test
-    void test_override_function_inference() {
+    void test_override_function_definition_inference() {
+        /*
+        module default
+        var add = (x,y)->x+y & (x,y,z)->x+y+z;
+         */
         AST ast = ASTHelper.mockOverrideAddFunc();
         ast.asf().infer();
-        Identifier getName = cast(ast.program().body().nodes().get(0).nodes().get(0).nodes().get(0));
-//        Identifier getName2 = cast(ast.program().body().nodes().get(1).nodes().get(0).nodes().get(0));
-
-//        assertTrue(getName1.outline() instanceof Function);
-        assertTrue(getName.outline() instanceof Poly);
-        assertEquals(2, ((Poly) getName.outline()).options().size());
-        assertTrue(((Poly) getName.outline()).options().getFirst() instanceof Function<?, ?>);
+        assertTrue(ast.asf().inferred());
+        Identifier add = cast(ast.program().body().nodes().getFirst().nodes().getFirst().nodes().getFirst());
+        assertInstanceOf(Poly.class, add.outline());
+        assertEquals(2, ((Poly) add.outline()).options().size());
+        assertTrue(((Poly) add.outline()).options().getFirst() instanceof Function<?, ?>);
     }
 
 
@@ -248,71 +266,98 @@ public class InferenceTest {
 
     @Test
     void test_binary_expression() {
+        /*
+        module test
+        let a = 100.0, b = 100, c = "some";
+        a+b;
+        a+c;
+        a-b;
+        a-c;
+        a==b;
+         */
         AST ast = mockGCPTestAst();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        declare.declare(new Token("a"), LiteralNode.parse(ast, new Token(100d)));
-        declare.declare(new Token("b"), LiteralNode.parse(ast, new Token(100)));
-        declare.declare(new Token("c"), LiteralNode.parse(ast, new Token("some")));
+        declare.declare(new Token<>("a"), LiteralNode.parse(ast, new Token<>(100d)));
+        declare.declare(new Token<>("b"), LiteralNode.parse(ast, new Token<>(100)));
+        declare.declare(new Token<>("c"), LiteralNode.parse(ast, new Token<>("some")));
         ast.addStatement(declare);
         //a+b should be double
-        BinaryExpression add1 = new BinaryExpression(new Identifier(ast, new Token("a")), new Identifier(ast, new Token("b"))
-                , new OperatorNode(ast, BinaryOperator.ADD));
+        BinaryExpression add1 = new BinaryExpression(new Identifier(ast, new Token<>("a")), new Identifier(ast, new Token<>("b"))
+                , new OperatorNode<>(ast, BinaryOperator.ADD));
         ast.addStatement(new ExpressionStatement(add1));
 
         //a+c should be string
-        BinaryExpression add2 = new BinaryExpression(new Identifier(ast, new Token("a")), new Identifier(ast, new Token("c"))
-                , new OperatorNode(ast, BinaryOperator.ADD));
+        BinaryExpression add2 = new BinaryExpression(new Identifier(ast, new Token<>("a")), new Identifier(ast, new Token<>("c"))
+                , new OperatorNode<>(ast, BinaryOperator.ADD));
         ast.addStatement(new ExpressionStatement(add2));
 
         //a-b should be double
-        BinaryExpression sub1 = new BinaryExpression(new Identifier(ast, new Token("a")), new Identifier(ast, new Token("b"))
-                , new OperatorNode(ast, BinaryOperator.SUBTRACT));
+        BinaryExpression sub1 = new BinaryExpression(new Identifier(ast, new Token<>("a")), new Identifier(ast, new Token<>("b"))
+                , new OperatorNode<>(ast, BinaryOperator.SUBTRACT));
         ast.addStatement(new ExpressionStatement(sub1));
         //a-c should be error
-        BinaryExpression sub2 = new BinaryExpression(new Identifier(ast, new Token("a")), new Identifier(ast, new Token("c"))
-                , new OperatorNode(ast, BinaryOperator.SUBTRACT));
+        BinaryExpression sub2 = new BinaryExpression(new Identifier(ast, new Token<>("a")), new Identifier(ast, new Token<>("c"))
+                , new OperatorNode<>(ast, BinaryOperator.SUBTRACT));
         ast.addStatement(new ExpressionStatement(sub2));
 
         //a==b should be bool
-        BinaryExpression compare = new BinaryExpression(new Identifier(ast, new Token("a")), new Identifier(ast, new Token("b"))
-                , new OperatorNode(ast, BinaryOperator.EQUALS));
+        BinaryExpression compare = new BinaryExpression(new Identifier(ast, new Token<>("a")), new Identifier(ast, new Token<>("b"))
+                , new OperatorNode<>(ast, BinaryOperator.EQUALS));
         ast.addStatement(new ExpressionStatement(compare));
 
         ast.asf().infer();
-        assertTrue(add1.outline() instanceof DOUBLE);
-        assertTrue(add2.outline() instanceof STRING);
-        assertTrue(sub1.outline() instanceof DOUBLE);
+        assertTrue(ast.asf().inferred());
+        assertInstanceOf(DOUBLE.class, add1.outline());
+        assertInstanceOf(STRING.class, add2.outline());
+        assertInstanceOf(DOUBLE.class, sub1.outline());
         assertEquals(Outline.Boolean, compare.outline());
         assertEquals(1, ast.errors().size());
+        assertEquals(sub2,ast.errors().getFirst().node());
     }
 
     @Test
     void test_simple_person_entity() {
-        //let person: Entity = {
-        //  name = "Will",
-        //  get_name = ()->{
-        //    this.name
-        //  }
-        //  get_my_name = ()->{
-        //    name
-        //  }
-        //};
+        /*
+        let person: Entity = {
+          name = "Will",
+          get_name = ()->this.name;
+          get_my_name = ()->name;
+        };
+        let name_1 = person.name;
+        let name_2 = person.get_name();
+         */
         AST ast = ASTHelper.mockSimplePersonEntity();
         ast.asf().infer();
-        VariableDeclarator var = cast(ast.program().body().statements().get(0));
-        Entity person = cast(var.assignments().get(0).lhs().outline());
+        assertTrue(ast.asf().inferred());
+        VariableDeclarator var = cast(ast.program().body().statements().getFirst());
+        Entity person = cast(var.assignments().getFirst().lhs().outline());
         assertEquals(3, person.members().size());
         EntityMember name = person.members().get(0);
         EntityMember getName = person.members().get(1);
         EntityMember getName2 = person.members().get(2);
-        assertTrue(name.outline() instanceof STRING);
-        assertTrue(getName.outline() instanceof Function);
-        assertTrue(((Function) getName.outline()).returns().supposedToBe() instanceof STRING);
-        assertTrue(((Function) getName2.outline()).returns().supposedToBe() instanceof STRING);
+        assertInstanceOf(STRING.class, name.outline());
+        assertInstanceOf(Function.class, getName.outline());
+        assertInstanceOf(STRING.class, ((Function<?,?>) getName.outline()).returns().supposedToBe());
+        assertInstanceOf(STRING.class, ((Function<?,?>) getName2.outline()).returns().supposedToBe());
+
+        VariableDeclarator name1 = cast(ast.program().body().statements().get(1));
+        VariableDeclarator name2 = cast(ast.program().body().statements().get(2));
+        assertInstanceOf(STRING.class, name1.assignments().getFirst().lhs().outline());
+        assertInstanceOf(STRING.class, name2.assignments().getFirst().lhs().outline());
     }
 
     @Test
     void test_simple_person_entity_with_override_member() {
+        /*
+        module test
+        let person = {
+            get_name = ()->this.name,
+            name = "Will",
+            mute get_name = ()->this.name&last_name->this.name+last_name
+        };
+        let name_1 = person.name;
+        let name_2 = person.get_name();
+         */
         AST ast = ASTHelper.mockSimplePersonEntityWithOverrideMember();
         ast.asf().infer();
         VariableDeclarator var = cast(ast.program().body().statements().getFirst());

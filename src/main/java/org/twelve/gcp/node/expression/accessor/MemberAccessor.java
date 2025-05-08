@@ -34,7 +34,8 @@ public class MemberAccessor extends Accessor {
         if (this.outline == Outline.Error) return;
         ProductADT owner = cast(this.entity.outline());
         if (!owner.checkMember(member.token(), inferred)) {
-            ErrorReporter.report(this, GCPErrCode.OUTLINE_MISMATCH,member.token()+" not found");
+            ErrorReporter.report(this, GCPErrCode.FIELD_NOT_FOUND,
+                    member.token() + " not found in " + this.entity);
         }
     }
 
@@ -58,7 +59,7 @@ public class MemberAccessor extends Accessor {
 
     @Override
     public void markUnknowns() {
-        if (this.outline  instanceof UNKNOWN) {
+        if (this.outline instanceof UNKNOWN) {
             ErrorReporter.report(this, GCPErrCode.INFER_ERROR);
         }
     }

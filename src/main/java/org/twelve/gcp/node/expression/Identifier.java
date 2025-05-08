@@ -99,7 +99,7 @@ public class Identifier extends Assignable {
         EnvSymbol symbol = env.current().lookup(this.token());
         if (symbol == null) return;
         if(!inferred.canBe(symbol.declared())){
-            ErrorReporter.report(inferred.node(), GCPErrCode.OUTLINE_MISMATCH);
+            ErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
             return;
         }
         //infer is not finished yet
@@ -125,7 +125,7 @@ public class Identifier extends Assignable {
                     return;
                 }
             } else {//没有找到匹配，说明赋值类型不一致
-                ErrorReporter.report(this, GCPErrCode.OUTLINE_MISMATCH);
+                ErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
                 return;
             }
         } else {

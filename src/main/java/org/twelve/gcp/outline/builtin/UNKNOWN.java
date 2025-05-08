@@ -7,10 +7,10 @@ import org.twelve.gcp.outline.Outline;
  * outline before type inference
  */
 public class UNKNOWN implements BuildInOutline {
-    private static UNKNOWN _instance = new UNKNOWN();
-    public static UNKNOWN instance(){
-        return _instance;
-    }
+//    private static UNKNOWN _instance = new UNKNOWN();
+//    public static UNKNOWN instance(){
+//        return _instance;
+//    }
 
     public UNKNOWN(){
         super();

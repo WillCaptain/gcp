@@ -15,7 +15,7 @@ public class Program extends Node {
 
     public Program(AST ast) {
         super(ast);
-        this.namespace = this.addNode(new NamespaceNode(ast,new ArrayList<>()));
+        this.namespace = this.addNode(new NamespaceNode(ast, new ArrayList<>()));
         this.body = this.addNode(new ProgramBody(ast));
     }
 
@@ -24,19 +24,19 @@ public class Program extends Node {
 //        return namespace;
 //    }
 
-    public NamespaceNode setNamespace(List<Token<String>> names){
-        this.moduleName = names.remove(names.size()-1);
-        this.namespace = this.replaceNode(this.namespace,new NamespaceNode(this.ast(),names));
+    public NamespaceNode setNamespace(List<Token<String>> names) {
+        this.moduleName = names.remove(names.size() - 1);
+        this.namespace = this.replaceNode(this.namespace, new NamespaceNode(this.ast(), names));
         return this.namespace;
     }
 
     @Serialization
-    public NamespaceNode namespace(){
+    public NamespaceNode namespace() {
         return this.namespace;
     }
 
     @Serialization
-    public ProgramBody body(){
+    public ProgramBody body() {
         return body;
     }
 
@@ -44,9 +44,12 @@ public class Program extends Node {
     public String lexeme() {
         StringBuilder sb = new StringBuilder();
         String namespace = this.namespace.lexeme();
-        if(namespace!=null && !namespace.trim().equals("")) {
-            sb.append("module " + this.namespace.lexeme()+"."+this.moduleName.lexeme()+"\n\n");
+        sb.append("module ");
+        if (namespace != null && !namespace.trim().equals("")) {
+            sb.append(this.namespace.lexeme()).append(".");
         }
+
+        sb.append(this.moduleName == null ? "default" : this.moduleName.lexeme()).append("\n\n");
         sb.append(this.body().lexeme());
         return sb.toString();
     }
@@ -56,10 +59,10 @@ public class Program extends Node {
         return this.body().scope();
     }
 
-    public String moduleName(){
-        if(this.moduleName==null){
+    public String moduleName() {
+        if (this.moduleName == null) {
             return "";
-        }else {
+        } else {
             return this.moduleName.lexeme();
         }
     }

@@ -16,8 +16,11 @@ public class Option extends SumADT {
     public static Option StringOrNumber = new Option(null, Outline.String, Outline.Number);
 
 
-    public static Option from(Node node, Outline... outlines) {
-        return new Option(node, outlines);
+    public static Outline from(Node node, Outline... outlines) {
+        Outline[] os =
+                Arrays.stream(outlines).filter(o -> !(o == Outline.Pending)).toArray(Outline[]::new);
+        if(os.length==1) return os[0];
+        return new Option(node, os);
     }
 
 
@@ -58,8 +61,7 @@ public class Option extends SumADT {
 
     @Override
     public Option copy() {
-        Option copies = new
-                Option(this.node());
+        Option copies = new Option(this.node());
         copies.options.addAll(this.options);
         return copies;
     }

@@ -3,7 +3,6 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.*;
-import org.twelve.gcp.inference.Inference;
 import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.LiteralUnionNode;
 import org.twelve.gcp.node.expression.*;
@@ -24,7 +23,6 @@ import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
-import org.twelve.gcp.outline.projectable.Function;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -95,7 +93,7 @@ public class ASTHelper {
         ast.addExport(new Export(ast, vars));
     }
 
-    public static ASF asf() {
+    public static ASF educationAndHuman() {
         ASF asf = new ASF();
         AST education = asf.newAST();
         fillEducationAst(education);
@@ -234,8 +232,6 @@ public class ASTHelper {
         Expression getName = person.members().get("get_name").expression();
         MemberNode node = new MemberNode(ast, new Token<>("get_name"),
                 new PolyNode(ast,getName,FunctionNode.from(body, new Argument(ast, new Token<>("last_name")))), true);
-//        person.members().get("get_name").add(getName);//重载get_name方法
-//        person.addNode(getName.getKey());
         person.nodes().remove(1);
         person.addNode(node);
         return ast;
@@ -498,52 +494,44 @@ public class ASTHelper {
 
     public static AST mockRecursive() {
         /*
-        let chain = (f, x) -> x>0?chain(f, f(x)):“done”;
-        chain(x->x-1,100);
-        chain(x->x-1,"100");
+        let factorial = n -> n==0?1:n*factorial(n-1);
+        factorial(100);
+        factorial(100);
          */
-        Token<String> tChain = new Token<>("chain");
         ASF asf = new ASF();
         AST ast = asf.newAST();
-        Argument x = new Argument(ast, new Token<>("x"));
-        Argument f = new Argument(ast, new Token<>("f"));
-        FunctionBody body = new FunctionBody(ast);
 
+        Token<String> fToken = new Token<>("factorial");
         Consequence c1 = new Consequence(ast);
-        FunctionCallNode call = new FunctionCallNode(ast, tChain,
-                new Identifier(ast,new Token<>("f")),
-                new FunctionCallNode(ast,new Token<>("f"),new Identifier(ast,new Token<>("x"))));
-        c1.addStatement(new ReturnStatement(call));
-
-        Arm arm1 = new Arm(ast, new BinaryExpression(new Identifier(ast, new Token<>("x")),
-                LiteralNode.parse(ast, new Token<>(0)),
-                new OperatorNode<>(ast, BinaryOperator.GREATER_THAN)), c1);
-
+        c1.addStatement(new ReturnStatement(LiteralNode.parse(ast, new Token<>(1))));
         Consequence c2 = new Consequence(ast);
-        c2.addStatement(new ReturnStatement(LiteralNode.parse(ast, new Token<>("done"))));
+        FunctionCallNode call = new FunctionCallNode(ast,fToken ,
+                new BinaryExpression(new Identifier(ast,new Token<>("n")),
+                LiteralNode.parse(ast,new Token<>(1)),
+                        new OperatorNode<>(ast,BinaryOperator.SUBTRACT)));
+        c2.addStatement(new ReturnStatement(call));
+
+        FunctionBody body = new FunctionBody(ast);
+        Arm arm1 = new Arm(ast, new BinaryExpression(new Identifier(ast, new Token<>("n")),
+                LiteralNode.parse(ast, new Token<>(0)),
+                new OperatorNode<>(ast, BinaryOperator.EQUALS)), c1);
+
         Arm arm2 = new Arm(ast, c2);
 
         Selections ifs = new Selections(ast, null, SELECTION_TYPE.TERNARY, arm1, arm2);
         body.addStatement(new ReturnStatement(ifs));
 
-        FunctionNode chain = FunctionNode.from(body, f,x);
+        FunctionNode factorial = FunctionNode.from(body, new Argument(ast, new Token<>("n")));
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.LET);
-        declarator.declare(tChain, chain);
+        declarator.declare(fToken, factorial);
         ast.addStatement(declarator);
 
-        body = new FunctionBody(ast);
-        body.addStatement(new ReturnStatement(new BinaryExpression(new Identifier(ast,new Token<>("x")),
-                LiteralNode.parse(ast,new Token<>(1)),
-                new OperatorNode<>(ast,BinaryOperator.SUBTRACT))));
-        call = new FunctionCallNode(ast,tChain,FunctionNode.from(body,x),LiteralNode.parse(ast,new Token<>(100)));
+        call = new FunctionCallNode(ast,fToken,LiteralNode.parse(ast,new Token<>(100)));
         ast.addStatement(new ExpressionStatement(call));
 
-        body = new FunctionBody(ast);
-        body.addStatement(new ReturnStatement(new BinaryExpression(new Identifier(ast,new Token<>("x")),
-                LiteralNode.parse(ast,new Token<>(1)),
-                new OperatorNode<>(ast,BinaryOperator.SUBTRACT))));
-        call = new FunctionCallNode(ast,tChain,FunctionNode.from(body,x),LiteralNode.parse(ast,new Token<>("100")));
+        call = new FunctionCallNode(ast,fToken,LiteralNode.parse(ast,new Token<>("100")));
         ast.addStatement(new ExpressionStatement(call));
+
         return ast;
     }
 

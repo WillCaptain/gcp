@@ -553,12 +553,19 @@ public class GCPInference {
     @Test
     void test_gcp_recursive_projection(){
         /*
-        let chain = (f, x) -> x>0?chain(f, f(x)):“done”;
-        chain(x->x-1,100);
-        chain(x->x-1,"100");
+        let factorial = n -> n==0?1:n*factorial(n-1);
+        factorial(100);
+        factorial(100);
          */
         AST ast = ASTHelper.mockRecursive();
-//        ast.asf().infer();
+        ast.asf().infer();
+        VariableDeclarator declarator = cast(ast.program().body().statements().getFirst());
+        Function<?,?> f = cast(declarator.assignments().getFirst().lhs().outline());
+        Generic argument = cast(f.argument());
+        Return returns = f.returns();
+        assertTrue(argument.definedToBe() instanceof INTEGER);
+        assertTrue(returns.supposedToBe() instanceof INTEGER);
+        assertEquals(1,ast.errors().size());
 //todo
     }
 

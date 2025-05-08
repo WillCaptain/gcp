@@ -33,7 +33,7 @@ public class NumOperaInference implements OperatorInference {
             ((OperateAble<?>) right).addDefinedToBe(Outline.Number);
             return new NumericAble(left, right, node);
         }
-        ErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);
+        ErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH,node+" is invalid");
         return Outline.Number;
     }
 }

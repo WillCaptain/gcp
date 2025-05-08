@@ -36,16 +36,6 @@ public class Poly extends SumADT {
      */
     Poly(Node node, Boolean mutable, Outline... outlines) {
         super(node, outlines);
-        //设置option的mutable属性
-//        for (Outline outline : outlines) {
-//            if (outline instanceof Poly) {
-//                for (Outline option : ((Poly) outline).options) {
-//                    this.attachMeta(option.node().id(), mutable);
-//                }
-//            } else {
-//                this.attachMeta(outline.node().id(), mutable);
-//            }
-//        }
         this.mutable = mutable;
     }
 
@@ -198,6 +188,10 @@ public class Poly extends SumADT {
 
     @Override
     public String toString() {
-        return options.stream().map(Object::toString).collect(Collectors.joining("&"));
+        if(options.size()==1){
+            return "Poly("+options.getFirst()+")";
+        }else {
+            return options.stream().map(Object::toString).collect(Collectors.joining("&"));
+        }
     }
 }

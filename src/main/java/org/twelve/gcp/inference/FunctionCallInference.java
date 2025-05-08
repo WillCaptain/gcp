@@ -23,7 +23,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             ErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_DEFINED);
             return Outline.Error;
         }
-        if (func == Outline.Unknown) {//recursive
+        if (func == Outline.Pending) {//recursive
             return func;
         }
 

@@ -69,7 +69,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
 //        if (!(downConstraint == null || outline.is(downConstraint))) {
         if (!outline.is(downConstraint)) {
-            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, CONSTANTS.MISMATCH_STR + downConstraint);
+            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + downConstraint);
             return;
         }
 
@@ -103,13 +103,13 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
         //find down stream maximum constraint
         if (!outline.is(downConstraint)) {
-            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, CONSTANTS.MISMATCH_STR + downConstraint);
+            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + downConstraint);
             return;
         }
 
         //find up stream minimum constraint
         if (!upConstraint.is(outline)) {
-            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, CONSTANTS.MISMATCH_STR + upConstraint);
+            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + upConstraint);
             return;
         }
 
@@ -124,7 +124,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         }
 
         if (!this.hasToBe.is((outline))) {
-            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, CONSTANTS.MISMATCH_STR + this.hasToBe);
+            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + this.hasToBe);
         }
     }
 
@@ -135,7 +135,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
         //is chain不满足，退出
         if (!upConstraint.is(outline)) {
-            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, CONSTANTS.MISMATCH_STR + upConstraint);
+            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + upConstraint);
             return;
         }
 
@@ -145,15 +145,17 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             return;
         }
 
-        //得基类
+        //得子类
         if (this.definedToBe.is(outline) || outline.is(this.definedToBe)) {
-            if (this.definedToBe.is(outline)) this.definedToBe = outline;
+//            if (this.definedToBe.is(outline)) this.definedToBe = outline;
+            if (outline.is(this.definedToBe)) this.definedToBe = outline;
             return;
         }
 
         //非第一次赋值，先满足基础类型的相互is关系，否则退出
         if (!(outline.maybe(this) || this.maybe(outline))) {
-            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, CONSTANTS.MISMATCH_STR + this);
+            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL,
+                    outline.node() + CONSTANTS.MISMATCH_STR + this);
             return;
         }
         //finally, should be entity combine
@@ -275,7 +277,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (projection.is(this)) {
             return this.projectOutline(projection, session);
         } else {
-            ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, "mismatch " + this);
+            ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.node());
             return this.guess();
         }
     }
@@ -293,7 +295,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             if (returnProjected instanceof FirstOrderFunction) {
                 returnProjected = projectLambda(cast(lambdaReturn.min()), cast(returnProjected), session);
             } else {
-                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, CONSTANTS.MISMATCH_STR + lambdaReturn.min());
+                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + lambdaReturn.min());
                 returnProjected = ((HigherOrderFunction) lambdaReturn.min()).guess();
             }
         }
@@ -301,7 +303,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             lambdaReturn.project(lambdaReturn, returnProjected, session);
             return new FixFunction(projection.node(), argProjected, returnProjected);
         } else {
-            ErrorReporter.report(this.node, GCPErrCode.PROJECT_FAIL, CONSTANTS.MISMATCH_STR + "between " +
+            ErrorReporter.report(this.node, GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + "between " +
                     lambdaReturn.max() + " and " + lambdaReturn.min());
             return this.guess();
         }
@@ -324,7 +326,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (outline.is(this)) {
             return outline;
         } else {
-            ErrorReporter.report(projection.node(), GCPErrCode.OUTLINE_MISMATCH, CONSTANTS.MISMATCH_STR + this);
+            ErrorReporter.report(projection.node(), GCPErrCode.OUTLINE_MISMATCH, projection.node() + CONSTANTS.MISMATCH_STR + this);
             return this.guess();
         }
     }
@@ -339,7 +341,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (outline.is(this)) {
             return outline;
         } else {
-            ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, CONSTANTS.MISMATCH_STR + this);
+            ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this);
             return this.guess();
         }
     }
@@ -354,7 +356,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (copied.is(this)) {
             return copied;
         } else {
-            ErrorReporter.report(copied.node, GCPErrCode.PROJECT_FAIL, CONSTANTS.MISMATCH_STR + this);
+            ErrorReporter.report(copied.node, GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this);
             return this.guess();
         }
 
@@ -395,10 +397,10 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (this.node() == null && !(this.declaredToBe() instanceof ANY)) {//this is outline definition
             if (this.id() == projected.id()) {
                 if (projection instanceof Genericable) {
-                    ((Genericable) projection).addMin(this.declaredToBe());
+                    ((Genericable<?,?>) projection).addMin(this.declaredToBe());
                 }
                 if (!projection.is(this.declaredToBe())) {
-                    ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, CONSTANTS.MISMATCH_STR + this.declaredToBe());
+                    ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.declaredToBe());
                 }
                 return this.declaredToBe();
             }
@@ -421,13 +423,13 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 //            }
             return this.projectMySelf(projection, session);
         } else {//投影靠前的参数
-            Genericable<?,?> result = this.copy();
-            projectConstraints(result,projected, projection, session);
+            Genericable<?, ?> result = this.copy();
+            projectConstraints(result, projected, projection, session);
             return result;
         }
     }
 
-    protected void projectConstraints(Genericable<?,?> me,Projectable projected, Outline projection, ProjectSession session) {
+    protected void projectConstraints(Genericable<?, ?> me, Projectable projected, Outline projection, ProjectSession session) {
         me.extendToBe = tryProject(me.extendToBe, projected, projection, session);
         me.hasToBe = tryProject(me.hasToBe, projected, projection, session);
         me.definedToBe = tryProject(me.definedToBe, projected, projection, session);
@@ -437,15 +439,6 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
     @Override
     public String toString() {
-//        StringBuilder constraint = new StringBuilder("generic");
-//        if (!(this.max() instanceof NOTHING) || !(this.max() instanceof ANY)) {
-//            constraint.append("( ");
-//            if (!(this.max() instanceof NOTHING)) constraint.append(this.max().toString());
-//            if (!(this.min() instanceof ANY))
-//                constraint.append((this.max() instanceof NOTHING ? "" : ",") + this.min().toString());
-//            constraint.append(")");
-//        }
-//        return constraint.toString();
         return "`" + this.guess().toString() + "`";
     }
 }

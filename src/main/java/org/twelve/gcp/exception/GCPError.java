@@ -23,6 +23,6 @@ public class GCPError {
 
     @Override
     public String toString() {
-        return this.node.outline()+" "+this.errorCode().toString() + (message.isEmpty() ?"":(": " + message));
+        return this.errorCode().toString().toLowerCase()+ (message.isEmpty() ?"":(": " + message));
     }
 }

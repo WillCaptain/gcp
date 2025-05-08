@@ -157,12 +157,15 @@ public class AstStructureTest {
     @Test
     void test_function_definition(){
         AST ast = ASTHelper.mockAddFunc();
-        String expected = "let add = x->{" +
-                "  y->{" +
-                "    x+y" +
-                "  }" +
-                "};";
-        assertEquals(expected,ast.lexeme().replace("\n",""));
+        String expected = """
+                module default
+                
+                let add = x->{
+                  y->{
+                    x+y
+                  }
+                };""";
+        assertEquals(expected,ast.lexeme());
     }
 
     @Test
@@ -180,6 +183,8 @@ public class AstStructureTest {
     void test_entity(){
         AST ast = ASTHelper.mockSimplePersonEntity();
         String expected = """
+                module test
+                
                 let person = {
                   get_name = ()->{
                     this.name
@@ -197,14 +202,14 @@ public class AstStructureTest {
     @Test
     void test_poly(){
         AST ast = ASTHelper.mockDefinedPoly();
-        String expected = "var poly = 100&\"some\";";
+        String expected = "module default\n\nvar poly = 100&\"some\";";
         assertEquals(expected,ast.lexeme());
     }
 
     @Test
     void test_union(){
         AST ast = ASTHelper.mockDefinedLiteralUnion();
-        String expected = "var union = 100|\"some\";";
+        String expected = "module default\n\nvar union = 100|\"some\";";
         assertEquals(expected,ast.lexeme());
     }
 
@@ -212,6 +217,8 @@ public class AstStructureTest {
     void test_if(){
         AST ast = ASTHelper.mockIf(SELECTION_TYPE.IF);
         String expected = """
+                module default
+                
                 if(name=="Will"){
                   name: String
                 } else {
@@ -219,6 +226,6 @@ public class AstStructureTest {
                 };""";
         assertEquals(expected,ast.lexeme());
         ast = ASTHelper.mockIf(SELECTION_TYPE.TERNARY);
-        assertEquals("name==\"Will\"? name: String: \"Someone\";",ast.lexeme());
+        assertEquals("module default\n\nname==\"Will\"? name: String: \"Someone\";",ast.lexeme());
     }
 }

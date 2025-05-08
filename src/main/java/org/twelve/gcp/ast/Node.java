@@ -145,7 +145,7 @@ public abstract class Node implements Serializable {
                 this.ast().symbolEnv().exit();
             }
         } catch (GCPRuntimeException e) {
-            ErrorReporter.report(this, e.errCode(),"exception occurs in outline inference");
+            ErrorReporter.report(this, e.errCode(),"unexpected exception occurs in outline inference");
         }
         return outline;
     }
@@ -246,7 +246,7 @@ public abstract class Node implements Serializable {
     }
 
     public Node invalidate() {
-        this.outline =Unknown;
+        this.outline =Unknown;//ensure it is going to infer again
         return this;
     }
 }
