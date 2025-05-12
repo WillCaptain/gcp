@@ -1,12 +1,10 @@
 package org.twelve.gcp.outline;
 
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.primitive.*;
 
 import java.io.Serializable;
-import java.nio.channels.AcceptPendingException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -108,7 +106,7 @@ public interface Outline extends Serializable {
         }
     }
 
-    default boolean reAssignable() {
+    default boolean beAssignedAble() {
         return true;
     }
 

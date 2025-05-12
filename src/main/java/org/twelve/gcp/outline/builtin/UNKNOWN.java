@@ -34,4 +34,9 @@ public class UNKNOWN implements BuildInOutline {
     public String toString() {
         return "?";
     }
+
+    @Override
+    public boolean beAssignedAble() {
+        return false;
+    }
 }

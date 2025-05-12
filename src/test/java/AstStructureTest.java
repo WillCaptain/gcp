@@ -54,7 +54,7 @@ public class AstStructureTest {
         assertNull(org.parentNamespace());
         assertEquals("org", org.namespace());
         //namespace is not assignable, means or can not express alone without tail
-        assertFalse(org.reAssignable());
+        assertFalse(org.beAssignedAble());
 
         Namespace twelve = cast(ast.program().namespace().nodes().get(1).outline());
         assertEquals(twelve, org.subNamespaces().getFirst());

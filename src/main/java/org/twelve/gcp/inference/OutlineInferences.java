@@ -6,8 +6,8 @@ import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.Block;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.expression.conditions.Arm;
-import org.twelve.gcp.node.expression.conditions.Consequence;
 import org.twelve.gcp.node.expression.conditions.Selections;
+import org.twelve.gcp.node.expression.IsAs;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
@@ -136,6 +136,11 @@ public class OutlineInferences implements Inferences {
     @Override
     public Outline visit(ExportSpecifier exportSpecifier) {
         return new ExportSpecifierInference().infer(exportSpecifier,this);
+    }
+
+    @Override
+    public Outline visit(IsAs isAs) {
+        return new IsAsInference().infer(isAs,this);
     }
 
 

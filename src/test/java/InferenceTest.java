@@ -1,6 +1,7 @@
 import org.junit.jupiter.api.Test;
 import org.twelve.gcp.ast.ASF;
 import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -166,7 +167,7 @@ public class InferenceTest {
         assertEquals(2, poly.options().size());
         assertEquals(1, ast.errors().size());
         assertEquals(GCPErrCode.OUTLINE_MISMATCH, ast.errors().getFirst().errorCode());//id doesn't math any poly options
-        assertEquals(ast.program().body().nodes().get(2),ast.errors().getFirst().node());
+        assertEquals(ast.program().body().nodes().get(2), ast.errors().getFirst().node());
     }
 
     @Test
@@ -312,7 +313,7 @@ public class InferenceTest {
         assertInstanceOf(DOUBLE.class, sub1.outline());
         assertEquals(Outline.Boolean, compare.outline());
         assertEquals(1, ast.errors().size());
-        assertEquals(sub2,ast.errors().getFirst().node());
+        assertEquals(sub2, ast.errors().getFirst().node());
     }
 
     @Test
@@ -337,8 +338,8 @@ public class InferenceTest {
         EntityMember getName2 = person.members().get(2);
         assertInstanceOf(STRING.class, name.outline());
         assertInstanceOf(Function.class, getName.outline());
-        assertInstanceOf(STRING.class, ((Function<?,?>) getName.outline()).returns().supposedToBe());
-        assertInstanceOf(STRING.class, ((Function<?,?>) getName2.outline()).returns().supposedToBe());
+        assertInstanceOf(STRING.class, ((Function<?, ?>) getName.outline()).returns().supposedToBe());
+        assertInstanceOf(STRING.class, ((Function<?, ?>) getName2.outline()).returns().supposedToBe());
 
         VariableDeclarator name1 = cast(ast.program().body().statements().get(1));
         VariableDeclarator name2 = cast(ast.program().body().statements().get(2));
@@ -404,6 +405,43 @@ public class InferenceTest {
 
     @Test
     void test_inherited_person_entity_with_override_call() {
+        //todo
+    }
+
+    @Test
+    void test_option_is_as() {
+        /*let result = {
+            var some:String|Integer = “string";
+            if(some is Integer){
+                some
+            }
+            if(some is String as str){
+                str
+            }
+        };
+         */
+        AST ast = ASTHelper.mockOptionIsAs();
+        ast.asf().infer();
+        Assignment assignment = ((VariableDeclarator) ast.program().body().nodes().getFirst()).assignments().getFirst();
+        Outline result = assignment.lhs().outline();
+        assertInstanceOf(Option.class, result);
+        assertInstanceOf(INTEGER.class, ((Option) result).options().getFirst());
+        assertInstanceOf(STRING.class, ((Option) result).options().getLast());
+        Node rootSome = assignment.rhs().nodes().getFirst().nodes().getFirst().nodes().getFirst();
+        assertInstanceOf(Option.class, rootSome.outline());
+        Node some = assignment.rhs().nodes().get(1).nodes().getFirst().nodes().getFirst().nodes().getLast().nodes().getFirst().nodes().getFirst();
+        assertInstanceOf(INTEGER.class, some.outline());
+        Node str = assignment.rhs().nodes().get(1).nodes().getFirst().nodes().get(1).nodes().getLast().nodes().getFirst().nodes().getFirst();
+        assertInstanceOf(STRING.class, str.outline());
+    }
+
+    @Test
+    void test_poly_is_as() {
+
+    }
+
+    @Test
+    void test_generic_is_as() {
 
     }
 
@@ -415,5 +453,6 @@ public class InferenceTest {
         ast.setNamespace(namespace);
         return ast;
     }
+
 
 }

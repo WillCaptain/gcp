@@ -133,7 +133,7 @@ public enum GCPErrCode {
     /**
      * Unary operator position mismatch
      */
-    UNARY_POSITION_MISMATCH, AMBIGUOUS_RETURN, UNAVAILABLE_THIS, FUNCTION_NOT_FOUND;
+    UNARY_POSITION_MISMATCH, AMBIGUOUS_RETURN, UNAVAILABLE_THIS, FUNCTION_NOT_FOUND, TYPE_CAST_NEVER_SUCCED, NOT_BE_ASSIGNEDABLE;
 
     /**
      * Returns the error category for grouping related errors.

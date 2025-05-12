@@ -18,9 +18,13 @@ public class SelectionsInference implements Inference<Selections>{
         for (Arm arm : node.arms()) {
             inferred.add(arm.infer(inferences));
         }
+        if(!node.containsElse() && !inferred.contains(Outline.Ignore)){
+            inferred.add(Outline.Ignore);
+        }
         //calculate return outline
-        if(inferred.stream().allMatch(o->o instanceof UNIT)) return Outline.Ignore;//can't be assigned and will not be return statement
+//        if(inferred.stream().allMatch(o->o instanceof UNIT)) return Outline.Ignore;//can't be assigned and will not be return statement
         if(inferred.removeIf(o->o instanceof UNIT)){
+
             ErrorReporter.report(node, GCPErrCode.AMBIGUOUS_RETURN);
         }
         return Option.from(node,inferred.toArray(new Outline[]{}));

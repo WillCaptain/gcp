@@ -1,6 +1,5 @@
 package org.twelve.gcp.node.expression.conditions;
 
-import lombok.Getter;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.body.Block;

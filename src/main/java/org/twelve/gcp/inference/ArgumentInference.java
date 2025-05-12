@@ -17,7 +17,7 @@ public class ArgumentInference implements Inference<Argument> {
     @Override
     public Outline infer(Argument node, Inferences inferences) {
         Identifier id = node.identifier();
-        EnvSymbol symbol = node.ast().symbolEnv().lookup(id.token());
+        EnvSymbol symbol = node.ast().symbolEnv().lookupAll(id.token());
         if (symbol == null) {
             Expression defaultValue = node.defaultValue();
             Generic generic = Generic.from(node, id.outline());

@@ -4,9 +4,10 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.body.Body;
+import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.adt.Option;
+import org.twelve.gcp.outline.builtin.IGNORE;
 
 
 /**
@@ -22,31 +23,45 @@ public abstract class BodyInference<T extends Body> implements Inference<T> {
     public Outline infer(T node, Inferences inferences) {
         Outline returns = null;
         for (int i = 0; i < node.nodes().size(); i++) {
-            // Unreachable statement if we have more nodes left in the list
-            if (returns != null) {
-                //selection returns has no return branch, means it doesn't have full return, then the next statement is available
-                if (!(returns instanceof Option && ((Option) returns).options().stream().anyMatch(o -> o == ProductADT.Ignore))) {
-                    ErrorReporter.report(node.nodes().get(i), GCPErrCode.UNREACHABLE_STATEMENT);
-                    return Option.Ignore;
-                }
-            }
-
             Node child = node.nodes().get(i);
             Outline outline = child.infer(inferences);
-            //all non ignore outline is return
-            if (outline != ProductADT.Ignore) {
-                if(returns ==null){
-                    returns = outline;
-                }else {
-                    ((Option)returns).options().removeIf(o->o== ProductADT.Ignore);//remove the no return outline
-                    returns = Option.from(node,returns,outline);
-                }
+            //ignore IGNORE
+            if (outline == ProductADT.Ignore) {
+                continue;
+            }
+            //first return
+            if (returns == null) {
+                returns = outline;
+                continue;
+            }
+            //half return can have more return
+            if(halfReturned(returns)){
+                returns = Option.from(node, returns, outline);
+            }else{
+                break;
+            }
+            //meet full return, means no more return will be accepted
+            if(!halfReturned(outline)){
+                removeIgnore(returns);
+                break;
             }
         }
+
         //didn't meet and return statement, then return Ignore
         if (returns == null) {
             returns = ProductADT.Ignore;
         }
         return returns;
+    }
+
+    private void removeIgnore(Outline returns) {
+        if(returns instanceof Option){
+            ((Option) returns).options().removeIf(o->o instanceof IGNORE);
+        }
+    }
+
+    private boolean halfReturned(Outline outline) {
+        return outline instanceof Option && ((Option) outline).options()
+                .stream().anyMatch(o -> o instanceof IGNORE);
     }
 }

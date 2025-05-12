@@ -21,6 +21,10 @@ public abstract class Assignable extends Expression {
     }
 
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
+        if(!inferred.beAssignedAble()){
+            ErrorReporter.report(GCPErrCode.NOT_BE_ASSIGNEDABLE);
+            return;
+        }
         //generic处理
         if (this.outline instanceof Generic) {
             Generic me = ((Generic) this.outline);

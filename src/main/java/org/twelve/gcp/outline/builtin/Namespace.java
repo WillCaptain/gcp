@@ -40,7 +40,7 @@ public class Namespace implements Outline {
     }
 
     @Override
-    public boolean reAssignable() {
+    public boolean beAssignedAble() {
         return false;
     }
 

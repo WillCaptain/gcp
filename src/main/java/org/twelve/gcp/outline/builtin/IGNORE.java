@@ -26,5 +26,13 @@ public class IGNORE implements BuildInOutline {
     public boolean equals(Outline another) {
         return another instanceof IGNORE;
     }
+    @Override
+    public boolean beAssignedAble() {
+        return false;
+    }
 
+    @Override
+    public String toString() {
+        return "-";
+    }
 }

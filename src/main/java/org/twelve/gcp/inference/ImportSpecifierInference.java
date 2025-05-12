@@ -11,9 +11,9 @@ public class ImportSpecifierInference implements Inference<ImportSpecifier> {
     public Outline infer(ImportSpecifier node, Inferences inferences) {
         Identifier moduleSymbol = ((Import)node.parent()).source().name();
         if(node.imported().lexeme().equals(CONSTANTS.STAR)){
-            return node.ast().symbolEnv().lookup(moduleSymbol.token()).outline();
+            return node.ast().symbolEnv().lookupAll(moduleSymbol.token()).outline();
         }else{
-            return node.ast().symbolEnv().lookup(node.local().token()).outline();
+            return node.ast().symbolEnv().lookupAll(node.local().token()).outline();
         }
     }
 

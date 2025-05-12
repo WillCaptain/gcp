@@ -7,8 +7,8 @@ import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.Block;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.expression.conditions.Arm;
-import org.twelve.gcp.node.expression.conditions.Consequence;
 import org.twelve.gcp.node.expression.conditions.Selections;
+import org.twelve.gcp.node.expression.IsAs;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
@@ -42,7 +42,7 @@ public interface Inferences {
     Outline visit(FunctionCallNode call);
     Outline visit(Argument argument);
     Outline visit(FunctionBody body);
-    Outline visit(Block body);
+    Outline visit(Block block);
     Outline visit(ReturnStatement body);
     Outline visit(ExpressionStatement body);
     Outline visit(EntityNode entity);
@@ -55,4 +55,5 @@ public interface Inferences {
     Outline visit(Arm arm);
     Outline visit(ImportSpecifier importSpecifier);
     Outline visit(ExportSpecifier exportSpecifier);
+    Outline visit(IsAs isAs);
 }

@@ -2,17 +2,13 @@ package org.twelve.gcp.outlineenv;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.common.SCOPE_TYPE;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.*;
 import org.twelve.gcp.outline.builtin.Module;
-import org.twelve.gcp.outline.builtin.Symbol_;
 
 import java.util.*;
-
-import static org.twelve.gcp.common.Tool.cast;
 
 public class LocalSymbolEnvironment implements SymbolEnvironment {
     private final AstScope root;
@@ -58,7 +54,20 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         this.current = scopeStack.getLast();
     }
 
-    public EnvSymbol lookup(String key) {
+    public EnvSymbol lookup(String key){
+        AstScope scope = this.current;
+        boolean reachedThisScope = false;
+        while(scope!=null){
+            EnvSymbol symbol = scope.lookup(key, !reachedThisScope);
+            if (symbol != null) return symbol;
+            if(!reachedThisScope && scope.scopeType()== SCOPE_TYPE.IN_PRODUCT_ADT){
+                reachedThisScope = true;
+            }
+            scope = scope.parent();
+        }
+        return null;
+    }
+    public EnvSymbol lookupAll(String key) {
         List<EnvSymbol> symbols = new ArrayList<>();
         AstScope scope = this.current;
         boolean reachedThisScope = false;//only possible to try to find base in the first product adt scope
@@ -75,19 +84,6 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         if(symbols.size()==1) return symbols.getFirst();
         Outline outline = Poly.from(null,false,symbols.stream().map(EnvSymbol::outline).toArray(Outline[]::new));
         return new EnvSymbol(key, false, outline, false, this.current.id(), null);//null origin node, means it is merged
-
-
-//        EnvSymbol symbol = null;
-//        AstScope scope = this.current;
-//        while (symbol == null) {
-//            symbol = scope.lookup(key);
-//            if (scope.parent() != null) {
-//                scope = cast(scope.parent());
-//            } else {
-//                break;
-//            }
-//        }
-//        return symbol;
     }
 
 

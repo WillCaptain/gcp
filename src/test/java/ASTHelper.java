@@ -1,3 +1,4 @@
+import net.bytebuddy.asm.Advice;
 import org.twelve.gcp.ast.ASF;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
@@ -7,6 +8,7 @@ import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.LiteralUnionNode;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
+import org.twelve.gcp.node.expression.body.Block;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.node.expression.conditions.Consequence;
@@ -21,6 +23,7 @@ import org.twelve.gcp.node.statement.*;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
+import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
 
@@ -486,7 +489,7 @@ public class ASTHelper {
                 new OperatorNode<>(ast, BinaryOperator.EQUALS)), c1);
         Arm arm2 = new Arm(ast, c2);
 
-        Selections ifs = new Selections(ast, null, selectionType, arm1, arm2);
+        Selections ifs = new Selections(ast,  selectionType, arm1, arm2);
 
         ast.addStatement(new ExpressionStatement(ifs));
         return ast;
@@ -518,7 +521,7 @@ public class ASTHelper {
 
         Arm arm2 = new Arm(ast, c2);
 
-        Selections ifs = new Selections(ast, null, SELECTION_TYPE.TERNARY, arm1, arm2);
+        Selections ifs = new Selections(ast, SELECTION_TYPE.TERNARY, arm1, arm2);
         body.addStatement(new ReturnStatement(ifs));
 
         FunctionNode factorial = FunctionNode.from(body, new Argument(ast, new Token<>("n")));
@@ -535,4 +538,53 @@ public class ASTHelper {
         return ast;
     }
 
+    public static AST mockOptionIsAs() {
+        /*let result = {
+            var some:String|Integer = "string";
+            if(some is Integer){
+                some
+            }
+            if(some is String as str){
+                str
+            }
+        };
+         */
+        ASF asf = new ASF();
+        AST ast = asf.newAST();
+
+        Block block = new Block(ast);
+
+        //var some:String|Integer = 100;
+        Token<String> some = new Token<>("some");
+        VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.VAR);
+        declarator.declare(some, Option.from(Outline.String,Outline.Integer),LiteralNode.parse(ast,new Token<>("string")));
+        block.addStatement(declarator);
+
+        //if(some is Integer){
+        //    some
+        //}else if(some is String as str){
+        //    str
+        //}else{100}
+        IsAs isInt =  new IsAs(ast,new Identifier(ast,some),Outline.Integer);
+        Consequence consequence = new Consequence(ast);
+        consequence.addStatement(new ReturnStatement(new Identifier(ast,some)));
+        Arm arm1 = new Arm(ast,isInt,consequence);
+        Token<String> str = new Token<>("str");
+        IsAs isStr = new IsAs(ast, new Identifier(ast,some),Outline.String,new Identifier(ast,str));
+        consequence = new Consequence(ast);
+        consequence.addStatement(new ReturnStatement(new Identifier(ast,str)));
+        Arm arm2 = new Arm(ast,isStr,consequence);
+        consequence = new Consequence(ast);
+        consequence.addStatement(new ReturnStatement(LiteralNode.parse(ast,new Token<>(100))));
+        Arm arm3 = new Arm(ast,consequence);
+        Selections ifs = new Selections(ast,SELECTION_TYPE.IF,arm1,arm2,arm3);
+        block.addStatement(new ReturnStatement(ifs));
+
+        //let result = {...}
+        Token<String> result = new Token<>("result");
+        declarator = new VariableDeclarator(ast,VariableKind.LET);
+        declarator.declare(result,block);
+        ast.addStatement(declarator);
+        return ast;
+    }
 }

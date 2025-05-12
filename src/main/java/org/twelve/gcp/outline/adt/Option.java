@@ -23,7 +23,9 @@ public class Option extends SumADT {
         return new Option(node, os);
     }
 
-
+    public static Outline from(Outline... outlines){
+        return from(null,outlines);
+    }
 
     Option(Node node, Outline... outlines) {
         super(node, outlines);
@@ -53,11 +55,10 @@ public class Option extends SumADT {
         return true;
     }
 
-//    public void sum(List<Outline> outlines) {
-//        for (Outline outline : outlines) {
-//            this.sum(outline);
-//        }
-//    }
+    @Override
+    public boolean beAssignedAble() {
+        return options.stream().allMatch(Outline::beAssignedAble);
+    }
 
     @Override
     public Option copy() {

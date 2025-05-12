@@ -1,8 +1,10 @@
 package org.twelve.gcp.node.expression.body;
 
 import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.statement.Statement;
+import org.twelve.gcp.outline.Outline;
 
 public abstract class Body extends Expression {
     private final Long scope;
@@ -10,6 +12,11 @@ public abstract class Body extends Expression {
     public Body(AST ast) {
         super(ast, null);
         this.scope = ast.scopeIndexer().incrementAndGet();
+    }
+
+    @Override
+    protected Outline accept(Inferences inferences) {
+        return inferences.visit(this);
     }
 
     @Override

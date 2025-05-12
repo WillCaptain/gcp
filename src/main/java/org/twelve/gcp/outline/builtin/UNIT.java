@@ -32,4 +32,8 @@ public class UNIT implements BuildInOutline {
     public String toString() {
         return "()";
     }
+    @Override
+    public boolean beAssignedAble() {
+        return false;
+    }
 }

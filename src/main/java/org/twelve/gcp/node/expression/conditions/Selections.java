@@ -20,8 +20,8 @@ public class Selections extends Expression {
     private final List<Arm> arms = new ArrayList<>();
     private final SELECTION_TYPE selectionType;
 
-    public Selections(AST ast, Location loc, SELECTION_TYPE selectionType,Arm... arms) {
-        super(ast, loc);
+    public Selections(AST ast, SELECTION_TYPE selectionType,Arm... arms) {
+        super(ast, null);
         this.selectionType = selectionType;
         for (Arm arm : arms) {
             this.arms.add(arm);
@@ -45,5 +45,9 @@ public class Selections extends Expression {
     @Override
     public String lexeme() {
         return this.selectionType.lexeme(this);
+    }
+
+    public boolean containsElse() {
+        return this.arms.stream().anyMatch(Arm::isElse);
     }
 }

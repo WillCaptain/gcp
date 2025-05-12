@@ -5,6 +5,8 @@ import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.accessor.Accessor;
+import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.statement.Assignment;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
@@ -19,7 +21,12 @@ public class IdentifierInference implements Inference<Identifier> {
     public Outline infer(Identifier node, Inferences inferences) {
 //        if (!(node.outline() instanceof UNKNOWN)) return node.outline();
         LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
-        EnvSymbol supposed = oEnv.lookup(node.token());
+        EnvSymbol supposed;
+        if(node.parent() instanceof FunctionCallNode || node.parent() instanceof Accessor) {
+            supposed = oEnv.lookupAll(node.token());
+        }else{
+            supposed = oEnv.lookup(node.token());
+        }
         if (supposed == null) {
             ErrorReporter.report(node, GCPErrCode.VARIABLE_NOT_DEFINED);
             return Outline.Unknown;

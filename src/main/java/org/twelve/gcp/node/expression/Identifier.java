@@ -78,9 +78,15 @@ public class Identifier extends Assignable {
      */
     @Override
     public Outline infer(Inferences inferences) {
-        if (this.isDeclared()) return this.outline;
-//        this.outline = Unknown;
+        if (this.isDeclared()) {
+            return this.declared;
+        }
         return super.infer(inferences);
+    }
+
+    @Override
+    public Outline outline() {
+        return this.isDeclared() ? this.declared : this.outline;
     }
 
     @Override
@@ -98,13 +104,17 @@ public class Identifier extends Assignable {
         if (this.outline == Error) return;
         EnvSymbol symbol = env.current().lookup(this.token());
         if (symbol == null) return;
-        if(!inferred.canBe(symbol.declared())){
+        if (!inferred.canBe(symbol.declared())) {
             ErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
             return;
         }
         //infer is not finished yet
-        if (!symbol.outline().inferred()|| symbol.isDeclared()) {
-            symbol.update(inferred);
+        if (!symbol.outline().inferred() || symbol.isDeclared()) {
+            if(symbol.isDeclared()){
+                symbol.update(symbol.declared());
+            }else {
+                symbol.update(inferred);
+            }
             this.outline = inferred;
             return;
 

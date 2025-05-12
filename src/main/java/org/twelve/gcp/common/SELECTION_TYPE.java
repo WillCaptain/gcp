@@ -8,15 +8,16 @@ public enum SELECTION_TYPE {
         @Override
         public String lexeme(Selections selections) {
             StringBuilder sb = new StringBuilder();
-            for (Arm arm : selections.arms()) {
-                if (arm == selections.arms().getLast()) {
-                    sb.append(arm.consequence().lexeme());
+            for(int i=0; i<selections.arms().size();i++) {
+                Arm arm = selections.arms().get(i);
+                if (arm.isElse()) {
+                    sb.append(" else ").append(arm.consequence().lexeme());
                 } else {
+                    if(i>0) sb.append(" else ");
                     sb.append("if(")
                             .append(arm.test().lexeme())
                             .append(")")
-                            .append(arm.consequence().lexeme())
-                            .append(" else ");
+                            .append(arm.consequence().lexeme());
                 }
             }
             return sb.toString();

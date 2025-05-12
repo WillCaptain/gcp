@@ -118,9 +118,10 @@ public class Return extends Genericable<Return, Node> {
         } else {
             if (!(supposed instanceof Option)) return;
             Option option = cast(supposed);
-            if (option.options().removeIf(o -> o == Ignore)) {
-                option.options().add(Unit);
-            }
+            option.options().removeIf(o -> o == Ignore);
+//            if (option.options().removeIf(o -> o == Ignore)) {
+//                option.options().add(Unit);
+//            }
         }
     }
 
