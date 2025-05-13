@@ -133,7 +133,7 @@ public enum GCPErrCode {
     /**
      * Unary operator position mismatch
      */
-    UNARY_POSITION_MISMATCH, AMBIGUOUS_RETURN, UNAVAILABLE_THIS, FUNCTION_NOT_FOUND, TYPE_CAST_NEVER_SUCCED, NOT_BE_ASSIGNEDABLE;
+    UNARY_POSITION_MISMATCH, AMBIGUOUS_RETURN, UNAVAILABLE_THIS, FUNCTION_NOT_FOUND, TYPE_CAST_NEVER_SUCCEED, NOT_BE_ASSIGNEDABLE;
 
     /**
      * Returns the error category for grouping related errors.
@@ -147,7 +147,7 @@ public enum GCPErrCode {
      */
     public boolean isRecoverable() {
         return switch (this) {
-            case POSSIBLE_ENDLESS_LOOP, UNREACHABLE_STATEMENT -> true;
+            case POSSIBLE_ENDLESS_LOOP, UNREACHABLE_STATEMENT, TYPE_CAST_NEVER_SUCCEED -> true;
             default -> false;
         };
     }

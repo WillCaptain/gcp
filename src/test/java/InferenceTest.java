@@ -7,6 +7,9 @@ import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.expression.*;
+import org.twelve.gcp.node.function.Argument;
+import org.twelve.gcp.node.function.FunctionCallNode;
+import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.operator.OperatorNode;
@@ -411,15 +414,13 @@ public class InferenceTest {
     @Test
     void test_option_is_as() {
         /*let result = {
-            var some:String|Integer = “string";
+            var some:String|Integer = "string";
             if(some is Integer){
                 some
-            }
-            if(some is String as str){
+            }else if(some is String as str){
                 str
-            }
-        };
-         */
+            }else{100}
+        };*/
         AST ast = ASTHelper.mockOptionIsAs();
         ast.asf().infer();
         Assignment assignment = ((VariableDeclarator) ast.program().body().nodes().getFirst()).assignments().getFirst();
@@ -433,16 +434,56 @@ public class InferenceTest {
         assertInstanceOf(INTEGER.class, some.outline());
         Node str = assignment.rhs().nodes().get(1).nodes().getFirst().nodes().get(1).nodes().getLast().nodes().getFirst().nodes().getFirst();
         assertInstanceOf(STRING.class, str.outline());
+        assertTrue(ast.errors().isEmpty());
     }
 
     @Test
     void test_poly_is_as() {
-
+        /*let result = {
+            var some = 100&"string";
+            if(some is Integer){
+                some
+            }else if(some is String as str){
+                str
+            }else{100}
+        };*/
+        AST ast = ASTHelper.mockPolyIsAs();
+        ast.asf().infer();
+        Assignment assignment = ((VariableDeclarator) ast.program().body().nodes().getFirst()).assignments().getFirst();
+        Outline result = assignment.lhs().outline();
+        assertInstanceOf(Option.class, result);
+        assertInstanceOf(INTEGER.class, ((Option) result).options().getFirst());
+        assertInstanceOf(STRING.class, ((Option) result).options().getLast());
+        Node rootSome = assignment.rhs().nodes().getFirst().nodes().getFirst().nodes().getFirst();
+        assertInstanceOf(Poly.class, rootSome.outline());
+        Node some = assignment.rhs().nodes().get(1).nodes().getFirst().nodes().getFirst().nodes().getLast().nodes().getFirst().nodes().getFirst();
+        assertInstanceOf(INTEGER.class, some.outline());
+        Node str = assignment.rhs().nodes().get(1).nodes().getFirst().nodes().get(1).nodes().getLast().nodes().getFirst().nodes().getFirst();
+        assertInstanceOf(STRING.class, str.outline());
+        assertTrue(ast.errors().isEmpty());
     }
 
     @Test
     void test_generic_is_as() {
+        /*let result = some->{
+            if(some is Integer){
+                some
+            }else if(some is String as str){
+                str
+            }else{100}
+        }(100);*/
+        AST ast = ASTHelper.mockGenericIsAs();
+        ast.asf().infer();
+        Assignment assignment = ((VariableDeclarator) ast.program().body().nodes().getFirst()).assignments().getFirst();
+        Outline result = assignment.lhs().outline();
+        assertInstanceOf(Option.class, result);
+        assertInstanceOf(INTEGER.class, ((Option) result).options().getFirst());
+        assertInstanceOf(STRING.class, ((Option) result).options().getLast());
 
+        FunctionNode function = cast(((FunctionCallNode)assignment.rhs()).function());
+        assertEquals(1,ast.errors().size());
+        Generic arg = cast(function.argument().outline());
+        assertTrue(arg.couldBe() instanceof INTEGER);
     }
 
     private static AST mockGCPTestAst() {

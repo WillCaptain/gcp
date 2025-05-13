@@ -31,8 +31,6 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     protected Outline hasToBe = Any;
     //x(a) => x.definedToBe = generic->generic
     protected Outline definedToBe = Any;
-    //if(x is A as y){...}
-    protected Outline couldBe = Any;
     protected Outline max = Nothing;
     protected Outline min = Any;
 

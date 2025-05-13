@@ -9,6 +9,7 @@ import org.twelve.gcp.node.LiteralUnionNode;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.Block;
+import org.twelve.gcp.node.expression.body.Body;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.node.expression.conditions.Consequence;
@@ -25,6 +26,7 @@ import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.ProductADT;
+import org.twelve.gcp.outline.primitive.INTEGER;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
 
 import java.util.ArrayList;
@@ -543,34 +545,39 @@ public class ASTHelper {
             var some:String|Integer = "string";
             if(some is Integer){
                 some
-            }
-            if(some is String as str){
+            }else if(some is String as str){
                 str
-            }
-        };
-         */
+            }else{100}
+        };*/
         ASF asf = new ASF();
         AST ast = asf.newAST();
-
         Block block = new Block(ast);
-
         //var some:String|Integer = 100;
         Token<String> some = new Token<>("some");
         VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.VAR);
         declarator.declare(some, Option.from(Outline.String,Outline.Integer),LiteralNode.parse(ast,new Token<>("string")));
         block.addStatement(declarator);
+        mockIsAs(ast, some, block);
+        //let result = {...}
+        Token<String> result = new Token<>("result");
+        declarator = new VariableDeclarator(ast,VariableKind.LET);
+        declarator.declare(result, block);
+        ast.addStatement(declarator);
+        return ast;
+    }
 
+    private static void mockIsAs(AST ast, Token<String> some, Body body) {
         //if(some is Integer){
         //    some
         //}else if(some is String as str){
         //    str
         //}else{100}
-        IsAs isInt =  new IsAs(ast,new Identifier(ast,some),Outline.Integer);
+        IsAs isInt =  new IsAs(ast,new Identifier(ast, some),Outline.Integer);
         Consequence consequence = new Consequence(ast);
-        consequence.addStatement(new ReturnStatement(new Identifier(ast,some)));
+        consequence.addStatement(new ReturnStatement(new Identifier(ast, some)));
         Arm arm1 = new Arm(ast,isInt,consequence);
         Token<String> str = new Token<>("str");
-        IsAs isStr = new IsAs(ast, new Identifier(ast,some),Outline.String,new Identifier(ast,str));
+        IsAs isStr = new IsAs(ast, new Identifier(ast, some),Outline.String,new Identifier(ast,str));
         consequence = new Consequence(ast);
         consequence.addStatement(new ReturnStatement(new Identifier(ast,str)));
         Arm arm2 = new Arm(ast,isStr,consequence);
@@ -578,13 +585,62 @@ public class ASTHelper {
         consequence.addStatement(new ReturnStatement(LiteralNode.parse(ast,new Token<>(100))));
         Arm arm3 = new Arm(ast,consequence);
         Selections ifs = new Selections(ast,SELECTION_TYPE.IF,arm1,arm2,arm3);
-        block.addStatement(new ReturnStatement(ifs));
+        body.addStatement(new ReturnStatement(ifs));
+    }
 
+    public static AST mockPolyIsAs() {
+        /*let result = {
+            var some = 100&"string";
+            if(some is Integer){
+                some
+            }else if(some is String as str){
+                str
+            }else{100}
+        };*/
+        ASF asf = new ASF();
+        AST ast = asf.newAST();
+
+        Block block = new Block(ast);
+
+        //var some = 100&"some";
+        Token<String> some = new Token<>("some");
+        VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.VAR);
+        declarator.declare(some,new PolyNode(ast,LiteralNode.parse(ast,new Token<>(100)),
+                new PolyNode(ast,LiteralNode.parse(ast,new Token<>("some")))));
+        block.addStatement(declarator);
+        mockIsAs(ast, some, block);
         //let result = {...}
         Token<String> result = new Token<>("result");
         declarator = new VariableDeclarator(ast,VariableKind.LET);
-        declarator.declare(result,block);
+        declarator.declare(result, block);
         ast.addStatement(declarator);
+        return ast;
+    }
+
+    public static AST mockGenericIsAs(){
+         /*let result = some->{
+            if(some is Integer){
+                some
+            }else if(some is String as str){
+                str
+            }else{100}
+        }(100);*/
+        ASF asf = new ASF();
+        AST ast = asf.newAST();
+
+        Token<String> some = new Token<>("some");
+        FunctionBody body = new FunctionBody(ast);
+        mockIsAs(ast, some, body);
+
+        FunctionNode function = new FunctionNode(new Argument(ast,some, Outline.Integer),body);
+        FunctionCallNode call = new FunctionCallNode(ast,function,LiteralNode.parse(ast,new Token<>(100)));
+
+        //let result = some->{...}
+        Token<String> result = new Token<>("result");
+        VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.LET);
+        declarator.declare(result, call);
+        ast.addStatement(declarator);
+
         return ast;
     }
 }

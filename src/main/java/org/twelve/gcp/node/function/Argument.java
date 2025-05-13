@@ -31,22 +31,22 @@ public class Argument extends Node {
     private final Identifier identifier;
     protected final Expression defaultValue;
 
-    public Argument(AST ast, Token token) {
+    public Argument(AST ast, Token<String> token) {
         this(ast, token, (Expression) null);
     }
 
-    public Argument(AST ast, Token token, Expression reference) {
+    public Argument(AST ast, Token<String> token, Expression reference) {
         this(ast, token, null, reference);
     }
 
-    public Argument(AST ast, Token token, Outline outline, Expression defaultValue) {
+    public Argument(AST ast, Token<String> token, Outline outline, Expression defaultValue) {
         super(ast);
         this.identifier = this.addNode(outline == null ? new Identifier(ast, token) :
                 new Identifier(ast, token, outline, false));
         this.defaultValue = defaultValue;
     }
 
-    public Argument(AST ast, Token token, Outline outline) {
+    public Argument(AST ast, Token<String> token, Outline outline) {
         this(ast, token, outline, null);
     }
 
