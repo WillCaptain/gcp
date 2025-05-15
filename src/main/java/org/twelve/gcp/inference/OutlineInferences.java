@@ -54,6 +54,11 @@ public class OutlineInferences implements Inferences {
     }
 
     @Override
+    public Outline visit(Variable variable) {
+        return new VariableInference().infer(variable,this);
+    }
+
+    @Override
     public Outline visit(Export export) {
         return new ExportInference().infer(export, this);
     }

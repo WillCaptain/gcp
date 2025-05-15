@@ -37,7 +37,7 @@ public class Module implements Outline {
     }
 
     public Outline lookup(Identifier symbol) {
-        String key = symbol.token();
+        String key = symbol.name();
         if (this.symbols.containsKey(key)) {
             return this.symbols.get(key);
         } else {

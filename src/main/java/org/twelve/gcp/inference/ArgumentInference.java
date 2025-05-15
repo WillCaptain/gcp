@@ -17,14 +17,14 @@ public class ArgumentInference implements Inference<Argument> {
     @Override
     public Outline infer(Argument node, Inferences inferences) {
         Identifier id = node.identifier();
-        EnvSymbol symbol = node.ast().symbolEnv().lookupAll(id.token());
+        EnvSymbol symbol = node.ast().symbolEnv().lookupAll(id.name());
         if (symbol == null) {
             Expression defaultValue = node.defaultValue();
             Generic generic = Generic.from(node, id.outline());
             if (defaultValue != null) {
                 generic.addExtendToBe(defaultValue.infer(inferences));
             }
-            node.ast().symbolEnv().defineSymbol(id.token(), generic, true, id);
+            node.ast().symbolEnv().defineSymbol(id.name(), generic, true, id);
             node.ast().cache().add(id.id());
             return generic;
         } else {

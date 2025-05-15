@@ -9,7 +9,6 @@ import org.twelve.gcp.node.ValueNode;
 import org.twelve.gcp.node.statement.MemberNode;
 import org.twelve.gcp.outline.Outline;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,7 +110,7 @@ public class EntityNode extends ValueNode<EntityNode> {
         Map<String, MemberNode> ms = new HashMap<>();
         for (Node node : this.nodes()) {
             MemberNode m = cast(node);
-            ms.put(m.name().token(),m);
+            ms.put(m.name().name(),m);
         }
         return ms;
     }

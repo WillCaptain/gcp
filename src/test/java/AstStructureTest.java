@@ -176,7 +176,7 @@ public class AstStructureTest {
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         declare.declare(new Token<>("get", 0),function);
         ast.addStatement(declare);
-        assertEquals(Token.unit().lexeme(),function.argument().identifier().token());
+        assertEquals(Token.unit().lexeme(),function.argument().identifier().name());
     }
 
     @Test
@@ -220,12 +220,30 @@ public class AstStructureTest {
                 module default
                 
                 if(name=="Will"){
-                  name: String
+                  name
                 } else {
                   "Someone"
                 };""";
         assertEquals(expected,ast.lexeme());
         ast = ASTHelper.mockIf(SELECTION_TYPE.TERNARY);
-        assertEquals("module default\n\nname==\"Will\"? name: String: \"Someone\";",ast.lexeme());
+        assertEquals("module default\n\nname==\"Will\"? name: \"Someone\";",ast.lexeme());
+    }
+
+    @Test
+    void test_reference_in_function(){
+        /*
+        let f = func<a,b>(x:a)->{
+           let y:b = 100;
+           y
+        }*/
+        AST ast = ASTHelper.mockReferenceInFunction();
+        String expected = """
+                module default
+                
+                let f = func<a,b>(x: a)->{
+                  let y: b = 100;
+                  y
+                };""";
+        assertEquals(expected,ast.lexeme());
     }
 }

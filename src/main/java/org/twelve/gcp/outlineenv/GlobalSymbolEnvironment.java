@@ -35,7 +35,7 @@ public class GlobalSymbolEnvironment implements SymbolEnvironment {
         for (String name : namespace.split("\\.")) {
             scope = scope.getNamespace(name);
         }
-        scope = scope.getNamespace(moduleSymbol.token());//last level is the module level
+        scope = scope.getNamespace(moduleSymbol.name());//last level is the module level
         Module module = scope.module();
         if(module==null){
             ErrorReporter.report(moduleSymbol, GCPErrCode.MODULE_NOT_DEFINED);

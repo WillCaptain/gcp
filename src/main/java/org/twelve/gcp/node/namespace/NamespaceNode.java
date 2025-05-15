@@ -12,7 +12,7 @@ public class NamespaceNode extends Node {
         Namespace outline = null;
         for (Token<String> name : names) {
             outline = new Namespace(new Identifier(ast,name), outline);
-            this.addNode(new Identifier(ast, name, outline, false));
+            this.addNode(new Identifier(ast, name, outline));
         }
     }
 

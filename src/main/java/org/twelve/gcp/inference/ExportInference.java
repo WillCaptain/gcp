@@ -10,7 +10,7 @@ public class ExportInference implements Inference<Export> {
     public Outline infer(Export node, Inferences inferences) {
         for (ExportSpecifier export : node.specifiers()) {
             Outline local = export.local().infer(inferences);
-            node.ast().symbolEnv().exportSymbol(export.exported().token(), local);
+            node.ast().symbolEnv().exportSymbol(export.exported().name(), local);
             export.infer(inferences);
         }
         return ProductADT.Ignore;

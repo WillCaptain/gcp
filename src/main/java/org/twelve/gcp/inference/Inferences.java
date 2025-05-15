@@ -36,6 +36,7 @@ public interface Inferences {
     Outline visit(Assignment assignment);
     Outline visit(VariableDeclarator assignment);
     Outline visit(Identifier identifier);
+    Outline visit(Variable variable);
     Outline visit(Export export);
     Outline visit(Import _import);
     Outline visit(FunctionNode function);

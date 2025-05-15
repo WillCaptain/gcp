@@ -21,7 +21,8 @@ import static org.twelve.gcp.outline.Outline.*;
 public class AssignmentInference implements Inference<Assignment> {
     @Override
     public Outline infer(Assignment node, Inferences inferences) {
-        if(node.rhs()==null){
+        Outline varOutline = node.lhs().infer(inferences);
+        if (node.rhs() == null) {
             ErrorReporter.report(node.lhs(), GCPErrCode.NOT_INITIALIZED);
             return Ignore;
         }
@@ -36,19 +37,11 @@ public class AssignmentInference implements Inference<Assignment> {
             ErrorReporter.report(node.rhs(), GCPErrCode.NOT_INITIALIZED);
             return Ignore;
         }
-//        if(node.parent() instanceof VariableDeclarator){
-//            Identifier var = cast(node.lhs());
-//            EnvSymbol symbol = node.ast().symbolEnv().current().lookup(var.token());
-//            symbol.update(valueOutline);
-//            var.assign(valueOutline);
-//        }else {
-            Outline varOutline = node.lhs().infer(inferences);
-            if (varOutline == Nothing) {
-                ErrorReporter.report(node.lhs(), GCPErrCode.VARIABLE_NOT_DEFINED);
-                return Ignore;
-            }
-            node.lhs().assign(node.ast().symbolEnv(), valueOutline);
-//        }
+        if (varOutline == Nothing) {
+            ErrorReporter.report(node.lhs(), GCPErrCode.VARIABLE_NOT_DEFINED);
+            return Ignore;
+        }
+        node.lhs().assign(node.ast().symbolEnv(), valueOutline);
         return Ignore;
     }
 }

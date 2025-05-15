@@ -4,8 +4,8 @@ import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.adt.SumADT;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 
-import java.io.ObjectOutput;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class EnvSymbol {
@@ -14,16 +14,29 @@ public class EnvSymbol {
     private final Long scope;
     private final String name;
     private final Identifier identifier;
-    private boolean isDeclared;
+    private Outline declared;
+//    private boolean isDeclared;
     private Outline outline;
+    private final SYMBOL_CATEGORY category;
 
-    public EnvSymbol(String name, boolean mutable, Outline outline, boolean isDeclared, Long scope, Identifier identifier) {
+    public EnvSymbol(String name, boolean mutable, Outline outline, Long scope, Identifier identifier) {
         this.mutable = mutable;
+        this.declared = outline;
         this.outline = outline;
         this.name = name;
-        this.isDeclared = isDeclared;
+//        this.isDeclared = isDeclared;
         this.scope = scope;
         this.identifier = identifier;
+        this.category = SYMBOL_CATEGORY.VARIABLE;
+    }
+    public EnvSymbol(String name, Outline outline,Long scope) {
+        this.mutable = false;
+        this.declared = this.outline = outline;
+        this.name = name;
+//        this.isDeclared = true;
+        this.scope = scope;
+        this.identifier = null;
+        this.category = SYMBOL_CATEGORY.OUTLINE;
     }
 
     public Long id(){
@@ -48,14 +61,15 @@ public class EnvSymbol {
      * @return 是否定义成功
      */
     public boolean update(Outline outline) {
-        //todo:waiting for issue #5
-//        if (!(this.outline instanceof UNKNOWN)) return false;
-        if (outline == null) return false;
+        if (outline == null || (outline instanceof UNKNOWN)) return false;
+        if(this.declared instanceof UNKNOWN){
+            this.declared = outline;
+        }
         this.outline = outline;
         //如果对方是poly或者option，说明是简约显式声明，应记为declare sum adt，后续不可以动态加option
-        if(outline instanceof SumADT){
-            this.isDeclared = true;
-        }
+//        if(outline instanceof SumADT){
+//            this.isDeclared = true;
+//        }
         return true;
     }
 
@@ -80,11 +94,13 @@ public class EnvSymbol {
     }
 
     public boolean isDeclared() {
-        return this.identifier.isDeclared();
+//        return this.identifier.isDeclared();
+        return !(this.declared instanceof UNKNOWN);
     }
 
     public Outline declared(){
-        return this.identifier.declared();
+//        return this.identifier.declared();
+        return this.declared;
     }
 
     @Override

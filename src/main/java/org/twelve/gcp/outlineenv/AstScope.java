@@ -17,6 +17,7 @@ public class AstScope implements Scope {
     private final Long scopeId;
     private final Node node;
     private Map<String, EnvSymbol> symbols = new HashMap<>();
+    private Map<String, EnvSymbol> outlines = new HashMap<>();
     private final AstScope parent;
     @Setter
     private SCOPE_TYPE scopeType = SCOPE_TYPE.IN_BLOCK;
@@ -44,35 +45,44 @@ public class AstScope implements Scope {
     }
 
 
-    public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, boolean isDeclared, Identifier originNode) {
+    public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, Identifier originNode) {
         if (this.symbols.containsKey(key)) {
             return this.symbols.get(key);
         }
-        EnvSymbol symbol = new EnvSymbol(key, mutable, outline, isDeclared, this.scopeId, originNode);
+        EnvSymbol symbol = new EnvSymbol(key, mutable, outline, this.scopeId, originNode);
         this.symbols.put(key, symbol);
         return symbol;
+    }
+
+    public EnvSymbol defineOutline(String key,Outline outline){
+        if(this.outlines.containsKey(key)){
+            return this.outlines.get(key);
+        }
+        EnvSymbol type = new EnvSymbol(key,outline,this.scopeId);
+        this.outlines.put(key,type);
+        return type;
     }
 
     public SCOPE_TYPE scopeType() {
         return this.scopeType;
     }
 
-    public EnvSymbol lookup(String key, boolean isEntity) {
+    public EnvSymbol lookupSymbol(String key, boolean isEntity) {
         EnvSymbol symbol = symbols.get(key);
         if (isEntity && this.scopeType == SCOPE_TYPE.IN_PRODUCT_ADT) {
             //find base
-            EnvSymbol baseSymbol = this.lookup("base");
+            EnvSymbol baseSymbol = this.lookupSymbol("base");
             if (baseSymbol != null) {
                 Optional<EntityMember> member = ((ProductADT) baseSymbol.outline()).getMember(key);
                 if (member.isPresent()) {
                     if (symbol == null) {
                         EntityMember m = member.get();
-                        return new EnvSymbol(key, m.mutable().toBool(), m.outline(), true, m.node().scope(), m.node());
+                        return new EnvSymbol(key, m.mutable().toBool(), m.outline(), m.node().scope(), m.node());
                     } else {
                         Poly poly = Poly.create();
                         poly.sum(symbol.outline(),false);
                         poly.sum(member.get().outline(),false);
-                        return new EnvSymbol(key, symbol.mutable(), poly, true, symbol.node().scope(), symbol.node());
+                        return new EnvSymbol(key, symbol.mutable(), poly, symbol.node().scope(), symbol.node());
                     }
                 }
             }
@@ -80,7 +90,10 @@ public class AstScope implements Scope {
         return symbol;
     }
 
-    public EnvSymbol lookup(String key) {
+    public EnvSymbol lookupSymbol(String key) {
         return symbols.get(key);
+    }
+    public EnvSymbol lookupOutline(String key){
+        return outlines.get(key);
     }
 }

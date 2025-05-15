@@ -4,7 +4,9 @@ import java.util.Objects;
 
 public record SimpleLocation(long start, long end) implements Location {
     public SimpleLocation {
-        if (end < start) throw new IllegalArgumentException("End cannot precede start");
+//        if (end < start) {
+//            throw new IllegalArgumentException("End cannot precede start");
+//        }
     }
 
     @Override

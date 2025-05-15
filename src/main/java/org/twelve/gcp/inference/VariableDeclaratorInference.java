@@ -7,7 +7,6 @@ import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.statement.Assignment;
 import org.twelve.gcp.node.statement.VariableDeclarator;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
@@ -22,49 +21,27 @@ import static org.twelve.gcp.outline.Outline.*;
 public class VariableDeclaratorInference implements Inference<VariableDeclarator> {
     @Override
     public Outline infer(VariableDeclarator node, Inferences inferences) {
-        LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
-        Set<Long> cache = node.ast().cache();
         for (Assignment assignment : node.assignments()) {
-            Identifier var = cast(assignment.lhs());
-            EnvSymbol symbol = oEnv.current().lookup(var.token());//find the symbol in current scope
-            if (symbol != null) {//there is symbol in current scope,can't have duplicate declaration
-                if (symbol.node() != var && !(node.parent() instanceof EntityNode)) {
-                    ErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
-                    return Ignore;
-                }
-
-//                if (assignment.rhs() == null) return Ignore;
-//                Outline inferred = assignment.rhs().infer(inferences);
-//                if (!inferred.equals(symbol.outline())){//类型不同，如果没有声明类型，开始重载定义，如果有声明类型，不能重复定义
-//
-//                    if ((symbol.isDeclared() || var.isDeclared())&&!cache.contains(var.id())) {
-//                        ErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
-//                    }else {
-//                        if(symbol.outline() instanceof UNKNOWN){
-//                            assignment.infer(inferences);
-//                        }else {
-//                            Poly poly = Poly.create();
-//                            //隐式动态poly重载
-//                            poly.sum(symbol.outline(), symbol.mutable());
-//                            if (!poly.sum(inferred, node.kind().mutable())) {
-//                                ErrorReporter.report(node, GCPErrCode.POLY_SUM_FAIL);
-//                                return Ignore;
-//                            }
-//                            symbol.polyTo(poly);
-//                        }
-//                        cache.add(var.id());
-//                    }
-//                    assignment.lhs().infer(inferences);
-//                    assignment.setInferred();//not good solution
-//                }
-            } else {
-                oEnv.defineSymbol(var.token(), var.outline(),
-                        node.kind().mutable(), var.isDeclared(), var);
-                assignment.infer(inferences);
-                cache.add(var.id());
-            }
             assignment.infer(inferences);
         }
+//        LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
+//        Set<Long> cache = node.ast().cache();
+//        for (Assignment assignment : node.assignments()) {
+//            Identifier var = cast(assignment.lhs());
+//            EnvSymbol symbol = oEnv.current().lookupSymbol(var.name());//find the symbol in current scope
+//            if (symbol != null) {//there is symbol in current scope,can't have duplicate declaration
+//                if (symbol.node() != var && !(node.parent() instanceof EntityNode)) {
+//                    ErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
+//                    return Ignore;
+//                }
+//            } else {
+//                oEnv.defineSymbol(var.name(), var.outline(),
+//                        node.kind().mutable(), var.isDeclared(), var);
+//                assignment.infer(inferences);
+//                cache.add(var.id());
+//            }
+//            assignment.infer(inferences);
+//        }
         return Ignore;
     }
 

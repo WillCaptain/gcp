@@ -28,6 +28,7 @@ import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.primitive.INTEGER;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
+import org.twelve.gcp.outline.projectable.Reference;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -481,7 +482,7 @@ public class ASTHelper {
     public static AST mockIf(SELECTION_TYPE selectionType) {
         ASF asf = new ASF();
         AST ast = asf.newAST();
-        Identifier name = new Identifier(ast, new Token<>("name"), Outline.String, false);
+        Identifier name = new Identifier(ast, new Token<>("name"), Outline.String);
         Consequence c1 = new Consequence(ast);
         c1.addStatement(new ReturnStatement(name));
         Consequence c2 = new Consequence(ast);
@@ -641,6 +642,35 @@ public class ASTHelper {
         declarator.declare(result, call);
         ast.addStatement(declarator);
 
+        return ast;
+    }
+
+    public static AST mockReferenceInFunction() {
+        /*
+        let f = func<a,b>(x:a)->{
+           let y:b = 100;
+           y
+        }*/
+        ASF asf = new ASF();
+        AST ast = asf.newAST();
+        FunctionBody body = new FunctionBody(ast);
+        VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.LET);
+        declarator.declare(new Token<>("y"),
+                Reference.from(new Identifier(ast,new Token<>("b"))),
+                LiteralNode.parse(ast,new Token<>(100)));
+        body.addStatement(declarator);
+        body.addStatement(new ReturnStatement(new Identifier(ast,new Token<>("y"))));
+
+        List<Identifier> refs = new ArrayList<>();
+        refs.add(new Identifier(ast,new Token<>("a")));
+        refs.add(new Identifier(ast,new Token<>("b")));
+        List<Argument> args = new ArrayList<>();
+        args.add(new Argument(ast,new Token<>("x"),
+                Reference.from(new Identifier(ast,new Token<>("a")))));
+        FunctionNode func = FunctionNode.from(body,refs,args);
+        declarator = new VariableDeclarator(ast,VariableKind.LET);
+        declarator.declare(new Token<>("f"),func);
+        ast.addStatement(declarator);
         return ast;
     }
 }

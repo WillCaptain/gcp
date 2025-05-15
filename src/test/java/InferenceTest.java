@@ -16,6 +16,7 @@ import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.node.statement.*;
 import org.twelve.gcp.outline.adt.*;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.ERROR;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.primitive.DOUBLE;
 import org.twelve.gcp.outline.primitive.INTEGER;
@@ -62,7 +63,7 @@ public class InferenceTest {
         assertEquals(Ignore, var.assignments().getFirst().outline());
         //age:Integer
         Assignment age = var.assignments().getFirst();
-        assertEquals(Outline.Integer, ((Identifier) age.lhs()).declared());
+        assertEquals(Outline.Integer, ((Variable) age.lhs()).getDeclared().outline());
         assertEquals(Outline.Integer, age.lhs().outline());
         //name = "Will"
         Assignment name = var.assignments().get(1);
@@ -190,7 +191,7 @@ public class InferenceTest {
 
         ast = ASTHelper.mockErrorAssignOnDefinedPoly();
         ast.asf().infer();
-        assertFalse(ast.asf().inferred());
+        assertTrue(ast.asf().inferred());
         Poly p1 = cast(((Assignment) ast.program().body().nodes().get(1)).lhs().outline());
         VariableDeclarator declarator = cast(ast.program().body().nodes().get(2));
         Outline p2 = declarator.assignments().get(0).lhs().outline();
@@ -202,7 +203,7 @@ public class InferenceTest {
         assertInstanceOf(INTEGER.class, p1.options().get(0));
         assertInstanceOf(STRING.class, p1.options().get(1));
 
-        assertInstanceOf(UNKNOWN.class, p2);
+        assertInstanceOf(ERROR.class, p2);
     }
 
     @Test
@@ -484,6 +485,16 @@ public class InferenceTest {
         assertEquals(1,ast.errors().size());
         Generic arg = cast(function.argument().outline());
         assertTrue(arg.couldBe() instanceof INTEGER);
+    }
+
+    @Test
+    void test_inference_of_reference_in_function() {
+        /*
+        let f = func<a,b>(x:a)->{
+           let y:b = 100;
+           y
+        }*/
+        AST ast = ASTHelper.mockReferenceInFunction();
     }
 
     private static AST mockGCPTestAst() {

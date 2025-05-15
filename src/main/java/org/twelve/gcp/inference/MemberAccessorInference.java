@@ -31,14 +31,14 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
             if(generic.definedToBe() instanceof ANY){
                 generic.addDefinedToBe(Entity.from(node.entity()));
             }
-            Optional<EntityMember> member = ((Entity) generic.definedToBe()).members().stream().filter(m -> m.name().equals(node.member().token())).findFirst();
+            Optional<EntityMember> member = ((Entity) generic.definedToBe()).members().stream().filter(m -> m.name().equals(node.member().name())).findFirst();
            if(member.isPresent()){
                return member.get().outline();
            }else {
                Entity entity = cast(generic.definedToBe());
                AccessorGeneric g = new AccessorGeneric(node);
 //               Generic g = new Generic(node);
-               entity.addMember(node.member().token(), g, Modifier.PUBLIC, false, node.member());
+               entity.addMember(node.member().name(), g, Modifier.PUBLIC, false, node.member());
                return g;
            }
         }
@@ -48,7 +48,7 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
             return Outline.Error;
         }
         ProductADT entity = cast(outline);
-        List<EntityMember> found = entity.members().stream().filter(m -> m.name().equals(node.member().token())).collect(Collectors.toList());
+        List<EntityMember> found = entity.members().stream().filter(m -> m.name().equals(node.member().name())).collect(Collectors.toList());
         if (found.isEmpty()) {
             ErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
             return Outline.Error;

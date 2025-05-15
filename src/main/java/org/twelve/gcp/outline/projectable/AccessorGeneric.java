@@ -29,7 +29,7 @@ public class AccessorGeneric extends Genericable<AccessorGeneric, Accessor> {
     }
 
     private String memberName() {
-        return ((MemberAccessor) this.node()).member().token();
+        return ((MemberAccessor) this.node()).member().name();
     }
 
     @Override

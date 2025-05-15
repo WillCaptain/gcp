@@ -23,32 +23,20 @@ import static org.twelve.gcp.outline.adt.ProductADT.Unknown;
 
 public class Identifier extends Assignable {
     private final Token<String> token;
-    private final Boolean mutable;
-    private Outline declared;
 
     // import a as b, b is the reference
     public Identifier(AST ast, Token<String> token) {
-        this(ast, token, Unknown, true);
+        this(ast, token, Unknown);
     }
 
-    public Identifier(AST ast, Token<String> token, Outline declared, Boolean mutable) {
+    public Identifier(AST ast, Token<String> token, Outline declaredOutline) {
         super(ast, null);
         this.token = token;
-        this.outline = declared;
-        this.declared = declared;
-        this.mutable = mutable;
+        this.outline = declaredOutline;
     }
 
     @Override
     public String lexeme() {
-
-        if ((this.outline() instanceof UNKNOWN) || this.outline instanceof UNIT || this.outline() instanceof Namespace) {
-            return this.token.lexeme();
-        }
-
-        if (this.isDeclared() || (this.parent().parent() != null && this.parent().parent() instanceof VariableDeclarator && ((Assignment) this.parent()).lhs() == this)) {
-            return this.token.lexeme() + ": " + this.outline().toString();
-        }
         return this.token.lexeme();
     }
 
@@ -57,64 +45,31 @@ public class Identifier extends Assignable {
         return this.token.loc();
     }
 
-    public Boolean isDeclared() {
-        return !(this.declared instanceof UNKNOWN);
-    }
-
-    public Boolean isMutable() {
-        return this.mutable;
-    }
-
-    /**
-     * Determines the outline of a variable based on its declaration and assignments:
-     * - If the variable is declared, its outline is fixed to the declared type.
-     * - If the variable is not declared, its outline is inferred dynamically:
-     * - For example:
-     * var a = 10; // a: Integer
-     * a = "some"; // a: Integer | String
-     *
-     * @param inferences Contextual inferences used for outline determination.
-     * @return The inferred or declared outline of the variable.
-     */
-    @Override
-    public Outline infer(Inferences inferences) {
-        if (this.isDeclared()) {
-            return this.declared;
-        }
-        return super.infer(inferences);
-    }
-
-    @Override
-    public Outline outline() {
-        return this.isDeclared() ? this.declared : this.outline;
-    }
-
     @Override
     protected Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
 
-    public String token() {
+    public String name() {
         return this.token.lexeme();
+    }
+
+    public Token<String> token() {
+        return this.token;
     }
 
 
     @Override
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
         if (this.outline == Error) return;
-        EnvSymbol symbol = env.current().lookup(this.token());
+        EnvSymbol symbol = env.current().lookupSymbol(this.name());
         if (symbol == null) return;
-        if (!inferred.canBe(symbol.declared())) {
-            ErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
-            return;
-        }
-        //infer is not finished yet
-        if (!symbol.outline().inferred() || symbol.isDeclared()) {
-            if(symbol.isDeclared()){
-                symbol.update(symbol.declared());
-            }else {
-                symbol.update(inferred);
+        if (!symbol.outline().inferred()) {
+            if (!inferred.canBe(symbol.declared())) {
+                ErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
+                return;
             }
+            symbol.update(inferred);
             this.outline = inferred;
             return;
 
@@ -149,17 +104,5 @@ public class Identifier extends Assignable {
 
     public Modifier modifier() {
         return this.lexeme().startsWith("_") ? Modifier.PRIVATE : Modifier.PUBLIC;
-    }
-
-    public void assign(Outline outline) {
-        if (this.isDeclared() && !this.outline.tryYouCanBeMe(outline)) {
-            ErrorReporter.report(this, GCPErrCode.OUTLINE_MISMATCH);
-            return;
-        }
-        this.outline = outline;
-    }
-
-    public Outline declared() {
-        return this.declared;
     }
 }

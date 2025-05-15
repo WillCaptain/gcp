@@ -20,6 +20,22 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
     public LocalSymbolEnvironment(AST ast) {
         this.root = new AstScope(ast.program().scope(), null,ast.program());
         setCurrent(this.root);
+        initOutlines(this.root);
+    }
+
+    private void initOutlines(AstScope root) {
+        defineOutline(root,Outline.String);
+        defineOutline(root,Outline.Integer);
+        defineOutline(root,Outline.Boolean);
+        defineOutline(root,Outline.Decimal);
+        defineOutline(root,Outline.Double);
+        defineOutline(root,Outline.Float);
+        defineOutline(root,Outline.Long);
+        defineOutline(root,Outline.Unit);
+        defineOutline(root,Outline.Number);
+    }
+    private void defineOutline(AstScope root, Outline outline){
+        root.defineOutline(outline.name(),outline);
     }
 
     private void setCurrent(AstScope scope) {
@@ -54,11 +70,11 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         this.current = scopeStack.getLast();
     }
 
-    public EnvSymbol lookup(String key){
+    public EnvSymbol lookupSymbol(String key){
         AstScope scope = this.current;
         boolean reachedThisScope = false;
         while(scope!=null){
-            EnvSymbol symbol = scope.lookup(key, !reachedThisScope);
+            EnvSymbol symbol = scope.lookupSymbol(key, !reachedThisScope);
             if (symbol != null) return symbol;
             if(!reachedThisScope && scope.scopeType()== SCOPE_TYPE.IN_PRODUCT_ADT){
                 reachedThisScope = true;
@@ -72,7 +88,7 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         AstScope scope = this.current;
         boolean reachedThisScope = false;//only possible to try to find base in the first product adt scope
         while(scope!=null){
-            EnvSymbol symbol = scope.lookup(key, !reachedThisScope);
+            EnvSymbol symbol = scope.lookupSymbol(key, !reachedThisScope);
             if (symbol != null) symbols.add(symbol);
             if(!reachedThisScope && scope.scopeType()== SCOPE_TYPE.IN_PRODUCT_ADT){
                 reachedThisScope = true;
@@ -83,16 +99,12 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         if (symbols.isEmpty()) return null;
         if(symbols.size()==1) return symbols.getFirst();
         Outline outline = Poly.from(null,false,symbols.stream().map(EnvSymbol::outline).toArray(Outline[]::new));
-        return new EnvSymbol(key, false, outline, false, this.current.id(), null);//null origin node, means it is merged
+        return new EnvSymbol(key, false, outline, this.current.id(), null);//null origin node, means it is merged
     }
 
 
     public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, Identifier originNode) {
-        return this.current.defineSymbol(key, outline, mutable, false, originNode);
-    }
-
-    public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, boolean isDeclared, Identifier originNode) {
-        return this.current.defineSymbol(key, outline, mutable, isDeclared, originNode);
+        return this.current.defineSymbol(key, outline, mutable, originNode);
     }
 
     public Module module() {
@@ -105,6 +117,16 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
 
     public AstScope current() {
         return this.current;
+    }
+
+    public EnvSymbol lookupOutline(String key) {
+        AstScope scope = this.current;
+        while(scope!=null){
+            EnvSymbol outline = scope.lookupOutline(key);
+            if (outline != null) return outline;
+            scope = scope.parent();
+        }
+        return null;
     }
 
 //    public void exportFunction(String name, Function outline) {

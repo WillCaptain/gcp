@@ -20,7 +20,7 @@ public class IsAsInference implements Inference<IsAs> {
         }
         if(node.parent() instanceof Arm){
             node.ast().symbolEnv().enter(((Arm) node.parent()).consequence());
-            node.ast().symbolEnv().defineSymbol(node.c().token(),node.b(),false,node.c());
+            node.ast().symbolEnv().defineSymbol(node.c().name(),node.b(),false,node.c());
             node.ast().symbolEnv().exit();;
         }
         return Outline.Boolean;

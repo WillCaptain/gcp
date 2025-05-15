@@ -12,7 +12,6 @@ import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 import static org.twelve.gcp.common.Tool.cast;
-import static org.twelve.gcp.outline.Outline.Unknown;
 
 /**
  * a.b
@@ -33,9 +32,9 @@ public class MemberAccessor extends Accessor {
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
         if (this.outline == Outline.Error) return;
         ProductADT owner = cast(this.entity.outline());
-        if (!owner.checkMember(member.token(), inferred)) {
+        if (!owner.checkMember(member.name(), inferred)) {
             ErrorReporter.report(this, GCPErrCode.FIELD_NOT_FOUND,
-                    member.token() + " not found in " + this.entity);
+                    member.name() + " not found in " + this.entity);
         }
     }
 

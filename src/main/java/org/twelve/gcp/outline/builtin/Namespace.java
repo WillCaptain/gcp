@@ -19,7 +19,7 @@ public class Namespace implements Outline {
         if(parent!=null) {
             parent.subNamespaces.add(this);
         }
-        this.namespace = namespace.token();
+        this.namespace = namespace.name();
         this.node = namespace;
         this.id = Counter.getAndIncrement();
     }

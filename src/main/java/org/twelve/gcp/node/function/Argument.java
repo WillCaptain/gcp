@@ -42,7 +42,7 @@ public class Argument extends Node {
     public Argument(AST ast, Token<String> token, Outline outline, Expression defaultValue) {
         super(ast);
         this.identifier = this.addNode(outline == null ? new Identifier(ast, token) :
-                new Identifier(ast, token, outline, false));
+                new Identifier(ast, token, outline));
         this.defaultValue = defaultValue;
     }
 

@@ -566,7 +566,6 @@ public class GCPInference {
         assertTrue(argument.definedToBe() instanceof INTEGER);
         assertTrue(returns.supposedToBe() instanceof INTEGER);
         assertEquals(1,ast.errors().size());
-//todo
     }
 
     private static AST mockGCPTestAst() {

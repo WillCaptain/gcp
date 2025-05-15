@@ -23,9 +23,9 @@ public class IdentifierInference implements Inference<Identifier> {
         LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
         EnvSymbol supposed;
         if(node.parent() instanceof FunctionCallNode || node.parent() instanceof Accessor) {
-            supposed = oEnv.lookupAll(node.token());
+            supposed = oEnv.lookupAll(node.name());
         }else{
-            supposed = oEnv.lookup(node.token());
+            supposed = oEnv.lookupSymbol(node.name());
         }
         if (supposed == null) {
             ErrorReporter.report(node, GCPErrCode.VARIABLE_NOT_DEFINED);
