@@ -16,7 +16,7 @@ import java.util.Objects;
  */
 public class Token<T> {
     // Singleton unit token
-    private static final Token<?> UNIT = new Token<>(CONSTANTS.UNIT, 0);
+    private static final Token<String> UNIT = new Token<>(CONSTANTS.UNIT, 0);
 
     private final T data;
     private final Location loc;
@@ -66,9 +66,8 @@ public class Token<T> {
     /**
      * Gets the singleton unit token instance.
      */
-    @SuppressWarnings("unchecked")
-    public static <T> Token<T> unit() {
-        return (Token<T>) UNIT;
+    public static Token<String> unit() {
+        return UNIT;
     }
 
     // --- Object Overrides ---

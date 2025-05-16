@@ -24,7 +24,7 @@ public class AssignmentInference implements Inference<Assignment> {
         Outline varOutline = node.lhs().infer(inferences);
         if (node.rhs() == null) {
             ErrorReporter.report(node.lhs(), GCPErrCode.NOT_INITIALIZED);
-            return Ignore;
+            return varOutline;
         }
         Outline valueOutline = node.rhs() == null ? Unknown : node.rhs().infer(inferences);
 

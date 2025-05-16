@@ -5,6 +5,7 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.SELECTION_TYPE;
 import org.twelve.gcp.common.VariableKind;
+import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.node.imexport.Export;
@@ -174,9 +175,9 @@ public class AstStructureTest {
         FunctionBody body = new FunctionBody(ast);
         FunctionNode function = FunctionNode.from(body);
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        declare.declare(new Token<>("get", 0),function);
+        declare.declare(new Identifier(ast,new Token<>("get", 0)),function);
         ast.addStatement(declare);
-        assertEquals(Token.unit().lexeme(),function.argument().identifier().name());
+        assertEquals(Token.unit().lexeme(),function.argument().name());
     }
 
     @Test

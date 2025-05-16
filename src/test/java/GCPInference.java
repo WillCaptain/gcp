@@ -43,11 +43,11 @@ public class GCPInference {
         AST ast = mockGCPTestAst();
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        Argument x = new Argument(ast, new Token<>("x"), Outline.Integer);
+        Argument x = new Argument(ast, new Token<>("x"), new Identifier(ast,new Token<>("Integer")));
         FunctionBody body = new FunctionBody(ast);
         body.addStatement(new ReturnStatement(new Identifier(ast, new Token<>("x"))));
         FunctionNode f = FunctionNode.from(body, x);
-        declare.declare(new Token<>("f"), f);
+        declare.declare(new Identifier(ast,new Token<>("f")), f);
         ast.addStatement(declare);
         //f("some")
         LiteralNode<String> some = LiteralNode.parse(ast, new Token<>("some"));
@@ -96,7 +96,7 @@ public class GCPInference {
         FunctionNode f = FunctionNode.from(body, x);
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        declare.declare(new Token<>("f"), f);
+        declare.declare(new Identifier(ast,new Token<>("f")), f);
         ast.addStatement(declare);
 
         //f("some")
@@ -136,7 +136,7 @@ public class GCPInference {
         FunctionBody body = new FunctionBody(ast);
 
         VariableDeclarator yDeclare = new VariableDeclarator(ast, VariableKind.VAR);
-        yDeclare.declare(new Token<>("y"), LiteralNode.parse(ast, new Token<>("str")));
+        yDeclare.declare(new Identifier(ast,new Token<>("y")), LiteralNode.parse(ast, new Token<>("str")));
         body.addStatement(yDeclare);
 
 
@@ -146,7 +146,7 @@ public class GCPInference {
         FunctionNode f = FunctionNode.from(body, x);
 
         VariableDeclarator fDeclare = new VariableDeclarator(ast, VariableKind.LET);
-        fDeclare.declare(new Token<>("f"), f);
+        fDeclare.declare(new Identifier(ast,new Token<>("f")), f);
         ast.addStatement(fDeclare);
 
         //f("some")
@@ -188,7 +188,7 @@ public class GCPInference {
                 LiteralNode.parse(ast, new Token<>(1)), new OperatorNode<>(ast, BinaryOperator.ADD));
         body.addStatement(new ReturnStatement(add1));
         FunctionNode f = FunctionNode.from(body, x);
-        declare.declare(new Token<>("f"), f);
+        declare.declare(new Identifier(ast,new Token<>("f")), f);
         ast.addStatement(declare);
         //f("some")
         LiteralNode<String> some = LiteralNode.parse(ast, new Token<>("some"));
@@ -227,7 +227,7 @@ public class GCPInference {
                 new Identifier(ast, new Token<>("y")), new OperatorNode<>(ast, BinaryOperator.ADD));
         body.addStatement(new ReturnStatement(add1));
         FunctionNode f = FunctionNode.from(body, x, y);
-        declare.declare(new Token<>("f"), f);
+        declare.declare(new Identifier(ast,new Token<>("f")), f);
         ast.addStatement(declare);
 
         LiteralNode<String> some = LiteralNode.parse(ast, new Token<>("some"));
@@ -243,7 +243,7 @@ public class GCPInference {
 
         //let z = f("some");
         declare = new VariableDeclarator(ast, VariableKind.LET);
-        declare.declare(new Token<>("z"), new FunctionCallNode(ast, new Token<>("f"), some));
+        declare.declare(new Identifier(ast,new Token<>("z")), new FunctionCallNode(ast, new Token<>("f"), some));
         ast.addStatement(declare);
         //z("people");
         FunctionCallNode call3 = new FunctionCallNode(ast, new Token<>("z"), people);
@@ -294,7 +294,7 @@ public class GCPInference {
         add = new BinaryExpression(add, new Identifier(ast, new Token<>("z")), new OperatorNode<>(ast, BinaryOperator.ADD));
         body.addStatement(new ReturnStatement(add));
         FunctionNode f = FunctionNode.from(body, x, y, z);
-        declare.declare(new Token<>("f"), f);
+        declare.declare(new Identifier(ast,new Token<>("f")), f);
         ast.addStatement(declare);
 
         LiteralNode<String> some = LiteralNode.parse(ast, new Token<>("some"));
@@ -329,7 +329,7 @@ public class GCPInference {
         FunctionCallNode call1 = new FunctionCallNode(ast, new Token<>("y"), new Identifier(ast, new Token<>("x")));
         body.addStatement(new ReturnStatement(call1));
         FunctionNode f = FunctionNode.from(body, x, y);
-        declare.declare(new Token<>("f"), f);
+        declare.declare(new Identifier(ast,new Token<>("f")), f);
         ast.addStatement(declare);
         //f(10,x->x*5);
         LiteralNode<Integer> ten = LiteralNode.parse(ast, new Token<>(10));
@@ -361,7 +361,7 @@ public class GCPInference {
         FunctionCallNode call1 = new FunctionCallNode(ast, new Token<>("y"), new Identifier(ast, new Token<>("x")));
         body.addStatement(new ReturnStatement(call1));
         FunctionNode f = FunctionNode.from(body, y, x);
-        declare.declare(new Token<>("f"), f);
+        declare.declare(new Identifier(ast,new Token<>("f")), f);
         ast.addStatement(declare);
         //f(x->x+5,10);
         LiteralNode<String> ten = LiteralNode.parse(ast, new Token<>("10"));
@@ -395,7 +395,7 @@ public class GCPInference {
         FunctionCallNode call2 = new FunctionCallNode(ast, new Token<>("z"), call1);
         body.addStatement(new ReturnStatement(call2));
         FunctionNode f = FunctionNode.from(body, x, y, z);
-        declare.declare(new Token<>("f"), f);
+        declare.declare(new Identifier(ast,new Token<>("f")), f);
         ast.addStatement(declare);
         //f(10,x->x+"some",y->y+100)
         LiteralNode<Integer> ten = LiteralNode.parse(ast, new Token<>(10));
@@ -438,7 +438,7 @@ public class GCPInference {
         FunctionCallNode call2 = new FunctionCallNode(ast, new Token<>("z"), call1);
         body.addStatement(new ReturnStatement(call2));
         FunctionNode f = FunctionNode.from(body, z, y, x);
-        declare.declare(new Token<>("f"), f);
+        declare.declare(new Identifier(ast,new Token<>("f")), f);
         ast.addStatement(declare);
         //f(y->y+100,x->x,"some")
         LiteralNode<Integer> ten = LiteralNode.parse(ast, new Token<>(10));

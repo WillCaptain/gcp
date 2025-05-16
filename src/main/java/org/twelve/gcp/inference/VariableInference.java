@@ -2,8 +2,7 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
-import org.twelve.gcp.node.expression.EntityNode;
-import org.twelve.gcp.node.expression.Expression;
+import org.twelve.gcp.node.typeable.TypeAble;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.outline.Outline;
@@ -16,7 +15,7 @@ public class VariableInference implements Inference<Variable> {
         LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
         EnvSymbol symbol = oEnv.current().lookupSymbol(node.name());//only check my scope
         if(symbol==null ) {
-            Outline outline = inferDeclared(oEnv,node.getDeclared(),inferences);
+            Outline outline = inferDeclared(oEnv,node.declared(),inferences);
             oEnv.defineSymbol(node.name(), outline, node.mutable(), node);
             return outline;
         }else{
@@ -29,11 +28,8 @@ public class VariableInference implements Inference<Variable> {
         }
     }
 
-    private Outline inferDeclared(LocalSymbolEnvironment oEnv, Expression declared, Inferences inferences) {
-        if(declared instanceof Identifier){
-            return oEnv.lookupOutline(((Identifier) declared).name()).outline();
-        }else {
-            return declared.infer(inferences);
-        }
+    private Outline inferDeclared(LocalSymbolEnvironment oEnv, TypeAble declared, Inferences inferences) {
+        if(declared==null) return Outline.Unknown;
+        return declared.inferOutline();
     }
 }

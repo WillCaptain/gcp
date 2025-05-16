@@ -1,9 +1,7 @@
 import net.bytebuddy.asm.Advice;
-import org.twelve.gcp.ast.ASF;
-import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.ast.Token;
+import org.twelve.gcp.ast.*;
 import org.twelve.gcp.common.*;
+import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.LiteralUnionNode;
 import org.twelve.gcp.node.expression.*;
@@ -21,6 +19,7 @@ import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.node.statement.*;
+import org.twelve.gcp.node.typeable.TypeAble;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
@@ -58,13 +57,13 @@ public class ASTHelper {
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.LET);
         //var age:Integer, name = "Will", height:Float = 1.68, my_school = school;
         //age:Integer
-        var.declare(new Token<>("age", offset + 4), ProductADT.Integer);
+        var.declare(new Identifier(ast,new Token<>("age", offset + 4)), new Identifier(ast,new Token<>("Integer")),null);
         //name = "Will"
-        var.declare(new Token<>("name", offset + 19), LiteralNode.parse(ast, new Token<>("Will", offset + 26)));
+        var.declare(new Identifier(ast,new Token<>("name", offset + 16)), LiteralNode.parse(ast, new Token<>("Will", offset + 26)));
         //height:Float = 1.68
-        var.declare(new Token<>("height", offset + 34), ProductADT.Double, LiteralNode.parse(ast, new Token<>(1.68, offset + 50)));
+        var.declare(new Identifier(ast,new Token<>("height", offset + 34)), new Identifier(ast,new Token<>("Double")), LiteralNode.parse(ast, new Token<>(1.68, offset + 50)));
         //my_school = school
-        var.declare(new Token<>("grade", offset + 52), new Identifier(ast, new Token<>("level", offset + 64)));
+        var.declare(new Identifier(ast,new Token<>("grade", offset + 52)), new Identifier(ast, new Token<>("level", offset + 64)));
 
         ast.program().body().addStatement(var);
 
@@ -87,8 +86,8 @@ public class ASTHelper {
         int offset = 32;
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.LET);
         //var grade = 1, school="NO.1";
-        var.declare(new Token<>("grade", offset), LiteralNode.parse(ast, new Token<>(1, offset + 12)));
-        var.declare(new Token<>("school", offset), LiteralNode.parse(ast, new Token<>("NO.1", offset + 12)));
+        var.declare(new Identifier(ast,new Token<>("grade", offset)), LiteralNode.parse(ast, new Token<>(1, offset + 12)));
+        var.declare(new Identifier(ast,new Token<>("school", offset)), LiteralNode.parse(ast, new Token<>("NO.1", offset + 12)));
         ast.program().body().addStatement(var);
 
         //export height as stature, name;
@@ -130,7 +129,7 @@ public class ASTHelper {
 
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        declare.declare(new Token<>("add", 0), addxy);
+        declare.declare(new Identifier(ast,new Token<>("add", 0)), addxy);
         ast.program().body().addStatement(declare);
         return ast;
     }
@@ -157,7 +156,7 @@ public class ASTHelper {
         ast.program().body().nodes().clear();
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.VAR);
-        declare.declare(new Token<>("add", 0), new PolyNode(ast,addxy,addxyz));
+        declare.declare(new Identifier(ast,new Token<>("add", 0)), new PolyNode(ast,addxy,addxyz));
         ast.program().body().addStatement(declare);
 
         return ast;
@@ -166,7 +165,7 @@ public class ASTHelper {
     public static AST mockErrorPoly() {
         AST ast = mockOverrideAddFunc();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.VAR);
-        declare.declare(new Token<>("forError", 0), LiteralNode.parse(ast, new Token<>("any")));
+        declare.declare(new Identifier(ast,new Token<>("forError", 0)), LiteralNode.parse(ast, new Token<>("any")));
         ast.program().body().addStatement(declare);
 //        Expression add1 = cast(ast.program().body().nodes().getFirst().nodes().getFirst().nodes().get(1));
 //        Assignment assignment1 = new Assignment(new Identifier(ast, new Token<>("add", 0)), add1);
@@ -195,31 +194,31 @@ public class ASTHelper {
         FunctionBody body = new FunctionBody(ast);
         MemberAccessor accessor = new MemberAccessor(ast, new This(ast, new Token<>("this")), new Identifier(ast, new Token<>("name")));
         body.addStatement(new ReturnStatement(accessor));
-        members.add(new MemberNode(ast, new Token<>("get_name"),
+        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("get_name")),
                 FunctionNode.from(body), false));
 
         body = new FunctionBody(ast);
         body.addStatement(new ReturnStatement(new Identifier(ast, new Token<>("name"))));
-        members.add(new MemberNode(ast, new Token<>("get_my_name"),
+        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("get_my_name")),
                 FunctionNode.from(body), false));
-        members.add(new MemberNode(ast, new Token<>("name"),
+        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("name")),
                 LiteralNode.parse(ast, new Token<>("Will", 0)), false));
 
 
         EntityNode entity = new EntityNode(ast, members);
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        declare.declare(new Token<>("person", 0), entity);
+        declare.declare(new Identifier(ast,new Token<>("person", 0)), entity);
         ast.addStatement(declare);
 
         declare = new VariableDeclarator(ast, VariableKind.LET);
         accessor = new MemberAccessor(ast, new Identifier(ast, new Token<>("person")), new Identifier(ast, new Token<>("name")));
-        declare.declare(new Token<>("name_1", 0), accessor);
+        declare.declare(new Identifier(ast,new Token<>("name_1", 0)), accessor);
         ast.addStatement(declare);
 
         declare = new VariableDeclarator(ast, VariableKind.LET);
         accessor = new MemberAccessor(ast, new Identifier(ast, new Token<>("person")), new Identifier(ast, new Token<>("get_name")));
         FunctionCallNode call = new FunctionCallNode(ast, accessor);
-        declare.declare(new Token<>("name_2", 0), call);
+        declare.declare(new Identifier(ast,new Token<>("name_2", 0)), call);
         ast.addStatement(declare);
         return ast;
     }
@@ -236,7 +235,7 @@ public class ASTHelper {
         VariableDeclarator var = cast(ast.program().body().statements().getFirst());
         EntityNode person = cast(var.assignments().getFirst().rhs());
         Expression getName = person.members().get("get_name").expression();
-        MemberNode node = new MemberNode(ast, new Token<>("get_name"),
+        MemberNode node = new MemberNode(ast, new Identifier(ast,new Token<>("get_name")),
                 new PolyNode(ast,getName,FunctionNode.from(body, new Argument(ast, new Token<>("last_name")))), true);
         person.nodes().remove(1);
         person.addNode(node);
@@ -252,14 +251,14 @@ public class ASTHelper {
         BinaryExpression add = new BinaryExpression(name, LiteralNode.parse(ast, new Token<>("Zhang")),
                 new OperatorNode<>(ast, BinaryOperator.ADD));
         body.addStatement(new ReturnStatement(add));
-        MemberNode getFullName = new MemberNode(ast, new Token<>("get_full_name"),
+        MemberNode getFullName = new MemberNode(ast, new Identifier(ast,new Token<>("get_full_name")),
                 FunctionNode.from(body), false);
 
         List<MemberNode> members = new ArrayList<>();
         members.add(getFullName);
 
         body = new FunctionBody(ast);
-        MemberNode getName = new MemberNode(ast, new Token<>("get_name"),
+        MemberNode getName = new MemberNode(ast, new Identifier(ast,new Token<>("get_name")),
                 FunctionNode.from(body), true);
         body.addStatement(new ReturnStatement(LiteralNode.parse(ast, new Token<>("Will Zhang"))));
         members.add(getName);//重载get_name方法
@@ -268,7 +267,7 @@ public class ASTHelper {
                 ast.program().body().get(0).nodes().getFirst().nodes().getFirst());
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        declare.declare(new Token<>("me", 0), entity);
+        declare.declare(new Identifier(ast,new Token<>("me", 0)), entity);
         ast.addStatement(declare);
         return ast;
     }
@@ -286,7 +285,7 @@ public class ASTHelper {
                         new Identifier(ast, new Token<>("last_name")),
                         new OperatorNode<>(ast, BinaryOperator.ADD))));
         body.addStatement(new ReturnStatement(LiteralNode.parse(ast,new Token<>(100))));
-        MemberNode getName = new MemberNode(ast, new Token<>("get_name"),
+        MemberNode getName = new MemberNode(ast, new Identifier(ast,new Token<>("get_name")),
                 FunctionNode.from(body, new Argument(ast, new Token<>("last_name"))), false);
 
         List<MemberNode> members = new ArrayList<>();
@@ -297,7 +296,7 @@ public class ASTHelper {
         body.addStatement(new ExpressionStatement(call));
         call = new FunctionCallNode(ast, new Identifier(ast,new Token<>("get_name")),LiteralNode.parse(ast,new Token<>("other")));
         body.addStatement(new ReturnStatement(call));
-        getName = new MemberNode(ast, new Token<>("get_other_name"),
+        getName = new MemberNode(ast, new Identifier(ast,new Token<>("get_other_name")),
                 FunctionNode.from(body), false);
         members.add(getName);
 
@@ -306,7 +305,7 @@ public class ASTHelper {
                 ast.program().body().get(0).nodes().getFirst().nodes().getFirst());
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        declare.declare(new Token<>("me", 0), entity);
+        declare.declare(new Identifier(ast,new Token<>("me", 0)), entity);
         ast.addStatement(declare);
 
         //me.get_name();
@@ -330,7 +329,7 @@ public class ASTHelper {
         AST ast = asf.newAST();
         PolyNode poly = new PolyNode(ast, LiteralNode.parse(ast, new Token<>(100)), LiteralNode.parse(ast, new Token<>("some")));
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.VAR);
-        declare.declare(new Token<>("poly", 0), poly);
+        declare.declare(new Identifier(ast,new Token<>("poly", 0)), poly);
         ast.addStatement(declare);
         return ast;
     }
@@ -342,7 +341,7 @@ public class ASTHelper {
         ast.addStatement(assignment);
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        declare.declare(new Token<>("poly"), LiteralNode.parse(ast, new Token<>(10.0f)));
+        declare.declare(new Identifier(ast,new Token<>("poly")), LiteralNode.parse(ast, new Token<>(10.0f)));
         ast.addStatement(declare);
         return ast;
     }
@@ -352,7 +351,7 @@ public class ASTHelper {
         AST ast = asf.newAST();
         LiteralUnionNode union = new LiteralUnionNode(ast, LiteralNode.parse(ast, new Token<>(100)), LiteralNode.parse(ast, new Token<>("some")));
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.VAR);
-        declare.declare(new Token<>("union", 0), union);
+        declare.declare(new Identifier(ast,new Token<>("union", 0)), union);
         ast.addStatement(declare);
         return ast;
     }
@@ -395,27 +394,27 @@ public class ASTHelper {
             case 2 -> FunctionNode.from(body, z, x, y);
             default -> FunctionNode.from(body, x, y, z);
         };
-        declare.declare(new Token<>("f"), f);
+        declare.declare(new Identifier(ast,new Token<>("f")), f);
         ast.addStatement(declare);
 
         y = new Argument(ast, new Token<>("y"));
         x = new Argument(ast, new Token<>("x"));
         //x,y->{age=x, name = y.name}
         List<MemberNode> members = new ArrayList<>();
-        members.add(new MemberNode(ast, new Token<>("age"), new Identifier(ast, new Token<>("x")), false));
-        members.add(new MemberNode(ast, new Token<>("name"), new MemberAccessor(ast, new Identifier(ast, new Token<>("y")), new Identifier(ast, new Token<>("name"))), false));
+        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("age")), new Identifier(ast, new Token<>("x")), false));
+        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("name")), new MemberAccessor(ast, new Identifier(ast, new Token<>("y")), new Identifier(ast, new Token<>("name"))), false));
 
         EntityNode boy = new EntityNode(ast, members);
         body = new FunctionBody(ast);
         body.addStatement(new ReturnStatement(boy));
 
         members = new ArrayList<>();
-        members.add(new MemberNode(ast, new Token<>("combine"), FunctionNode.from(body, x, y), false));
+        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("combine")), FunctionNode.from(body, x, y), false));
 //        FunctionNode arg_z = FunctionNode.from(body, x, y);
         EntityNode arg_z = new EntityNode(ast, members);
 
         members = new ArrayList<>();
-        members.add(new MemberNode(ast, new Token<>("name"), LiteralNode.parse(ast, new Token<>("Will")), false));
+        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("name")), LiteralNode.parse(ast, new Token<>("Will")), false));
         EntityNode arg_y = new EntityNode(ast, members);
         FunctionCallNode call2 = switch (type) {
             case 1 ->
@@ -455,7 +454,7 @@ public class ASTHelper {
     static void mockEntityProjectionNode4(FunctionBody body) {
         AST ast = body.ast();
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.VAR);
-        declarator.declare(new Token<>("w"), new Identifier(ast, new Token<>("z")));
+        declarator.declare(new Identifier(ast,new Token<>("w")), new Identifier(ast, new Token<>("z")));
         body.addStatement(declarator);
         MemberAccessor accessor = new MemberAccessor(ast, new Identifier(ast, new Token<>("w")), new Identifier(ast, new Token<>("combine")));
         FunctionCallNode call1 = new FunctionCallNode(ast, accessor, new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("y")));
@@ -472,7 +471,7 @@ public class ASTHelper {
         members.add(EntityMember.from("combine", combine, Modifier.PUBLIC, true));
         Entity w = Entity.from(members);
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.VAR);
-        declarator.declare(new Token<>("w"), w, new Identifier(ast, new Token<>("z")));
+        declarator.declare(new Identifier(ast,new Token<>("w")), mockTypeAble(w), new Identifier(ast, new Token<>("z")));
         body.addStatement(declarator);
         MemberAccessor accessor = new MemberAccessor(ast, new Identifier(ast, new Token<>("w")), new Identifier(ast, new Token<>("combine")));
         FunctionCallNode call1 = new FunctionCallNode(ast, accessor, new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("y")));
@@ -529,7 +528,7 @@ public class ASTHelper {
 
         FunctionNode factorial = FunctionNode.from(body, new Argument(ast, new Token<>("n")));
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.LET);
-        declarator.declare(fToken, factorial);
+        declarator.declare(new Identifier(ast,fToken), factorial);
         ast.addStatement(declarator);
 
         call = new FunctionCallNode(ast,fToken,LiteralNode.parse(ast,new Token<>(100)));
@@ -556,13 +555,14 @@ public class ASTHelper {
         //var some:String|Integer = 100;
         Token<String> some = new Token<>("some");
         VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.VAR);
-        declarator.declare(some, Option.from(Outline.String,Outline.Integer),LiteralNode.parse(ast,new Token<>("string")));
+
+        declarator.declare(new Identifier(ast,some), mockTypeAble(Option.from(Outline.String,Outline.Integer)),LiteralNode.parse(ast,new Token<>("string")));
         block.addStatement(declarator);
         mockIsAs(ast, some, block);
         //let result = {...}
         Token<String> result = new Token<>("result");
         declarator = new VariableDeclarator(ast,VariableKind.LET);
-        declarator.declare(result, block);
+        declarator.declare(new Identifier(ast,result), block);
         ast.addStatement(declarator);
         return ast;
     }
@@ -606,14 +606,14 @@ public class ASTHelper {
         //var some = 100&"some";
         Token<String> some = new Token<>("some");
         VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.VAR);
-        declarator.declare(some,new PolyNode(ast,LiteralNode.parse(ast,new Token<>(100)),
+        declarator.declare(new Identifier(ast,some),new PolyNode(ast,LiteralNode.parse(ast,new Token<>(100)),
                 new PolyNode(ast,LiteralNode.parse(ast,new Token<>("some")))));
         block.addStatement(declarator);
         mockIsAs(ast, some, block);
         //let result = {...}
         Token<String> result = new Token<>("result");
         declarator = new VariableDeclarator(ast,VariableKind.LET);
-        declarator.declare(result, block);
+        declarator.declare(new Identifier(ast,result), block);
         ast.addStatement(declarator);
         return ast;
     }
@@ -633,13 +633,13 @@ public class ASTHelper {
         FunctionBody body = new FunctionBody(ast);
         mockIsAs(ast, some, body);
 
-        FunctionNode function = new FunctionNode(new Argument(ast,some, Outline.Integer),body);
+        FunctionNode function = new FunctionNode(new Argument(ast,some, new Identifier(ast,new Token<>("Integer"))),body);
         FunctionCallNode call = new FunctionCallNode(ast,function,LiteralNode.parse(ast,new Token<>(100)));
 
         //let result = some->{...}
         Token<String> result = new Token<>("result");
         VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.LET);
-        declarator.declare(result, call);
+        declarator.declare(new Identifier(ast,result), call);
         ast.addStatement(declarator);
 
         return ast;
@@ -655,8 +655,8 @@ public class ASTHelper {
         AST ast = asf.newAST();
         FunctionBody body = new FunctionBody(ast);
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.LET);
-        declarator.declare(new Token<>("y"),
-                Reference.from(new Identifier(ast,new Token<>("b"))),
+        declarator.declare(new Identifier(ast,new Token<>("y")),
+                new Identifier(ast,new Token<>("b")),
                 LiteralNode.parse(ast,new Token<>(100)));
         body.addStatement(declarator);
         body.addStatement(new ReturnStatement(new Identifier(ast,new Token<>("y"))));
@@ -666,11 +666,40 @@ public class ASTHelper {
         refs.add(new Identifier(ast,new Token<>("b")));
         List<Argument> args = new ArrayList<>();
         args.add(new Argument(ast,new Token<>("x"),
-                Reference.from(new Identifier(ast,new Token<>("a")))));
+                new Identifier(ast,new Token<>("a"))));
         FunctionNode func = FunctionNode.from(body,refs,args);
         declarator = new VariableDeclarator(ast,VariableKind.LET);
-        declarator.declare(new Token<>("f"),func);
+        declarator.declare(new Identifier(ast,new Token<>("f")),func);
         ast.addStatement(declarator);
         return ast;
+    }
+
+    private static TypeAble mockTypeAble(Outline outline){
+        return new TypeAble() {
+            @Override
+            public Outline infer(Inferences inferences) {
+                return outline;
+            }
+
+            @Override
+            public Outline outline() {
+                return outline;
+            }
+
+            @Override
+            public Location loc() {
+                return null;
+            }
+
+            @Override
+            public String lexeme() {
+                return "";
+            }
+
+            @Override
+            public Outline inferOutline() {
+                return outline;
+            }
+        };
     }
 }

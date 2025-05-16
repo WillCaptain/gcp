@@ -1,23 +1,21 @@
 package org.twelve.gcp.node.expression;
 
-import lombok.Getter;
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.SimpleLocation;
 import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.node.typeable.TypeAble;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.ERROR;
-import org.twelve.gcp.outline.builtin.NOTHING;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 public class Variable  extends Identifier{
     private final Identifier name;
-    @Getter
-    private final Expression declared;
+    private final TypeAble declared;
     private final Boolean mutable;
 
-    public Variable(Identifier name,Boolean mutable,Expression declared) {
-        super(declared.ast(),name.token());
+    public Variable(Identifier name, Boolean mutable, TypeAble declared) {
+        super(name.ast(),name.token());
         this.mutable = mutable;
         this.name = name;
         this.declared = declared;
@@ -33,7 +31,16 @@ public class Variable  extends Identifier{
     }
     @Override
     public String lexeme() {
-        return name.name()+(declared.outline() instanceof UNKNOWN ?"":(": "+declared.outline()));
+        String ext = "";
+        if(this.declared!=null){
+            ext = ": ";
+            if(this.declared instanceof Identifier){
+                ext += this.declared.lexeme();
+            }else{
+                ext += this.declared.outline();
+            }
+        }
+        return name.name()+ext;
     }
     @Override
     protected Outline accept(Inferences inferences) {
@@ -46,7 +53,7 @@ public class Variable  extends Identifier{
 
     @Override
     public Outline outline() {
-        if(this.declared.outline() instanceof UNKNOWN){
+        if(this.declared==null || this.declared.outline() instanceof UNKNOWN){
             return this.outline;
         }else{
             return this.declared.outline();
@@ -56,7 +63,9 @@ public class Variable  extends Identifier{
     public boolean mutable() {
         return this.mutable;
     }
-
+    public TypeAble declared() {
+        return this.declared;
+    }
     @Override
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
         if(!(this.outline instanceof ERROR)) {

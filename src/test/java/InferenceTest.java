@@ -63,7 +63,7 @@ public class InferenceTest {
         assertEquals(Ignore, var.assignments().getFirst().outline());
         //age:Integer
         Assignment age = var.assignments().getFirst();
-        assertEquals(Outline.Integer, ((Variable) age.lhs()).getDeclared().outline());
+        assertEquals(Outline.Integer, ((Variable) age.lhs()).declared().outline());
         assertEquals(Outline.Integer, age.lhs().outline());
         //name = "Will"
         Assignment name = var.assignments().get(1);
@@ -88,7 +88,7 @@ public class InferenceTest {
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Token<>("age"), Outline.Integer, LiteralNode.parse(ast, new Token("some")));
+        var.declare(new Identifier(ast,new Token<>("age")), new Identifier(ast,new Token<>("Integer")), LiteralNode.parse(ast, new Token("some")));
         ast.program().body().addStatement(var);
         asf.infer();
         assertTrue(asf.inferred());
@@ -116,7 +116,7 @@ public class InferenceTest {
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Token<>("age"), str);
+        var.declare(new Identifier(ast,new Token<>("age")), str);
         ast.program().body().addStatement(var);
         Assignment assignment = new Assignment(new Identifier(ast, new Token<>("age")), num);
         ast.addStatement(assignment);
@@ -146,7 +146,7 @@ public class InferenceTest {
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Token<>("age"), new PolyNode(ast, str, i));
+        var.declare(new Identifier(ast,new Token<>("age")), new PolyNode(ast, str, i));
         ast.program().body().addStatement(var);
         Assignment assignment = new Assignment(new Identifier(ast, new Token<>("age")), f);
         ast.addStatement(assignment);
@@ -282,9 +282,9 @@ public class InferenceTest {
          */
         AST ast = mockGCPTestAst();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        declare.declare(new Token<>("a"), LiteralNode.parse(ast, new Token<>(100d)));
-        declare.declare(new Token<>("b"), LiteralNode.parse(ast, new Token<>(100)));
-        declare.declare(new Token<>("c"), LiteralNode.parse(ast, new Token<>("some")));
+        declare.declare(new Identifier(ast,new Token<>("a")), LiteralNode.parse(ast, new Token<>(100d)));
+        declare.declare(new Identifier(ast,new Token<>("b")), LiteralNode.parse(ast, new Token<>(100)));
+        declare.declare(new Identifier(ast,new Token<>("c")), LiteralNode.parse(ast, new Token<>("some")));
         ast.addStatement(declare);
         //a+b should be double
         BinaryExpression add1 = new BinaryExpression(new Identifier(ast, new Token<>("a")), new Identifier(ast, new Token<>("b"))

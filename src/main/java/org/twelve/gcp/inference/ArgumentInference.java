@@ -1,13 +1,16 @@
 package org.twelve.gcp.inference;
 
+import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.node.typeable.TypeAble;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outlineenv.EnvSymbol;
+import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 /**
  * outline as declared outline constraint of generic
@@ -16,22 +19,29 @@ import org.twelve.gcp.outlineenv.EnvSymbol;
 public class ArgumentInference implements Inference<Argument> {
     @Override
     public Outline infer(Argument node, Inferences inferences) {
-        Identifier id = node.identifier();
-        EnvSymbol symbol = node.ast().symbolEnv().lookupAll(id.name());
+        if(node.token()== Token.unit()) return Generic.from(node, Outline.Unit);
+        LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
+        EnvSymbol symbol = oEnv.lookupAll(node.name());
         if (symbol == null) {
             Expression defaultValue = node.defaultValue();
-            Generic generic = Generic.from(node, id.outline());
+            Outline outline = inferDeclared(oEnv,node.declared(),inferences);
+            Generic generic = Generic.from(node, outline);
             if (defaultValue != null) {
                 generic.addExtendToBe(defaultValue.infer(inferences));
             }
-            node.ast().symbolEnv().defineSymbol(id.name(), generic, true, id);
-            node.ast().cache().add(id.id());
+            node.ast().symbolEnv().defineSymbol(node.name(), generic, true, node);
+//            node.ast().cache().add(id.id());
             return generic;
         } else {
-            if(!node.ast().cache().contains(id.id())){
+            if(symbol.node()!=node){
                 ErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
             }
             return symbol.outline();
         }
+    }
+
+    private Outline inferDeclared(LocalSymbolEnvironment oEnv, TypeAble declared, Inferences inferences) {
+        if(declared==null) return Outline.Unknown;
+        return declared.inferOutline();
     }
 }
