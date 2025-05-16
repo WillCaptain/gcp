@@ -568,6 +568,16 @@ public class GCPInference {
         assertEquals(1,ast.errors().size());
     }
 
+    @Test
+    void test_gpc_only_reference(){
+
+    }
+
+    @Test
+    void test_gcp_argument_reference(){
+        //todo
+    }
+
     private static AST mockGCPTestAst() {
         ASF asf = new ASF();
         AST ast = asf.newAST();
