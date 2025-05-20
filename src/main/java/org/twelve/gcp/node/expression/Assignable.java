@@ -10,6 +10,7 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.projectable.Generic;
+import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.OperateAble;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
@@ -26,14 +27,14 @@ public abstract class Assignable extends Expression {
             return;
         }
         //generic处理
-        if (this.outline instanceof Generic) {
-            Generic me = ((Generic) this.outline);
+        if (this.outline instanceof Genericable) {
+            Genericable<?,?> me = ((Genericable<?,?>) this.outline);
             if (inferred instanceof Generic) {
                 if (me.node().index() > ((Generic) inferred).node().index()) {//bigger index argument refer smaller
                     me.addExtendToBe(inferred);
                 }
             } else {
-                ((Generic) this.outline).addExtendToBe(inferred);
+                me.addExtendToBe(inferred);
             }
         }
 

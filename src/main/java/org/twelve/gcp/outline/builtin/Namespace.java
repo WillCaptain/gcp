@@ -58,6 +58,11 @@ public class Namespace implements Outline {
         return subs;
     }
 
+    @Override
+    public String toString() {
+        return "";
+    }
+
     public Namespace parentNamespace() {
         return this.parentNamespace;
     }

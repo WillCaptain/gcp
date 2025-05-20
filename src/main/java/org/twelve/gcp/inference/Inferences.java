@@ -9,9 +9,11 @@ import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.node.expression.IsAs;
+import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
+import org.twelve.gcp.node.expression.referable.ReferenceCallNode;
 import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.ExportSpecifier;
 import org.twelve.gcp.node.imexport.Import;
@@ -20,6 +22,7 @@ import org.twelve.gcp.node.statement.Assignment;
 import org.twelve.gcp.node.statement.ExpressionStatement;
 import org.twelve.gcp.node.statement.ReturnStatement;
 import org.twelve.gcp.node.statement.VariableDeclarator;
+import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
 import org.twelve.gcp.outline.Outline;
 
 public interface Inferences {
@@ -36,6 +39,8 @@ public interface Inferences {
     Outline visit(Assignment assignment);
     Outline visit(VariableDeclarator assignment);
     Outline visit(Identifier identifier);
+    Outline visit(IdentifierTypeNode identifierTypeNode);
+    Outline visit(ReferenceNode ref);
     Outline visit(Variable variable);
     Outline visit(Export export);
     Outline visit(Import _import);
@@ -57,4 +62,5 @@ public interface Inferences {
     Outline visit(ImportSpecifier importSpecifier);
     Outline visit(ExportSpecifier exportSpecifier);
     Outline visit(IsAs isAs);
+    Outline visit(ReferenceCallNode refCallNode);
 }

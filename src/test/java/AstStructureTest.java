@@ -66,9 +66,9 @@ public class AstStructureTest {
 
         assertEquals(0, ast.program().id());
         assertEquals(2, ast.program().body().id());
-        assertEquals(3, ast.program().namespace().id());
-        assertEquals(5, ast.program().namespace().nodes().get(0).id());
-        assertEquals(7, ast.program().namespace().nodes().get(1).id());
+        assertEquals(6, ast.program().namespace().id());
+        assertEquals(8, ast.program().namespace().nodes().get(0).id());
+        assertEquals(10, ast.program().namespace().nodes().get(1).id());
     }
 
 
@@ -106,10 +106,10 @@ public class AstStructureTest {
         assertEquals(43, c.imported().loc().end());
 
         //import * from e
-        List<Token<String>> source = new ArrayList<>();
-        source.add(new Token<>("e", 22));
-        source.add(new Token<>("f", 22));
-        source.add(new Token<>("g", 22));
+        List<Identifier> source = new ArrayList<>();
+        source.add(new Identifier(ast,new Token<>("e", 22)));
+        source.add(new Identifier(ast,new Token<>("f", 22)));
+        source.add(new Identifier(ast,new Token<>("g", 22)));
         imported = ast.program().body().addImport(new Import(ast, source));
         assertEquals(0, imported.specifiers().size());
         assertEquals("e.f.g", imported.source().lexeme());

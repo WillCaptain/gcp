@@ -7,7 +7,6 @@ import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.node.typeable.TypeAble;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outlineenv.EnvSymbol;
@@ -15,20 +14,13 @@ import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 import static org.twelve.gcp.common.Tool.cast;
 import static org.twelve.gcp.outline.adt.ProductADT.Error;
-import static org.twelve.gcp.outline.adt.ProductADT.Unknown;
 
-public class Identifier extends Assignable implements TypeAble {
+public class Identifier extends Assignable {
     private final Token<String> token;
 
-    // import a as b, b is the reference
     public Identifier(AST ast, Token<String> token) {
-        this(ast, token, Unknown);
-    }
-
-    public Identifier(AST ast, Token<String> token, Outline declaredOutline) {
         super(ast, null);
         this.token = token;
-        this.outline = declaredOutline;
     }
 
     @Override
@@ -36,11 +28,7 @@ public class Identifier extends Assignable implements TypeAble {
         return this.token.lexeme();
     }
 
-    @Override
-    public Outline inferOutline() {
-        this.outline = this.ast().symbolEnv().lookupOutline(this.name()).outline();
-        return this.outline;
-    }
+
 
     @Override
     public Location loc() {

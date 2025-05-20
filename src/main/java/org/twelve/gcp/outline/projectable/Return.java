@@ -143,16 +143,16 @@ public class Return extends Genericable<Return, Node> {
         return super.inferred() && this.supposed.inferred();
     }
 
-//    @Override
-//    public String toString() {
-//        return (this.supposed instanceof UNKNOWN) ? super.toString(): this.supposed.toString();
-//    }
-
     @Override
     public Outline guess() {
-//        return (this.supposed instanceof UNKNOWN) ? super.guess() :
-//                (this.supposed instanceof Projectable ? ((Projectable) this.supposed).guess() : this.supposed);
         Outline outline = this.supposed instanceof Projectable ? ((Projectable) this.supposed).guess() : this.supposed;
         return (outline instanceof UNKNOWN)?this.declaredToBe():outline;
+    }
+
+    @Override
+    public Outline project(Reference me, Outline you) {
+        Return projected = cast(super.project(me, you));
+        projected.supposed = this.supposed.project(me,you);
+        return projected;
     }
 }

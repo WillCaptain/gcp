@@ -35,7 +35,7 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         defineOutline(root,Outline.Number);
     }
     private void defineOutline(AstScope root, Outline outline){
-        root.defineOutline(outline.name(),outline);
+        root.defineOutline(outline.name(),outline,null);
     }
 
     private void setCurrent(AstScope scope) {
@@ -105,6 +105,9 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
 
     public EnvSymbol defineSymbol(String key, Outline outline, boolean mutable, Identifier originNode) {
         return this.current.defineSymbol(key, outline, mutable, originNode);
+    }
+    public void defineOutline(String key, Outline outline, Identifier originNode){
+        this.current.defineOutline(key,outline,originNode);
     }
 
     public Module module() {

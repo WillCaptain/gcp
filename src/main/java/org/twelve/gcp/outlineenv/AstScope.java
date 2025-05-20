@@ -54,12 +54,12 @@ public class AstScope implements Scope {
         return symbol;
     }
 
-    public EnvSymbol defineOutline(String key,Outline outline){
-        if(this.outlines.containsKey(key)){
+    public EnvSymbol defineOutline(String key, Outline outline, Identifier originNode) {
+        if (this.outlines.containsKey(key)) {
             return this.outlines.get(key);
         }
-        EnvSymbol type = new EnvSymbol(key,outline,this.scopeId);
-        this.outlines.put(key,type);
+        EnvSymbol type = new EnvSymbol(key, outline, this.scopeId, originNode);
+        this.outlines.put(key, type);
         return type;
     }
 
@@ -80,8 +80,8 @@ public class AstScope implements Scope {
                         return new EnvSymbol(key, m.mutable().toBool(), m.outline(), m.node().scope(), m.node());
                     } else {
                         Poly poly = Poly.create();
-                        poly.sum(symbol.outline(),false);
-                        poly.sum(member.get().outline(),false);
+                        poly.sum(symbol.outline(), false);
+                        poly.sum(member.get().outline(), false);
                         return new EnvSymbol(key, symbol.mutable(), poly, symbol.node().scope(), symbol.node());
                     }
                 }
@@ -93,7 +93,8 @@ public class AstScope implements Scope {
     public EnvSymbol lookupSymbol(String key) {
         return symbols.get(key);
     }
-    public EnvSymbol lookupOutline(String key){
+
+    public EnvSymbol lookupOutline(String key) {
         return outlines.get(key);
     }
 }

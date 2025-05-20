@@ -5,7 +5,7 @@ import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.node.typeable.TypeAble;
+import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
@@ -22,19 +22,19 @@ public class Argument extends Identifier {
     }
 
     protected final Expression defaultValue;
-    private final TypeAble declared;
+    private final TypeNode declared;
 
     public Argument(AST ast, Token<String> token) {
         this(ast, token, null);
     }
 
-    public Argument(AST ast, Token<String> token, TypeAble declared, Expression defaultValue) {
+    public Argument(AST ast, Token<String> token, TypeNode declared, Expression defaultValue) {
         super(ast, token);
-        this.declared = declared;
-        this.defaultValue = defaultValue;
+        this.declared = this.addNode(declared);
+        this.defaultValue = this.addNode(defaultValue);
     }
 
-    public Argument(AST ast, Token<String> token, TypeAble declared) {
+    public Argument(AST ast, Token<String> token, TypeNode declared) {
         this(ast, token, declared, null);
     }
 
@@ -52,12 +52,8 @@ public class Argument extends Identifier {
     public String lexeme() {
         String ext = "";
         if(this.declared!=null){
-            ext = ": ";
-            if(this.declared instanceof Identifier){
-                ext += this.declared.lexeme();
-            }else{
-                ext += this.declared.outline();
-            }
+            ext = ": "+this.declared.lexeme();
+            if(ext.trim().equals(":")) ext = "";
         }
         return this.name() + ext;
     }
@@ -89,7 +85,7 @@ public class Argument extends Identifier {
         return this.index;
     }
 
-    public TypeAble declared() {
+    public TypeNode declared() {
         return this.declared;
     }
 }

@@ -3,7 +3,7 @@ package org.twelve.gcp.node.expression;
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.SimpleLocation;
 import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.node.typeable.TypeAble;
+import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.ERROR;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
@@ -11,14 +11,14 @@ import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 public class Variable  extends Identifier{
     private final Identifier name;
-    private final TypeAble declared;
+    private final TypeNode declared;
     private final Boolean mutable;
 
-    public Variable(Identifier name, Boolean mutable, TypeAble declared) {
+    public Variable(Identifier name, Boolean mutable, TypeNode declared) {
         super(name.ast(),name.token());
         this.mutable = mutable;
         this.name = name;
-        this.declared = declared;
+        this.declared = this.addNode(declared);
     }
 
     @Override
@@ -33,12 +33,13 @@ public class Variable  extends Identifier{
     public String lexeme() {
         String ext = "";
         if(this.declared!=null){
-            ext = ": ";
-            if(this.declared instanceof Identifier){
-                ext += this.declared.lexeme();
-            }else{
-                ext += this.declared.outline();
-            }
+            ext = ": "+this.declared.lexeme();
+//            if(this.declared instanceof IdentifierType){
+//                ext += this.declared.lexeme();
+//            }else{
+//                ext += this.declared.outline();
+//            }
+            if(ext.trim().equals(":")) ext = "";
         }
         return name.name()+ext;
     }
@@ -47,9 +48,9 @@ public class Variable  extends Identifier{
         return inferences.visit(this);
     }
 
-    public Boolean isDeclared() {
-        return !(this.declared.outline() instanceof UNKNOWN);
-    }
+//    public Boolean isDeclared() {
+//        return !(this.declared.outline() instanceof UNKNOWN);
+//    }
 
     @Override
     public Outline outline() {
@@ -63,7 +64,7 @@ public class Variable  extends Identifier{
     public boolean mutable() {
         return this.mutable;
     }
-    public TypeAble declared() {
+    public TypeNode declared() {
         return this.declared;
     }
     @Override

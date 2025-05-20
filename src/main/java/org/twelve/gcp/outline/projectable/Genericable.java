@@ -23,7 +23,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
     //extend_to_be(out) <: projection <: declared_to_be <: (in)has_to_be (out)<:(in)defined_to_be
     //x:Number => x.declaredToBe = Number
-    protected final Outline declaredToBe;
+    protected Outline declaredToBe;
 
     //x = 100; => x.extend_to_be = Number
     protected Outline extendToBe = Nothing;
@@ -38,7 +38,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         this.node = node;
         this.id = Counter.getAndIncrement();
 
-        this.declaredToBe = (declaredToBe instanceof UNKNOWN) ? Any : declaredToBe;
+        this.declaredToBe = (declaredToBe==null || (declaredToBe instanceof UNKNOWN)) ? Any : declaredToBe;
         if (this.declaredToBe instanceof Poly) {
             this.extendToBe = this.declaredToBe.copy();//poly is declared确定了poly必须得到所有可能类型
             this.hasToBe = Poly.create();//declared is poly确定了空Poly为最泛化基类
@@ -438,5 +438,15 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     @Override
     public String toString() {
         return "`" + this.guess().toString() + "`";
+    }
+
+    @Override
+    public Outline project(Reference me, Outline you) {
+        G copied = this.copy();
+        copied.extendToBe = this.extendToBe.project(me,you);
+        copied.hasToBe = this.hasToBe.project(me,you);
+        copied.declaredToBe = this.declaredToBe.project(me,you);
+        copied.definedToBe = this.definedToBe.project(me,you);
+        return copied;
     }
 }

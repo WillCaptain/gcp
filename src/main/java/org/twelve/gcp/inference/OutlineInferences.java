@@ -8,9 +8,11 @@ import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.node.expression.IsAs;
+import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
+import org.twelve.gcp.node.expression.referable.ReferenceCallNode;
 import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.ExportSpecifier;
 import org.twelve.gcp.node.imexport.Import;
@@ -19,6 +21,7 @@ import org.twelve.gcp.node.statement.Assignment;
 import org.twelve.gcp.node.statement.ExpressionStatement;
 import org.twelve.gcp.node.statement.ReturnStatement;
 import org.twelve.gcp.node.statement.VariableDeclarator;
+import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
 import org.twelve.gcp.outline.Outline;
 
 
@@ -51,6 +54,16 @@ public class OutlineInferences implements Inferences {
     @Override
     public Outline visit(Identifier identifier) {
         return new IdentifierInference().infer(identifier, this);
+    }
+
+    @Override
+    public Outline visit(IdentifierTypeNode identifierTypeNode) {
+            return new IdentifierTypeInference().infer(identifierTypeNode,this);
+    }
+
+    @Override
+    public Outline visit(ReferenceNode ref) {
+        return new ReferenceNodeInference().infer(ref,this);
     }
 
     @Override
@@ -146,6 +159,11 @@ public class OutlineInferences implements Inferences {
     @Override
     public Outline visit(IsAs isAs) {
         return new IsAsInference().infer(isAs,this);
+    }
+
+    @Override
+    public Outline visit(ReferenceCallNode refCallNode) {
+        return new ReferenceCallInference().infer(refCallNode,this);
     }
 
 

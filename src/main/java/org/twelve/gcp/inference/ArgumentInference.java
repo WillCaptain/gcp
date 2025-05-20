@@ -3,9 +3,8 @@ package org.twelve.gcp.inference;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
-import org.twelve.gcp.node.typeable.TypeAble;
+import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.projectable.Generic;
@@ -24,7 +23,7 @@ public class ArgumentInference implements Inference<Argument> {
         EnvSymbol symbol = oEnv.lookupAll(node.name());
         if (symbol == null) {
             Expression defaultValue = node.defaultValue();
-            Outline outline = inferDeclared(oEnv,node.declared(),inferences);
+            Outline outline = inferDeclared(node.declared(),inferences);
             Generic generic = Generic.from(node, outline);
             if (defaultValue != null) {
                 generic.addExtendToBe(defaultValue.infer(inferences));
@@ -40,8 +39,8 @@ public class ArgumentInference implements Inference<Argument> {
         }
     }
 
-    private Outline inferDeclared(LocalSymbolEnvironment oEnv, TypeAble declared, Inferences inferences) {
+    private Outline inferDeclared(TypeNode declared, Inferences inferences) {
         if(declared==null) return Outline.Unknown;
-        return declared.inferOutline();
+        return declared.infer(inferences);
     }
 }

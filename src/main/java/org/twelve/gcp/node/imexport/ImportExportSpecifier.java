@@ -7,15 +7,16 @@ import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 public abstract class ImportExportSpecifier extends Node {
-    public ImportExportSpecifier(AST ast, Token a, Token b) {
+    public ImportExportSpecifier(AST ast, Identifier a, Identifier b) {
         super(ast);
-        Identifier origin = new Identifier(ast, a);
+        Identifier origin = a;//new Identifier(ast, a);
         this.addNode(origin);
         if(b==null){//a without as b
             this.addNode(origin);// regard it: a as a
         }else {
 //            this.addNode(new Identifier(ast, b, origin));//a as b
-            this.addNode(new Identifier(ast, b));//a as b
+//            this.addNode(new Identifier(ast, b));//a as b
+            this.addNode(b);//a as b
         }
     }
 

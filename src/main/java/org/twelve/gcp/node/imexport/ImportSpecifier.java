@@ -12,7 +12,7 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class ImportSpecifier extends ImportExportSpecifier {
 
-    public ImportSpecifier(AST ast, Token<String> imported, Token<String> local) {
+    public ImportSpecifier(AST ast, Identifier imported, Identifier local) {
         super(ast, imported, local);
     }
 

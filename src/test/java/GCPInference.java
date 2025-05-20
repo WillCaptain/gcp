@@ -5,24 +5,23 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.exception.GCPErrCode;
-import org.twelve.gcp.inference.Inference;
 import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.expression.BinaryExpression;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.expression.LiteralNode;
 import org.twelve.gcp.node.expression.body.FunctionBody;
+import org.twelve.gcp.node.expression.referable.ReferenceCallNode;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.node.operator.OperatorNode;
-import org.twelve.gcp.node.statement.Assignment;
-import org.twelve.gcp.node.statement.ExpressionStatement;
-import org.twelve.gcp.node.statement.ReturnStatement;
-import org.twelve.gcp.node.statement.VariableDeclarator;
+import org.twelve.gcp.node.statement.*;
+import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.primitive.INTEGER;
+import org.twelve.gcp.outline.primitive.LONG;
 import org.twelve.gcp.outline.primitive.STRING;
 import org.twelve.gcp.outline.projectable.*;
 
@@ -43,7 +42,7 @@ public class GCPInference {
         AST ast = mockGCPTestAst();
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        Argument x = new Argument(ast, new Token<>("x"), new Identifier(ast,new Token<>("Integer")));
+        Argument x = new Argument(ast, new Token<>("x"), new IdentifierTypeNode(new Identifier(ast,new Token<>("Integer"))));
         FunctionBody body = new FunctionBody(ast);
         body.addStatement(new ReturnStatement(new Identifier(ast, new Token<>("x"))));
         FunctionNode f = FunctionNode.from(body, x);
@@ -563,26 +562,53 @@ public class GCPInference {
         Function<?,?> f = cast(declarator.assignments().getFirst().lhs().outline());
         Generic argument = cast(f.argument());
         Return returns = f.returns();
-        assertTrue(argument.definedToBe() instanceof INTEGER);
-        assertTrue(returns.supposedToBe() instanceof INTEGER);
+        assertInstanceOf(INTEGER.class, argument.definedToBe());
+        assertInstanceOf(INTEGER.class, returns.supposedToBe());
         assertEquals(1,ast.errors().size());
     }
 
     @Test
-    void test_gpc_only_reference(){
-
+    void test_gpc_only_reference_for_simple_function(){
+        AST ast = ASTHelper.mockReferenceInFunction();
+        VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.LET);
+        ReferenceCallNode rCall = new ReferenceCallNode(ast,new Identifier(ast,new Token<>("f")),
+                new IdentifierTypeNode(new Identifier(ast,new Token<>("String"))),
+                new IdentifierTypeNode(new Identifier(ast,new Token<>("Long"))));
+        declarator.declare(new Identifier(ast,new Token<>("f1")),rCall);
+        ast.addStatement(declarator);
+        rCall = new ReferenceCallNode(ast,new Identifier(ast,new Token<>("f")),
+                new IdentifierTypeNode(new Identifier(ast,new Token<>("String"))),
+                new IdentifierTypeNode(new Identifier(ast,new Token<>("Long"))));
+//        ast.addStatement(new ExpressionStatement(rCall));
+        FunctionCallNode fCall = new FunctionCallNode(ast,new Identifier(ast,new Token<>("f1")),LiteralNode.parse(ast,new Token<>(100)));
+        ast.addStatement(new ReturnStatement(fCall));
+        ast.asf().infer();
+        assertTrue(ast.inferred());
+        Outline f1 = ast.program().body().statements().get(1).nodes().getFirst().nodes().getFirst().outline();
+        assertInstanceOf(FirstOrderFunction.class,f1);
+        assertInstanceOf(STRING.class,((FirstOrderFunction)f1).argument().declaredToBe());
+        assertInstanceOf(LONG.class,((FirstOrderFunction)f1).returns().supposedToBe());
+        Outline ret = ast.program().body().statements().getLast().outline();
+        assertInstanceOf(LONG.class,ret);
+        assertEquals(1,ast.errors().size());
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().getFirst().errorCode());
     }
 
     @Test
-    void test_gcp_argument_reference(){
-        //todo
+    void test_gcp_argument_reference_for_simple_function(){
+        AST ast = ASTHelper.mockReferenceInFunction();
+        FunctionCallNode fCall = new FunctionCallNode(ast,new Identifier(ast,new Token<>("f")),LiteralNode.parse(ast,new Token<>(100)));
+        ast.addStatement(new ReturnStatement(fCall));
+        ast.asf().infer();
+        Outline ret = ast.program().body().statements().getLast().outline();
+        assertInstanceOf(INTEGER.class,ret);
     }
 
     private static AST mockGCPTestAst() {
         ASF asf = new ASF();
         AST ast = asf.newAST();
-        List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token<>("test"));
+        List<Identifier> namespace = new ArrayList<>();
+        namespace.add(new Identifier(ast,new Token<>("test")));
         ast.setNamespace(namespace);
         return ast;
     }

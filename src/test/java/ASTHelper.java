@@ -1,7 +1,5 @@
-import net.bytebuddy.asm.Advice;
 import org.twelve.gcp.ast.*;
 import org.twelve.gcp.common.*;
-import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.LiteralUnionNode;
 import org.twelve.gcp.node.expression.*;
@@ -12,6 +10,7 @@ import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.node.expression.conditions.Consequence;
 import org.twelve.gcp.node.expression.conditions.Selections;
+import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
@@ -19,15 +18,13 @@ import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.node.statement.*;
-import org.twelve.gcp.node.typeable.TypeAble;
+import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
+import org.twelve.gcp.node.expression.typeable.WrapperTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Option;
-import org.twelve.gcp.outline.adt.ProductADT;
-import org.twelve.gcp.outline.primitive.INTEGER;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
-import org.twelve.gcp.outline.projectable.Reference;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,30 +35,30 @@ import static org.twelve.gcp.common.Tool.cast;
 public class ASTHelper {
     public static void fillHumanAst(AST ast) {
         //namespace org.twelve.human
-        List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token<>("org", 10));
-        namespace.add(new Token<>("twelve", 14));
-        namespace.add(new Token<>("human", 21));
+        List<Identifier> namespace = new ArrayList<>();
+        namespace.add(new Identifier(ast,new Token<>("org", 10)));
+        namespace.add(new Identifier(ast,new Token<>("twelve", 14)));
+        namespace.add(new Identifier(ast,new Token<>("human", 21)));
         ast.program().setNamespace(namespace);
 
         //import grade as level, school from education;
         int offset = 22;
-        List<Pair<Token<String>, Token<String>>> vars = new ArrayList<>();
-        vars.add(new Pair<>(new Token<>("grade", offset + 7), new Token<>("level", offset + 12)));
-        vars.add(new Pair<>(new Token<>("college", offset + 15), new Token<>("school", offset + 21)));
-        List<Token<String>> source = new ArrayList<>();
-        source.add(new Token<>("education", offset + 22));
+        List<Pair<Identifier, Identifier>> vars = new ArrayList<>();
+        vars.add(new Pair<>(new Identifier(ast,new Token<>("grade", offset + 7)), new Identifier(ast,new Token<>("level", offset + 12))));
+        vars.add(new Pair<>(new Identifier(ast,new Token<>("college", offset + 15)), new Identifier(ast,new Token<>("school", offset + 21))));
+        List<Identifier> source = new ArrayList<>();
+        source.add(new Identifier(ast,new Token<>("education", offset + 22)));
         ast.addImport(new Import(ast, vars, source));
 
         offset = 46;
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.LET);
         //var age:Integer, name = "Will", height:Float = 1.68, my_school = school;
         //age:Integer
-        var.declare(new Identifier(ast,new Token<>("age", offset + 4)), new Identifier(ast,new Token<>("Integer")),null);
+        var.declare(new Identifier(ast,new Token<>("age", offset + 4)), new IdentifierTypeNode(new Identifier(ast,new Token<>("Integer"))),null);
         //name = "Will"
         var.declare(new Identifier(ast,new Token<>("name", offset + 16)), LiteralNode.parse(ast, new Token<>("Will", offset + 26)));
         //height:Float = 1.68
-        var.declare(new Identifier(ast,new Token<>("height", offset + 34)), new Identifier(ast,new Token<>("Double")), LiteralNode.parse(ast, new Token<>(1.68, offset + 50)));
+        var.declare(new Identifier(ast,new Token<>("height", offset + 34)), new IdentifierTypeNode(new Identifier(ast,new Token<>("Double"))), LiteralNode.parse(ast, new Token<>(1.68, offset + 50)));
         //my_school = school
         var.declare(new Identifier(ast,new Token<>("grade", offset + 52)), new Identifier(ast, new Token<>("level", offset + 64)));
 
@@ -70,17 +67,17 @@ public class ASTHelper {
         //export height as stature, name;
         offset = 100;
         vars = new ArrayList<>();
-        vars.add(new Pair<>(new Token<>("height", offset), new Token<>("stature", offset + 11)));
-        vars.add(new Pair<>(new Token<>("name", offset + 16), null));
+        vars.add(new Pair<>(new Identifier(ast,new Token<>("height", offset)), new Identifier(ast,new Token<>("stature", offset + 11))));
+        vars.add(new Pair<>(new Identifier(ast,new Token<>("name", offset + 16)), null));
         ast.addExport(new Export(ast, vars));
     }
 
     public static void fillEducationAst(AST ast) {
         //namespace org.twelve.education
-        List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token<>("org", 10));
-        namespace.add(new Token<>("twelve", 14));
-        namespace.add(new Token<>("education", 21));
+        List<Identifier> namespace = new ArrayList<>();
+        namespace.add(new Identifier(ast,new Token<>("org", 10)));
+        namespace.add(new Identifier(ast,new Token<>("twelve", 14)));
+        namespace.add(new Identifier(ast,new Token<>("education", 21)));
         ast.program().setNamespace(namespace);
 
         int offset = 32;
@@ -92,9 +89,9 @@ public class ASTHelper {
 
         //export height as stature, name;
         offset = 61;
-        List<Pair<Token<String>, Token<String>>> vars = new ArrayList<>();
-        vars.add(new Pair<>(new Token<>("grade", offset), null));
-        vars.add(new Pair<>(new Token<>("school", offset + 5), new Token<>("college", offset + 11)));
+        List<Pair<Identifier, Identifier>> vars = new ArrayList<>();
+        vars.add(new Pair<>(new Identifier(ast,new Token<>("grade", offset)), null));
+        vars.add(new Pair<>(new Identifier(ast,new Token<>("school", offset + 5)), new Identifier(ast,new Token<>("college", offset + 11))));
         ast.addExport(new Export(ast, vars));
     }
 
@@ -318,8 +315,8 @@ public class ASTHelper {
     private static AST mockTestAst() {
         ASF asf = new ASF();
         AST ast = asf.newAST();
-        List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token<>("test"));
+        List<Identifier> namespace = new ArrayList<>();
+        namespace.add(new Identifier(ast,new Token<>("test")));
         ast.setNamespace(namespace);
         return ast;
     }
@@ -378,8 +375,8 @@ public class ASTHelper {
         //      }},{name = "Will"})
         ASF asf = new ASF();
         AST ast = asf.newAST();
-        List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token<>("test"));
+        List<Identifier> namespace = new ArrayList<>();
+        namespace.add(new Identifier(ast,new Token<>("test")));
         ast.setNamespace(namespace);
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
@@ -471,7 +468,7 @@ public class ASTHelper {
         members.add(EntityMember.from("combine", combine, Modifier.PUBLIC, true));
         Entity w = Entity.from(members);
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.VAR);
-        declarator.declare(new Identifier(ast,new Token<>("w")), mockTypeAble(w), new Identifier(ast, new Token<>("z")));
+        declarator.declare(new Identifier(ast,new Token<>("w")), new WrapperTypeNode(ast,w,null), new Identifier(ast, new Token<>("z")));
         body.addStatement(declarator);
         MemberAccessor accessor = new MemberAccessor(ast, new Identifier(ast, new Token<>("w")), new Identifier(ast, new Token<>("combine")));
         FunctionCallNode call1 = new FunctionCallNode(ast, accessor, new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("y")));
@@ -481,7 +478,10 @@ public class ASTHelper {
     public static AST mockIf(SELECTION_TYPE selectionType) {
         ASF asf = new ASF();
         AST ast = asf.newAST();
-        Identifier name = new Identifier(ast, new Token<>("name"), Outline.String);
+//        VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.LET);
+//        declarator.declare(new Identifier(ast,new Token<>("name")),LiteralNode.parse(ast,new Token<>("Will")));
+//        ast.addStatement(declarator);
+        Identifier name = new Identifier(ast, new Token<>("name"));
         Consequence c1 = new Consequence(ast);
         c1.addStatement(new ReturnStatement(name));
         Consequence c2 = new Consequence(ast);
@@ -556,7 +556,7 @@ public class ASTHelper {
         Token<String> some = new Token<>("some");
         VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.VAR);
 
-        declarator.declare(new Identifier(ast,some), mockTypeAble(Option.from(Outline.String,Outline.Integer)),LiteralNode.parse(ast,new Token<>("string")));
+        declarator.declare(new Identifier(ast,some), new WrapperTypeNode(ast,Option.from(Outline.String,Outline.Integer),null),LiteralNode.parse(ast,new Token<>("string")));
         block.addStatement(declarator);
         mockIsAs(ast, some, block);
         //let result = {...}
@@ -633,7 +633,7 @@ public class ASTHelper {
         FunctionBody body = new FunctionBody(ast);
         mockIsAs(ast, some, body);
 
-        FunctionNode function = new FunctionNode(new Argument(ast,some, new Identifier(ast,new Token<>("Integer"))),body);
+        FunctionNode function = new FunctionNode(new Argument(ast,some, new IdentifierTypeNode(new Identifier(ast,new Token<>("Integer")))),body);
         FunctionCallNode call = new FunctionCallNode(ast,function,LiteralNode.parse(ast,new Token<>(100)));
 
         //let result = some->{...}
@@ -656,50 +656,21 @@ public class ASTHelper {
         FunctionBody body = new FunctionBody(ast);
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.LET);
         declarator.declare(new Identifier(ast,new Token<>("y")),
-                new Identifier(ast,new Token<>("b")),
+                new IdentifierTypeNode(new Identifier(ast,new Token<>("b"))),
                 LiteralNode.parse(ast,new Token<>(100)));
         body.addStatement(declarator);
         body.addStatement(new ReturnStatement(new Identifier(ast,new Token<>("y"))));
 
-        List<Identifier> refs = new ArrayList<>();
-        refs.add(new Identifier(ast,new Token<>("a")));
-        refs.add(new Identifier(ast,new Token<>("b")));
+        List<ReferenceNode> refs = new ArrayList<>();
+        refs.add(new ReferenceNode(ast,new Identifier(ast,new Token<>("a")),null));
+        refs.add(new ReferenceNode(ast,new Identifier(ast,new Token<>("b")),null));
         List<Argument> args = new ArrayList<>();
         args.add(new Argument(ast,new Token<>("x"),
-                new Identifier(ast,new Token<>("a"))));
+                new IdentifierTypeNode(new Identifier(ast,new Token<>("a")))));
         FunctionNode func = FunctionNode.from(body,refs,args);
         declarator = new VariableDeclarator(ast,VariableKind.LET);
         declarator.declare(new Identifier(ast,new Token<>("f")),func);
         ast.addStatement(declarator);
         return ast;
-    }
-
-    private static TypeAble mockTypeAble(Outline outline){
-        return new TypeAble() {
-            @Override
-            public Outline infer(Inferences inferences) {
-                return outline;
-            }
-
-            @Override
-            public Outline outline() {
-                return outline;
-            }
-
-            @Override
-            public Location loc() {
-                return null;
-            }
-
-            @Override
-            public String lexeme() {
-                return "";
-            }
-
-            @Override
-            public Outline inferOutline() {
-                return outline;
-            }
-        };
     }
 }

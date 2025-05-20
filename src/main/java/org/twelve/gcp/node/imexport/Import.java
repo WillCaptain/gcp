@@ -3,6 +3,7 @@ package org.twelve.gcp.node.imexport;
 import org.twelve.gcp.ast.*;
 import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.namespace.ModuleNode;
 import org.twelve.gcp.outline.Outline;
 
@@ -13,17 +14,17 @@ public class Import extends Node {
     private final ModuleNode source;
     private final List<ImportSpecifier> specifiers = new ArrayList<>();
 
-    public Import(AST ast, List<Pair<Token<String>,Token<String>>> vars, List<Token<String>> source) {
+    public Import(AST ast, List<Pair<Identifier,Identifier>> vars, List<Identifier> source) {
         super(ast, null);
         if(vars!=null) {
-            for (Pair<Token<String>, Token<String>> var : vars) {
+            for (Pair<Identifier, Identifier> var : vars) {
                 this.specifiers.add(this.addNode(new ImportSpecifier(ast, var.key(), var.value())));
             }
         }
         this.source = this.addNode(new ModuleNode(ast,source));
     }
 
-    public Import(AST ast, List<Token<String>> source) {
+    public Import(AST ast, List<Identifier> source) {
         this(ast,  null,source);
     }
 

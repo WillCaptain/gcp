@@ -54,7 +54,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
                 result = project(result, argument);
             }
         }
-        return result;
+        return result.eventual();
     }
 
     private Outline targetOverride(Poly overwrite, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {

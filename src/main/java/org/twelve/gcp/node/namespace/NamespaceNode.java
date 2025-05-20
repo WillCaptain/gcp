@@ -2,17 +2,19 @@ package org.twelve.gcp.node.namespace;
 
 import org.twelve.gcp.ast.*;
 import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.Variable;
+import org.twelve.gcp.node.expression.typeable.WrapperTypeNode;
 import org.twelve.gcp.outline.builtin.Namespace;
 
 import java.util.List;
 
 public class NamespaceNode extends Node {
-    public NamespaceNode(AST ast, List<Token<String>> names) {
+    public NamespaceNode(AST ast, List<Identifier> names) {
         super(ast, null);
         Namespace outline = null;
-        for (Token<String> name : names) {
-            outline = new Namespace(new Identifier(ast,name), outline);
-            this.addNode(new Identifier(ast, name, outline));
+        for (Identifier name : names) {
+            outline = new Namespace(name, outline);
+            this.addNode(new Variable(name,false, new WrapperTypeNode(ast,outline,name.loc())));
         }
     }
 

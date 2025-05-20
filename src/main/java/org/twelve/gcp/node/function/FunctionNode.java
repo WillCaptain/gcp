@@ -3,8 +3,9 @@ package org.twelve.gcp.node.function;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.referable.ReferAbleNode;
+import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.node.expression.body.FunctionBody;
-import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.statement.ReturnStatement;
 import org.twelve.gcp.outline.Outline;
 
@@ -13,30 +14,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class FunctionNode extends Expression {
+/**
+ * function, map, array, entity
+ * are able to have reference type sub structure
+ */
+public class FunctionNode extends ReferAbleNode {
     public static FunctionNode from(FunctionBody funcBody, Argument... arguments) {
         return from(funcBody, new ArrayList<>(), new ArrayList<>(Arrays.asList(arguments)));
-//        AST ast = funcBody.ast();
-//        List<Argument> args = new ArrayList<>();
-//        for (Argument argument : arguments) {
-//            args.add(argument.setIndex(args.size()));
-//        }
-//
-//        if (args.isEmpty()) {
-//            args.add(Argument.unit(ast));
-//        }
-//        Argument arg = args.removeLast();
-//        FunctionNode function = new FunctionNode(arg, funcBody);
-//        while (!args.isEmpty()) {
-//            arg = args.removeLast();
-//            FunctionBody body = new FunctionBody(ast);
-//            body.addStatement(new ReturnStatement(function));
-//            function = new FunctionNode(arg, body);
-//        }
-//        return function;
     }
 
-    public static FunctionNode from(FunctionBody funcBody, List<Identifier> refs, List<Argument> arguments) {
+    public static FunctionNode from(FunctionBody funcBody, List<ReferenceNode> refs, List<Argument> arguments) {
         AST ast = funcBody.ast();
         List<Argument> args = new ArrayList<>();
         for (Argument argument : arguments) {
@@ -58,7 +45,7 @@ public class FunctionNode extends Expression {
                 body.addStatement(new ReturnStatement(function));
             }
             if (args.isEmpty()) {
-                function = new FunctionNode(arg, body, refs.toArray(Identifier[]::new));
+                function = new FunctionNode(arg, body, refs.toArray(ReferenceNode[]::new));
                 break;
             } else {
                 function = new FunctionNode(arg, body);
@@ -69,15 +56,12 @@ public class FunctionNode extends Expression {
 
     private final Argument argument;
     private final FunctionBody body;
-    private final List<Identifier> refs = new ArrayList<>();
 
-    public FunctionNode(Argument argument, FunctionBody body, Identifier... refs) {
-        super(body.ast(), null);
+    public FunctionNode(Argument argument, FunctionBody body, ReferenceNode... refs) {
+        super(body.ast(), refs);
         this.argument = this.addNode(argument);
         this.body = this.addNode(body);
-        for (Identifier ref : refs) {
-            this.refs.add(this.addNode(ref));
-        }
+
     }
 
 
@@ -87,10 +71,6 @@ public class FunctionNode extends Expression {
 
     public FunctionBody body() {
         return body;
-    }
-
-    public List<Identifier> refs() {
-        return this.refs;
     }
 
     @Override

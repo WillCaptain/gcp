@@ -3,6 +3,7 @@ package org.twelve.gcp.node.imexport;
 import org.twelve.gcp.ast.*;
 import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.ArrayList;
@@ -11,9 +12,9 @@ import java.util.List;
 public class Export extends Node {
     private final List<ExportSpecifier> specifiers = new ArrayList<>();
 
-    public Export(AST ast, List<Pair<Token<String>, Token<String>>> vars) {
+    public Export(AST ast, List<Pair<Identifier, Identifier>> vars) {
         super(ast, null);
-        for (Pair<Token<String>, Token<String>> var : vars) {
+        for (Pair<Identifier, Identifier> var : vars) {
             this.specifiers.add(this.addNode(new ExportSpecifier(ast, var.key(), var.value())));
         }
     }

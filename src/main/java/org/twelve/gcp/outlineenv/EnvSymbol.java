@@ -29,13 +29,13 @@ public class EnvSymbol {
         this.identifier = identifier;
         this.category = SYMBOL_CATEGORY.VARIABLE;
     }
-    public EnvSymbol(String name, Outline outline,Long scope) {
+    public EnvSymbol(String name, Outline outline,Long scope, Identifier identifier) {
         this.mutable = false;
         this.declared = this.outline = outline;
         this.name = name;
 //        this.isDeclared = true;
         this.scope = scope;
-        this.identifier = null;
+        this.identifier = identifier;
         this.category = SYMBOL_CATEGORY.OUTLINE;
     }
 

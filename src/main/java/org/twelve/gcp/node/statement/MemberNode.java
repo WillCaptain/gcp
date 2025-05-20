@@ -4,7 +4,7 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.node.typeable.TypeAble;
+import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
@@ -13,7 +13,7 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class MemberNode extends VariableDeclarator {
 
-    public MemberNode(AST ast, Identifier name, TypeAble declared, Expression expression, Boolean mutable) {
+    public MemberNode(AST ast, Identifier name, TypeNode declared, Expression expression, Boolean mutable) {
         super(ast, VariableKind.from(mutable));
         this.declare(name, declared, expression);
     }
@@ -23,7 +23,7 @@ public class MemberNode extends VariableDeclarator {
     }
 
     @Override
-    public Assignment declare(Identifier name, TypeAble declared, Expression value) {
+    public Assignment declare(Identifier name, TypeNode declared, Expression value) {
         if (!this.assignments().isEmpty()) return null;//member node只能有一个赋值
         //Identifier name,Expression declared, Expression value
         return super.declare(name, declared, value);

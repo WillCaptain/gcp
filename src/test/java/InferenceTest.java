@@ -7,17 +7,16 @@ import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.expression.*;
-import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.node.statement.*;
+import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
 import org.twelve.gcp.outline.adt.*;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.ERROR;
-import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.primitive.DOUBLE;
 import org.twelve.gcp.outline.primitive.INTEGER;
 import org.twelve.gcp.outline.primitive.STRING;
@@ -83,12 +82,12 @@ public class InferenceTest {
         ASF asf = new ASF();
         AST ast = asf.newAST();
 
-        List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token<>("me", 10));
+        List<Identifier> namespace = new ArrayList<>();
+        namespace.add(new Identifier(ast,new Token<>("me", 10)));
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Identifier(ast,new Token<>("age")), new Identifier(ast,new Token<>("Integer")), LiteralNode.parse(ast, new Token("some")));
+        var.declare(new Identifier(ast,new Token<>("age")), new IdentifierTypeNode(new Identifier(ast,new Token<>("Integer"))), LiteralNode.parse(ast, new Token("some")));
         ast.program().body().addStatement(var);
         asf.infer();
         assertTrue(asf.inferred());
@@ -111,8 +110,8 @@ public class InferenceTest {
         LiteralNode<String> str = LiteralNode.parse(ast, new Token<>("some"));
         LiteralNode<Integer> num = LiteralNode.parse(ast, new Token<>(100));
 
-        List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token<>("me", 10));
+        List<Identifier> namespace = new ArrayList<>();
+        namespace.add(new Identifier(ast,new Token<>("me", 10)));
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
@@ -141,8 +140,8 @@ public class InferenceTest {
         LiteralNode<Float> f = LiteralNode.parse(ast, new Token<>(100f));
         LiteralNode<Integer> i = LiteralNode.parse(ast, new Token<>(100));
 
-        List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token<>("me", 10));
+        List<Identifier> namespace = new ArrayList<>();
+        namespace.add(new Identifier(ast,new Token<>("me", 10)));
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
@@ -256,17 +255,6 @@ public class InferenceTest {
         assertInstanceOf(Poly.class, add.outline());
         assertEquals(2, ((Poly) add.outline()).options().size());
         assertTrue(((Poly) add.outline()).options().getFirst() instanceof Function<?, ?>);
-    }
-
-
-    @Test
-    void test_function_call_inference() {
-        //todo
-    }
-
-    @Test
-    void test_function_override_call_inference() {
-        //todo
     }
 
     @Test
@@ -484,7 +472,7 @@ public class InferenceTest {
         FunctionNode function = cast(((FunctionCallNode)assignment.rhs()).function());
         assertEquals(1,ast.errors().size());
         Generic arg = cast(function.argument().outline());
-        assertTrue(arg.couldBe() instanceof INTEGER);
+        assertInstanceOf(INTEGER.class, arg.couldBe());
     }
 
     @Test
@@ -495,13 +483,21 @@ public class InferenceTest {
            y
         }*/
         AST ast = ASTHelper.mockReferenceInFunction();
+        ast.infer();
+        Assignment assignment = ((VariableDeclarator)ast.program().body().statements().getFirst()).assignments().getFirst();
+        FirstOrderFunction f = cast(assignment.lhs().outline());
+        assertInstanceOf(Reference.class,f.argument().declaredToBe());
+        assertEquals("a", f.argument().declaredToBe().name());
+        assertInstanceOf(Reference.class, f.returns().supposedToBe());
+        assertEquals("b", f.returns().supposedToBe().name());
+        assertInstanceOf(INTEGER.class, ((Reference)f.returns().supposedToBe()).extendToBe());
     }
 
     private static AST mockGCPTestAst() {
         ASF asf = new ASF();
         AST ast = asf.newAST();
-        List<Token<String>> namespace = new ArrayList<>();
-        namespace.add(new Token("test"));
+        List<Identifier> namespace = new ArrayList<>();
+        namespace.add(new Identifier(ast,new Token<>("test")));
         ast.setNamespace(namespace);
         return ast;
     }

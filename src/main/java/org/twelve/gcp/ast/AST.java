@@ -4,6 +4,7 @@ import org.twelve.gcp.exception.GCPError;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.inference.OutlineInferences;
 import org.twelve.gcp.node.base.Program;
+import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.namespace.NamespaceNode;
@@ -145,7 +146,7 @@ public class AST {
         return this.cache;
     }
 
-    public void setNamespace(List<Token<String>> names) {
+    public void setNamespace(List<Identifier> names) {
         this.program.setNamespace(names);
     }
 }

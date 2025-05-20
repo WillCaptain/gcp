@@ -3,7 +3,7 @@ package org.twelve.gcp.node.statement;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.node.typeable.TypeAble;
+import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.expression.Variable;
@@ -54,7 +54,7 @@ public class VariableDeclarator extends Statement {
 //        return this.declare(varToken, ProductADT.Unknown, value);
 //    }
 
-    public Assignment declare(Identifier name, TypeAble declared, Expression value){
+    public Assignment declare(Identifier name, TypeNode declared, Expression value){
         Assignment assignment = this.addNode(new Assignment(new Variable(name,this.kind.mutable(),declared), value));
         this.assignments.add(assignment);
         return assignment;
