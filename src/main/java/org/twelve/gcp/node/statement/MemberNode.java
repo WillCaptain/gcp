@@ -13,13 +13,13 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class MemberNode extends VariableDeclarator {
 
-    public MemberNode(AST ast, Identifier name, TypeNode declared, Expression expression, Boolean mutable) {
-        super(ast, VariableKind.from(mutable));
+    public MemberNode(Identifier name, TypeNode declared, Expression expression, Boolean mutable) {
+        super(name.ast(), VariableKind.from(mutable));
         this.declare(name, declared, expression);
     }
 
-    public MemberNode(AST ast, Identifier name, Expression expression, Boolean mutable) {
-        this(ast, name, null, expression, mutable);
+    public MemberNode(Identifier name, Expression expression, Boolean mutable) {
+        this(name, null, expression, mutable);
     }
 
     @Override

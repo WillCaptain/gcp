@@ -145,7 +145,7 @@ public class InferenceTest {
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Identifier(ast,new Token<>("age")), new PolyNode(ast, str, i));
+        var.declare(new Identifier(ast,new Token<>("age")), new PolyNode(str, i));
         ast.program().body().addStatement(var);
         Assignment assignment = new Assignment(new Identifier(ast, new Token<>("age")), f);
         ast.addStatement(assignment);
@@ -396,8 +396,10 @@ public class InferenceTest {
     }
 
     @Test
-    void test_inherited_person_entity_with_override_call() {
-        //todo
+    void test_declare_infer(){
+        AST ast = ASTHelper.mockDeclare();
+        ast.asf().infer();
+        assertTrue(ast.asf().inferred());
     }
 
     @Test

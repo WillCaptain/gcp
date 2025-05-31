@@ -227,8 +227,13 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             return (g.max().is(this.max()) || this.max() == Nothing) && (this.min().is(g.min()) || this.min() == Any);
         } else {
             return this.min().is(another);
+//            return this.max().is(another) && (this.min() instanceof ANY || this.min().is(another));
         }
     }
+//    @Override
+//    public boolean canBe(Outline another) {
+//        return this.max().is(another) && (this.min() instanceof ANY || this.min().is(another));
+//    }
 
     @Override
     public boolean tryYouAreMe(Outline another) {

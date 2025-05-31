@@ -38,7 +38,7 @@ public abstract class Assignable extends Expression {
             }
         }
 
-        if (inferred.canBe(this.outline)) return;
+        if(inferred.canBe(this.outline)) return;
 
         if (inferred instanceof OperateAble) {
             OperateAble<?> you = (OperateAble<?>) inferred;

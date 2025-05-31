@@ -10,8 +10,8 @@ import org.twelve.gcp.outline.Outline;
 import java.util.stream.Collectors;
 
 public class LiteralUnionNode extends Expression {
-    public LiteralUnionNode(AST ast, Expression ... expressions) {
-        super(ast, null);
+    public LiteralUnionNode(Expression ... expressions) {
+        super(expressions[0].ast(), null);
         for (Expression expression : expressions) {
             this.addNode(expression);
         }

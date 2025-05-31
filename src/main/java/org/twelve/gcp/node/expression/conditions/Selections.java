@@ -20,12 +20,13 @@ public class Selections extends Expression {
     private final List<Arm> arms = new ArrayList<>();
     private final SELECTION_TYPE selectionType;
 
-    public Selections(AST ast, SELECTION_TYPE selectionType,Arm... arms) {
-        super(ast, null);
+    public Selections(SELECTION_TYPE selectionType,Arm arm,Arm... arms) {
+        super(arm.ast(), null);
         this.selectionType = selectionType;
-        for (Arm arm : arms) {
-            this.arms.add(arm);
-            this.addNode(arm);
+        this.arms.add(this.addNode(arm));
+        ;
+        for (Arm a : arms) {
+            this.arms.add(this.addNode(a));
         }
     }
 

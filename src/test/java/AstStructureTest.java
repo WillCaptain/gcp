@@ -110,7 +110,7 @@ public class AstStructureTest {
         source.add(new Identifier(ast,new Token<>("e", 22)));
         source.add(new Identifier(ast,new Token<>("f", 22)));
         source.add(new Identifier(ast,new Token<>("g", 22)));
-        imported = ast.program().body().addImport(new Import(ast, source));
+        imported = ast.program().body().addImport(new Import(source));
         assertEquals(0, imported.specifiers().size());
         assertEquals("e.f.g", imported.source().lexeme());
 
@@ -228,6 +228,25 @@ public class AstStructureTest {
         assertEquals(expected,ast.lexeme());
         ast = ASTHelper.mockIf(SELECTION_TYPE.TERNARY);
         assertEquals("module default\n\nname==\"Will\"? name: \"Someone\";",ast.lexeme());
+    }
+    @Test
+    void test_declare(){
+        /*
+         let f = (x:String->Integer->{name:String,age:Integer},y:String,z:Integer)->x(y,z);
+         */
+        AST ast = ASTHelper.mockDeclare();
+        String expected = """
+                module default
+                
+                let f = x: String->Integer->{name: String, var age: Integer}->{
+                  y: String->{
+                    z: Integer->{
+                      x(y,z)
+                    }
+                  }
+                };""";
+
+        assertEquals(expected,ast.lexeme());
     }
 
     @Test

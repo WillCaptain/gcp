@@ -14,8 +14,9 @@ import java.util.stream.Collectors;
  * 例如：1|“some”，代表了poly既是Number也是String
  */
 public class PolyNode extends Expression{
-    public PolyNode(AST ast, Expression ... expressions) {
-        super(ast, null);
+    public PolyNode(Expression e,Expression ... expressions) {
+        super(e.ast(), null);
+        this.addNode(e);
         for (Expression expression : expressions) {
             this.addNode(expression);
         }

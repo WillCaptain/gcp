@@ -25,6 +25,12 @@ public class NOTHING implements BuildInOutline {
     public boolean tryIamYou(Outline another) {
         return true;
     }
+
+//    @Override
+//    public boolean tryYouAreMe(Outline another) {
+//        return true;
+//    }
+
     @Override
     public String toString() {
         return "null";

@@ -12,11 +12,11 @@ public class ModuleNode extends Node {
     private final Identifier name;
     private NamespaceNode namespace = null;
 
-    public ModuleNode(AST ast, List<Identifier> source) {
-        super(ast,null, new Module());
+    public ModuleNode(List<Identifier> source) {
+        super(source.getFirst().ast(),null, new Module());
         Identifier module = source.removeLast();
         if(!source.isEmpty()) {
-            this.namespace = this.addNode(new NamespaceNode(ast, source));
+            this.namespace = this.addNode(new NamespaceNode(module.ast(), source));
         }
         this.name = this.addNode(module);
     }

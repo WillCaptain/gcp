@@ -19,16 +19,16 @@ public class Arm extends Expression {
     private final Consequence consequence;
     private final LiteralNode<Boolean> others;
 
-    public Arm(AST ast, Expression test, Consequence consequence) {
-        super(ast,null);
+    public Arm(Expression test, Consequence consequence) {
+        super(consequence.ast(),null);
         this.addNode(test);
         this.addNode(consequence);
         this.test = test;
         this.consequence = consequence;
-        this.others = LiteralNode.parse(ast, new Token<>(true));
+        this.others = LiteralNode.parse(consequence.ast(), new Token<>(true));
     }
-    public Arm(AST ast, Consequence consequence) {
-        this(ast, null,consequence);
+    public Arm(Consequence consequence) {
+        this(null,consequence);
 
     }
 

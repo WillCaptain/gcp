@@ -9,6 +9,8 @@ import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.node.expression.IsAs;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
+import org.twelve.gcp.node.expression.typeable.EntityTypeNode;
+import org.twelve.gcp.node.expression.typeable.FunctionTypeNode;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
@@ -58,7 +60,17 @@ public class OutlineInferences implements Inferences {
 
     @Override
     public Outline visit(IdentifierTypeNode identifierTypeNode) {
-            return new IdentifierTypeInference().infer(identifierTypeNode,this);
+            return new IdentifierTypeNodeInference().infer(identifierTypeNode,this);
+    }
+
+    @Override
+    public Outline visit(FunctionTypeNode functionTypeNode) {
+        return new FunctionTypeNodeInference().infer(functionTypeNode,this);
+    }
+
+    @Override
+    public Outline visit(EntityTypeNode entityTypeNode) {
+        return new EntityTypeNodeInference().infer(entityTypeNode,this);
     }
 
     @Override

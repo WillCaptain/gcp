@@ -27,4 +27,6 @@ public class CONSTANTS {
     public static final long BODY_INDEX = 18;
     public static final String MISMATCH_STR = " mismatch with ";
     public static final int MAX_INFER_TIMES = 4;
+    public static final long OUTLINE_WRAPPER = 51;
+    public static final String ANY_STR = "`any`";
 }

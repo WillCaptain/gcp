@@ -15,8 +15,8 @@ public class ReferenceCallNode extends Expression {
     private final List<TypeNode> types;
     private final Expression host;
 
-    public ReferenceCallNode(AST ast, Expression host, TypeNode... types) {
-        super(ast, null);
+    public ReferenceCallNode(Expression host, TypeNode... types) {
+        super(host.ast(), null);
         this.host = host;
         this.addNode(host);
         this.types = Arrays.asList(types);

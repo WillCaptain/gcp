@@ -18,24 +18,24 @@ public class Argument extends Identifier {
     private int index = 0;
 
     public static Argument unit(AST ast) {
-        return new Argument(ast, Token.unit(), null);
+        return new Argument(new Identifier(ast, Token.unit()), null);
     }
 
     protected final Expression defaultValue;
     private final TypeNode declared;
 
-    public Argument(AST ast, Token<String> token) {
-        this(ast, token, null);
+    public Argument(Identifier name) {
+        this(name, null);
     }
 
-    public Argument(AST ast, Token<String> token, TypeNode declared, Expression defaultValue) {
-        super(ast, token);
+    public Argument(Identifier name, TypeNode declared, Expression defaultValue) {
+        super(name.ast(), name.token());
         this.declared = this.addNode(declared);
         this.defaultValue = this.addNode(defaultValue);
     }
 
-    public Argument(AST ast, Token<String> token, TypeNode declared) {
-        this(ast, token, declared, null);
+    public Argument(Identifier name, TypeNode declared) {
+        this(name, declared, null);
     }
 
 

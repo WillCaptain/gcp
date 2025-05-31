@@ -14,8 +14,8 @@ public class IsAs extends Expression {
     private final Identifier c;
     private final Outline b;
 
-    public IsAs(AST ast, Expression a, Outline b, Identifier c) {
-        super(ast, null);
+    public IsAs(Expression a, Outline b, Identifier c) {
+        super(a.ast(), null);
         this.a = a;
         this.b = b;
         this.c = c;
@@ -23,8 +23,8 @@ public class IsAs extends Expression {
         if (a != c) this.addNode(c);
     }
 
-    public IsAs(AST ast, Identifier a, Outline is) {
-        this(ast, a, is, a);
+    public IsAs(Identifier a, Outline is) {
+        this(a, is, a);
     }
 
     @Override

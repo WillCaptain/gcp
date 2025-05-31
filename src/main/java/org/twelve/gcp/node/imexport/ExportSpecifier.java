@@ -10,8 +10,8 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class ExportSpecifier extends ImportExportSpecifier {
 
-    public ExportSpecifier(AST ast, Identifier local, Identifier exported) {
-        super(ast, local, exported);
+    public ExportSpecifier(Identifier local, Identifier exported) {
+        super(local, exported);
     }
 
     public Identifier local(){

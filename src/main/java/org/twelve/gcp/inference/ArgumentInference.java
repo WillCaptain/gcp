@@ -7,6 +7,7 @@ import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
@@ -41,6 +42,6 @@ public class ArgumentInference implements Inference<Argument> {
 
     private Outline inferDeclared(TypeNode declared, Inferences inferences) {
         if(declared==null) return Outline.Unknown;
-        return declared.infer(inferences);
+        return ((OutlineWrapper)declared.infer(inferences)).outline();
     }
 }

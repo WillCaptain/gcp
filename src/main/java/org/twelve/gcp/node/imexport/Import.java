@@ -14,18 +14,18 @@ public class Import extends Node {
     private final ModuleNode source;
     private final List<ImportSpecifier> specifiers = new ArrayList<>();
 
-    public Import(AST ast, List<Pair<Identifier,Identifier>> vars, List<Identifier> source) {
-        super(ast, null);
+    public Import(List<Pair<Identifier,Identifier>> vars, List<Identifier> source) {
+        super(source.getFirst().ast(), null);
         if(vars!=null) {
             for (Pair<Identifier, Identifier> var : vars) {
-                this.specifiers.add(this.addNode(new ImportSpecifier(ast, var.key(), var.value())));
+                this.specifiers.add(this.addNode(new ImportSpecifier(var.key(), var.value())));
             }
         }
-        this.source = this.addNode(new ModuleNode(ast,source));
+        this.source = this.addNode(new ModuleNode(source));
     }
 
-    public Import(AST ast, List<Identifier> source) {
-        this(ast,  null,source);
+    public Import(List<Identifier> source) {
+        this(null,source);
     }
 
     public List<ImportSpecifier> specifiers(){

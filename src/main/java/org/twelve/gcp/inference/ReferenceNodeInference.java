@@ -4,6 +4,7 @@ import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.projectable.Reference;
 import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
@@ -16,13 +17,14 @@ public class ReferenceNodeInference implements Inference<ReferenceNode> {
         EnvSymbol symbol = oEnv.current().lookupOutline(node.name());//only check my scope
         if (symbol == null) {
             oEnv.defineOutline(node.name(), outline, node);
-            return outline;
+//            return outline;
         } else {
             if (symbol.node() != node) {
                 ErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
                 return Outline.Error;
             }
-            return symbol.outline();
+            outline = symbol.outline();
         }
+        return outline;
     }
 }

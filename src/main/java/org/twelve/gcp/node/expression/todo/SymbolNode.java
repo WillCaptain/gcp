@@ -11,7 +11,7 @@ import java.util.List;
 public class SymbolNode extends EntityNode {
 
 
-    public SymbolNode(AST ast, List<MemberNode> members, Node base, Location loc) {
-        super(ast, members, base, loc);
+    public SymbolNode(List<MemberNode> members, Node base, Location loc) {
+        super(members, base, loc);
     }
 }

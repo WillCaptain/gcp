@@ -12,8 +12,8 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class ImportSpecifier extends ImportExportSpecifier {
 
-    public ImportSpecifier(AST ast, Identifier imported, Identifier local) {
-        super(ast, imported, local);
+    public ImportSpecifier(Identifier imported, Identifier local) {
+        super(imported, local);
     }
 
     public Identifier module() {

@@ -11,6 +11,8 @@ import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.node.expression.conditions.Consequence;
 import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
+import org.twelve.gcp.node.expression.typeable.EntityTypeNode;
+import org.twelve.gcp.node.expression.typeable.FunctionTypeNode;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
@@ -48,7 +50,7 @@ public class ASTHelper {
         vars.add(new Pair<>(new Identifier(ast,new Token<>("college", offset + 15)), new Identifier(ast,new Token<>("school", offset + 21))));
         List<Identifier> source = new ArrayList<>();
         source.add(new Identifier(ast,new Token<>("education", offset + 22)));
-        ast.addImport(new Import(ast, vars, source));
+        ast.addImport(new Import(vars, source));
 
         offset = 46;
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.LET);
@@ -69,7 +71,7 @@ public class ASTHelper {
         vars = new ArrayList<>();
         vars.add(new Pair<>(new Identifier(ast,new Token<>("height", offset)), new Identifier(ast,new Token<>("stature", offset + 11))));
         vars.add(new Pair<>(new Identifier(ast,new Token<>("name", offset + 16)), null));
-        ast.addExport(new Export(ast, vars));
+        ast.addExport(new Export(vars));
     }
 
     public static void fillEducationAst(AST ast) {
@@ -92,7 +94,7 @@ public class ASTHelper {
         List<Pair<Identifier, Identifier>> vars = new ArrayList<>();
         vars.add(new Pair<>(new Identifier(ast,new Token<>("grade", offset)), null));
         vars.add(new Pair<>(new Identifier(ast,new Token<>("school", offset + 5)), new Identifier(ast,new Token<>("college", offset + 11))));
-        ast.addExport(new Export(ast, vars));
+        ast.addExport(new Export(vars));
     }
 
     public static ASF educationAndHuman() {
@@ -122,7 +124,8 @@ public class ASTHelper {
 //        args.add(new Argument(ast,new Token<>("x",0)));
 //        args.add(new Argument(ast,new Token<>("y",0)));
         //fn(x)->(fn(y)->x+y)
-        FunctionNode addxy = FunctionNode.from(body, new Argument(ast, new Token<>("x", 0)), new Argument(ast, new Token<>("y", 0)));
+        FunctionNode addxy = FunctionNode.from(body, new Argument(new Identifier(ast, new Token<>("x", 0))),
+                new Argument(new Identifier(ast, new Token<>("y", 0))));
 
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
@@ -147,13 +150,14 @@ public class ASTHelper {
 //        args.add(new Argument(ast,new Token<>("x",0)));
 //        args.add(new Argument(ast,new Token<>("y",0)));
         //fn(x)->(fn(y)->x+y)
-        FunctionNode addxyz = FunctionNode.from(body, new Argument(ast, new Token<>("x", 0)),
-                new Argument(ast, new Token<>("y", 0)), new Argument(ast, new Token<>("z", 0)));
+        FunctionNode addxyz = FunctionNode.from(body, new Argument(new Identifier(ast, new Token<>("x", 0))),
+                new Argument(new Identifier(ast, new Token<>("y", 0))),
+                new Argument(new Identifier(ast, new Token<>("z", 0))));
         FunctionNode addxy = cast(ast.program().body().nodes().get(0).nodes().get(0).nodes().get(1));
         ast.program().body().nodes().clear();
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.VAR);
-        declare.declare(new Identifier(ast,new Token<>("add", 0)), new PolyNode(ast,addxy,addxyz));
+        declare.declare(new Identifier(ast,new Token<>("add", 0)), new PolyNode(addxy,addxyz));
         ast.program().body().addStatement(declare);
 
         return ast;
@@ -189,32 +193,32 @@ public class ASTHelper {
 
 
         FunctionBody body = new FunctionBody(ast);
-        MemberAccessor accessor = new MemberAccessor(ast, new This(ast, new Token<>("this")), new Identifier(ast, new Token<>("name")));
+        MemberAccessor accessor = new MemberAccessor(new This(ast, new Token<>("this")), new Identifier(ast, new Token<>("name")));
         body.addStatement(new ReturnStatement(accessor));
-        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("get_name")),
+        members.add(new MemberNode(new Identifier(ast,new Token<>("get_name")),
                 FunctionNode.from(body), false));
 
         body = new FunctionBody(ast);
         body.addStatement(new ReturnStatement(new Identifier(ast, new Token<>("name"))));
-        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("get_my_name")),
+        members.add(new MemberNode(new Identifier(ast,new Token<>("get_my_name")),
                 FunctionNode.from(body), false));
-        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("name")),
+        members.add(new MemberNode(new Identifier(ast,new Token<>("name")),
                 LiteralNode.parse(ast, new Token<>("Will", 0)), false));
 
 
-        EntityNode entity = new EntityNode(ast, members);
+        EntityNode entity = new EntityNode(members);
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         declare.declare(new Identifier(ast,new Token<>("person", 0)), entity);
         ast.addStatement(declare);
 
         declare = new VariableDeclarator(ast, VariableKind.LET);
-        accessor = new MemberAccessor(ast, new Identifier(ast, new Token<>("person")), new Identifier(ast, new Token<>("name")));
+        accessor = new MemberAccessor(new Identifier(ast, new Token<>("person")), new Identifier(ast, new Token<>("name")));
         declare.declare(new Identifier(ast,new Token<>("name_1", 0)), accessor);
         ast.addStatement(declare);
 
         declare = new VariableDeclarator(ast, VariableKind.LET);
-        accessor = new MemberAccessor(ast, new Identifier(ast, new Token<>("person")), new Identifier(ast, new Token<>("get_name")));
-        FunctionCallNode call = new FunctionCallNode(ast, accessor);
+        accessor = new MemberAccessor(new Identifier(ast, new Token<>("person")), new Identifier(ast, new Token<>("get_name")));
+        FunctionCallNode call = new FunctionCallNode(accessor);
         declare.declare(new Identifier(ast,new Token<>("name_2", 0)), call);
         ast.addStatement(declare);
         return ast;
@@ -226,14 +230,15 @@ public class ASTHelper {
 //        Pair<Node, Modifier> getName = new Pair<>(FunctionNode.from(body, new Argument(ast, new Token<>("last_name"))), Modifier.PUBLIC);
         body.addStatement(new ReturnStatement(
                 new BinaryExpression(
-                        new MemberAccessor(ast, new This(ast, new Token<>("this")), new Identifier(ast, new Token<>("name"))),
+                        new MemberAccessor(new This(ast, new Token<>("this")), new Identifier(ast, new Token<>("name"))),
                         new Identifier(ast, new Token<>("last_name")),
                         new OperatorNode<>(ast, BinaryOperator.ADD))));
         VariableDeclarator var = cast(ast.program().body().statements().getFirst());
         EntityNode person = cast(var.assignments().getFirst().rhs());
         Expression getName = person.members().get("get_name").expression();
-        MemberNode node = new MemberNode(ast, new Identifier(ast,new Token<>("get_name")),
-                new PolyNode(ast,getName,FunctionNode.from(body, new Argument(ast, new Token<>("last_name")))), true);
+        MemberNode node = new MemberNode(new Identifier(ast,new Token<>("get_name")),
+                new PolyNode(getName,FunctionNode.from(body,
+                        new Argument(new Identifier(ast, new Token<>("last_name"))))), true);
         person.nodes().remove(1);
         person.addNode(node);
         return ast;
@@ -244,23 +249,23 @@ public class ASTHelper {
 
         FunctionBody body = new FunctionBody(ast);
 //        Pair<ONode, Modifier> getFullName = new Pair<>(FunctionNode.from(body), Modifier.PUBLIC);
-        MemberAccessor name = new MemberAccessor(ast, new Base(ast, new Token<>("base")), new Identifier(ast, new Token<>("name")));
+        MemberAccessor name = new MemberAccessor(new Base(ast, new Token<>("base")), new Identifier(ast, new Token<>("name")));
         BinaryExpression add = new BinaryExpression(name, LiteralNode.parse(ast, new Token<>("Zhang")),
                 new OperatorNode<>(ast, BinaryOperator.ADD));
         body.addStatement(new ReturnStatement(add));
-        MemberNode getFullName = new MemberNode(ast, new Identifier(ast,new Token<>("get_full_name")),
+        MemberNode getFullName = new MemberNode(new Identifier(ast,new Token<>("get_full_name")),
                 FunctionNode.from(body), false);
 
         List<MemberNode> members = new ArrayList<>();
         members.add(getFullName);
 
         body = new FunctionBody(ast);
-        MemberNode getName = new MemberNode(ast, new Identifier(ast,new Token<>("get_name")),
+        MemberNode getName = new MemberNode(new Identifier(ast,new Token<>("get_name")),
                 FunctionNode.from(body), true);
         body.addStatement(new ReturnStatement(LiteralNode.parse(ast, new Token<>("Will Zhang"))));
         members.add(getName);//重载get_name方法
 
-        EntityNode entity = new EntityNode(ast, members,
+        EntityNode entity = new EntityNode(members,
                 ast.program().body().get(0).nodes().getFirst().nodes().getFirst());
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
@@ -272,8 +277,8 @@ public class ASTHelper {
     public static AST mockInheritedPersonEntityWithOverrideMember() {
         AST ast = mockSimplePersonEntity();
 
-        MemberAccessor accessor = new MemberAccessor(ast, new This(ast, new Token<>("this")), new Identifier(ast, new Token<>("get_name")));
-        FunctionCallNode call = new FunctionCallNode(ast, accessor);
+        MemberAccessor accessor = new MemberAccessor(new This(ast, new Token<>("this")), new Identifier(ast, new Token<>("get_name")));
+        FunctionCallNode call = new FunctionCallNode(accessor);
 
         FunctionBody body = new FunctionBody(ast);
         body.addStatement(new ExpressionStatement(
@@ -282,23 +287,24 @@ public class ASTHelper {
                         new Identifier(ast, new Token<>("last_name")),
                         new OperatorNode<>(ast, BinaryOperator.ADD))));
         body.addStatement(new ReturnStatement(LiteralNode.parse(ast,new Token<>(100))));
-        MemberNode getName = new MemberNode(ast, new Identifier(ast,new Token<>("get_name")),
-                FunctionNode.from(body, new Argument(ast, new Token<>("last_name"))), false);
+        MemberNode getName = new MemberNode(new Identifier(ast,new Token<>("get_name")),
+                FunctionNode.from(body,
+                        new Argument(new Identifier(ast, new Token<>("last_name")))), false);
 
         List<MemberNode> members = new ArrayList<>();
         members.add(getName);//重载get_name方法
 
         body = new FunctionBody(ast);
-        call = new FunctionCallNode(ast, new Identifier(ast,new Token<>("get_name")));
+        call = new FunctionCallNode(new Identifier(ast,new Token<>("get_name")));
         body.addStatement(new ExpressionStatement(call));
-        call = new FunctionCallNode(ast, new Identifier(ast,new Token<>("get_name")),LiteralNode.parse(ast,new Token<>("other")));
+        call = new FunctionCallNode(new Identifier(ast,new Token<>("get_name")),LiteralNode.parse(ast,new Token<>("other")));
         body.addStatement(new ReturnStatement(call));
-        getName = new MemberNode(ast, new Identifier(ast,new Token<>("get_other_name")),
+        getName = new MemberNode(new Identifier(ast,new Token<>("get_other_name")),
                 FunctionNode.from(body), false);
         members.add(getName);
 
 
-        EntityNode entity = new EntityNode(ast, members,
+        EntityNode entity = new EntityNode(members,
                 ast.program().body().get(0).nodes().getFirst().nodes().getFirst());
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
@@ -306,8 +312,8 @@ public class ASTHelper {
         ast.addStatement(declare);
 
         //me.get_name();
-        accessor = new MemberAccessor(ast, new Identifier(ast, new Token<>("me")), new Identifier(ast, new Token<>("get_name")));
-        call = new FunctionCallNode(ast,accessor,LiteralNode.parse(ast,new Token<>("Zhang")));
+        accessor = new MemberAccessor(new Identifier(ast, new Token<>("me")), new Identifier(ast, new Token<>("get_name")));
+        call = new FunctionCallNode(accessor,LiteralNode.parse(ast,new Token<>("Zhang")));
         ast.addStatement(new ExpressionStatement(call));
         return ast;
     }
@@ -324,7 +330,7 @@ public class ASTHelper {
     public static AST mockDefinedPoly() {
         ASF asf = new ASF();
         AST ast = asf.newAST();
-        PolyNode poly = new PolyNode(ast, LiteralNode.parse(ast, new Token<>(100)), LiteralNode.parse(ast, new Token<>("some")));
+        PolyNode poly = new PolyNode(LiteralNode.parse(ast, new Token<>(100)), LiteralNode.parse(ast, new Token<>("some")));
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.VAR);
         declare.declare(new Identifier(ast,new Token<>("poly", 0)), poly);
         ast.addStatement(declare);
@@ -346,7 +352,7 @@ public class ASTHelper {
     public static AST mockDefinedLiteralUnion() {
         ASF asf = new ASF();
         AST ast = asf.newAST();
-        LiteralUnionNode union = new LiteralUnionNode(ast, LiteralNode.parse(ast, new Token<>(100)), LiteralNode.parse(ast, new Token<>("some")));
+        LiteralUnionNode union = new LiteralUnionNode(LiteralNode.parse(ast, new Token<>(100)), LiteralNode.parse(ast, new Token<>("some")));
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.VAR);
         declare.declare(new Identifier(ast,new Token<>("union", 0)), union);
         ast.addStatement(declare);
@@ -380,9 +386,9 @@ public class ASTHelper {
         ast.setNamespace(namespace);
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        Argument x = new Argument(ast, new Token<>("x"));
-        Argument y = new Argument(ast, new Token<>("y"));
-        Argument z = new Argument(ast, new Token<>("z"));
+        Argument x = new Argument(new Identifier(ast, new Token<>("x")));
+        Argument y = new Argument(new Identifier(ast, new Token<>("y")));
+        Argument z = new Argument(new Identifier(ast, new Token<>("z")));
         FunctionBody body = new FunctionBody(ast);
         mockCallNode.accept(body);
 
@@ -394,32 +400,32 @@ public class ASTHelper {
         declare.declare(new Identifier(ast,new Token<>("f")), f);
         ast.addStatement(declare);
 
-        y = new Argument(ast, new Token<>("y"));
-        x = new Argument(ast, new Token<>("x"));
+        y = new Argument(new Identifier(ast, new Token<>("y")));
+        x = new Argument(new Identifier(ast, new Token<>("x")));
         //x,y->{age=x, name = y.name}
         List<MemberNode> members = new ArrayList<>();
-        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("age")), new Identifier(ast, new Token<>("x")), false));
-        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("name")), new MemberAccessor(ast, new Identifier(ast, new Token<>("y")), new Identifier(ast, new Token<>("name"))), false));
+        members.add(new MemberNode(new Identifier(ast,new Token<>("age")), new Identifier(ast, new Token<>("x")), false));
+        members.add(new MemberNode(new Identifier(ast,new Token<>("name")), new MemberAccessor(new Identifier(ast, new Token<>("y")), new Identifier(ast, new Token<>("name"))), false));
 
-        EntityNode boy = new EntityNode(ast, members);
+        EntityNode boy = new EntityNode(members);
         body = new FunctionBody(ast);
         body.addStatement(new ReturnStatement(boy));
 
         members = new ArrayList<>();
-        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("combine")), FunctionNode.from(body, x, y), false));
+        members.add(new MemberNode(new Identifier(ast,new Token<>("combine")), FunctionNode.from(body, x, y), false));
 //        FunctionNode arg_z = FunctionNode.from(body, x, y);
-        EntityNode arg_z = new EntityNode(ast, members);
+        EntityNode arg_z = new EntityNode(members);
 
         members = new ArrayList<>();
-        members.add(new MemberNode(ast, new Identifier(ast,new Token<>("name")), LiteralNode.parse(ast, new Token<>("Will")), false));
-        EntityNode arg_y = new EntityNode(ast, members);
+        members.add(new MemberNode(new Identifier(ast,new Token<>("name")), LiteralNode.parse(ast, new Token<>("Will")), false));
+        EntityNode arg_y = new EntityNode(members);
         FunctionCallNode call2 = switch (type) {
             case 1 ->
-                    new FunctionCallNode(ast, new Identifier(ast, new Token<>("f")), LiteralNode.parse(ast, new Token<>(20)), arg_z, arg_y);
+                    new FunctionCallNode(new Identifier(ast, new Token<>("f")), LiteralNode.parse(ast, new Token<>(20)), arg_z, arg_y);
             case 2 ->
-                    new FunctionCallNode(ast, new Identifier(ast, new Token<>("f")), arg_z, LiteralNode.parse(ast, new Token<>(20)), arg_y);
+                    new FunctionCallNode(new Identifier(ast, new Token<>("f")), arg_z, LiteralNode.parse(ast, new Token<>(20)), arg_y);
             default ->
-                    new FunctionCallNode(ast, new Identifier(ast, new Token<>("f")), LiteralNode.parse(ast, new Token<>(20)), arg_y, arg_z);
+                    new FunctionCallNode(new Identifier(ast, new Token<>("f")), LiteralNode.parse(ast, new Token<>(20)), arg_y, arg_z);
         };
         ast.addStatement(new ReturnStatement(call2));
         return cast(call2);
@@ -427,24 +433,24 @@ public class ASTHelper {
 
     static void mockEntityProjectionNode1(FunctionBody body) {
         AST ast = body.ast();
-        MemberAccessor accessor = new MemberAccessor(ast, new Identifier(ast, new Token<>("z")), new Identifier(ast, new Token<>("combine")));
-        FunctionCallNode call1 = new FunctionCallNode(ast, accessor, new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("y")));
+        MemberAccessor accessor = new MemberAccessor(new Identifier(ast, new Token<>("z")), new Identifier(ast, new Token<>("combine")));
+        FunctionCallNode call1 = new FunctionCallNode(accessor, new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("y")));
         body.addStatement(new ReturnStatement(call1));
     }
 
     static void mockEntityProjectionNode2(FunctionBody body) {
         AST ast = body.ast();
-        MemberAccessor accessor = new MemberAccessor(ast, new Identifier(ast, new Token<>("z")), new Identifier(ast, new Token<>("combine")));
-        FunctionCallNode call1 = new FunctionCallNode(ast, accessor, new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("y")));
-        accessor = new MemberAccessor(body.ast(), call1, new Identifier(ast, new Token<>("name")));
+        MemberAccessor accessor = new MemberAccessor(new Identifier(ast, new Token<>("z")), new Identifier(ast, new Token<>("combine")));
+        FunctionCallNode call1 = new FunctionCallNode(accessor, new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("y")));
+        accessor = new MemberAccessor(call1, new Identifier(ast, new Token<>("name")));
         body.addStatement(new ReturnStatement(accessor));
     }
 
     static void mockEntityProjectionNode3(FunctionBody body) {
         AST ast = body.ast();
-        MemberAccessor accessor = new MemberAccessor(ast, new Identifier(ast, new Token<>("z")), new Identifier(ast, new Token<>("combine")));
-        FunctionCallNode call1 = new FunctionCallNode(ast, accessor, new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("y")));
-        accessor = new MemberAccessor(ast, call1, new Identifier(ast, new Token<>("gender")));
+        MemberAccessor accessor = new MemberAccessor(new Identifier(ast, new Token<>("z")), new Identifier(ast, new Token<>("combine")));
+        FunctionCallNode call1 = new FunctionCallNode(accessor, new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("y")));
+        accessor = new MemberAccessor(call1, new Identifier(ast, new Token<>("gender")));
         body.addStatement(new ReturnStatement(accessor));
     }
 
@@ -453,8 +459,8 @@ public class ASTHelper {
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.VAR);
         declarator.declare(new Identifier(ast,new Token<>("w")), new Identifier(ast, new Token<>("z")));
         body.addStatement(declarator);
-        MemberAccessor accessor = new MemberAccessor(ast, new Identifier(ast, new Token<>("w")), new Identifier(ast, new Token<>("combine")));
-        FunctionCallNode call1 = new FunctionCallNode(ast, accessor, new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("y")));
+        MemberAccessor accessor = new MemberAccessor(new Identifier(ast, new Token<>("w")), new Identifier(ast, new Token<>("combine")));
+        FunctionCallNode call1 = new FunctionCallNode(accessor, new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("y")));
         body.addStatement(new ReturnStatement(call1));
     }
 
@@ -468,10 +474,10 @@ public class ASTHelper {
         members.add(EntityMember.from("combine", combine, Modifier.PUBLIC, true));
         Entity w = Entity.from(members);
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.VAR);
-        declarator.declare(new Identifier(ast,new Token<>("w")), new WrapperTypeNode(ast,w,null), new Identifier(ast, new Token<>("z")));
+        declarator.declare(new Identifier(ast,new Token<>("w")), new WrapperTypeNode(ast,w), new Identifier(ast, new Token<>("z")));
         body.addStatement(declarator);
-        MemberAccessor accessor = new MemberAccessor(ast, new Identifier(ast, new Token<>("w")), new Identifier(ast, new Token<>("combine")));
-        FunctionCallNode call1 = new FunctionCallNode(ast, accessor, new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("y")));
+        MemberAccessor accessor = new MemberAccessor(new Identifier(ast, new Token<>("w")), new Identifier(ast, new Token<>("combine")));
+        FunctionCallNode call1 = new FunctionCallNode(accessor, new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("y")));
         body.addStatement(new ReturnStatement(call1));
     }
 
@@ -486,12 +492,12 @@ public class ASTHelper {
         c1.addStatement(new ReturnStatement(name));
         Consequence c2 = new Consequence(ast);
         c2.addStatement(new ReturnStatement(LiteralNode.parse(ast, new Token<>("Someone"))));
-        Arm arm1 = new Arm(ast, new BinaryExpression(name,
+        Arm arm1 = new Arm(new BinaryExpression(name,
                 LiteralNode.parse(ast, new Token<>("Will")),
                 new OperatorNode<>(ast, BinaryOperator.EQUALS)), c1);
-        Arm arm2 = new Arm(ast, c2);
+        Arm arm2 = new Arm(c2);
 
-        Selections ifs = new Selections(ast,  selectionType, arm1, arm2);
+        Selections ifs = new Selections(selectionType, arm1, arm2);
 
         ast.addStatement(new ExpressionStatement(ifs));
         return ast;
@@ -510,31 +516,31 @@ public class ASTHelper {
         Consequence c1 = new Consequence(ast);
         c1.addStatement(new ReturnStatement(LiteralNode.parse(ast, new Token<>(1))));
         Consequence c2 = new Consequence(ast);
-        FunctionCallNode call = new FunctionCallNode(ast,fToken ,
+        FunctionCallNode call = new FunctionCallNode(new Identifier(ast,fToken) ,
                 new BinaryExpression(new Identifier(ast,new Token<>("n")),
                 LiteralNode.parse(ast,new Token<>(1)),
                         new OperatorNode<>(ast,BinaryOperator.SUBTRACT)));
         c2.addStatement(new ReturnStatement(call));
 
         FunctionBody body = new FunctionBody(ast);
-        Arm arm1 = new Arm(ast, new BinaryExpression(new Identifier(ast, new Token<>("n")),
+        Arm arm1 = new Arm(new BinaryExpression(new Identifier(ast, new Token<>("n")),
                 LiteralNode.parse(ast, new Token<>(0)),
                 new OperatorNode<>(ast, BinaryOperator.EQUALS)), c1);
 
-        Arm arm2 = new Arm(ast, c2);
+        Arm arm2 = new Arm(c2);
 
-        Selections ifs = new Selections(ast, SELECTION_TYPE.TERNARY, arm1, arm2);
+        Selections ifs = new Selections(SELECTION_TYPE.TERNARY, arm1, arm2);
         body.addStatement(new ReturnStatement(ifs));
 
-        FunctionNode factorial = FunctionNode.from(body, new Argument(ast, new Token<>("n")));
+        FunctionNode factorial = FunctionNode.from(body, new Argument(new Identifier(ast, new Token<>("n"))));
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.LET);
         declarator.declare(new Identifier(ast,fToken), factorial);
         ast.addStatement(declarator);
 
-        call = new FunctionCallNode(ast,fToken,LiteralNode.parse(ast,new Token<>(100)));
+        call = new FunctionCallNode(new Identifier(ast,fToken),LiteralNode.parse(ast,new Token<>(100)));
         ast.addStatement(new ExpressionStatement(call));
 
-        call = new FunctionCallNode(ast,fToken,LiteralNode.parse(ast,new Token<>("100")));
+        call = new FunctionCallNode(new Identifier(ast,fToken),LiteralNode.parse(ast,new Token<>("100")));
         ast.addStatement(new ExpressionStatement(call));
 
         return ast;
@@ -556,7 +562,7 @@ public class ASTHelper {
         Token<String> some = new Token<>("some");
         VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.VAR);
 
-        declarator.declare(new Identifier(ast,some), new WrapperTypeNode(ast,Option.from(Outline.String,Outline.Integer),null),LiteralNode.parse(ast,new Token<>("string")));
+        declarator.declare(new Identifier(ast,some), new WrapperTypeNode(ast,Option.from(Outline.String,Outline.Integer)),LiteralNode.parse(ast,new Token<>("string")));
         block.addStatement(declarator);
         mockIsAs(ast, some, block);
         //let result = {...}
@@ -573,19 +579,19 @@ public class ASTHelper {
         //}else if(some is String as str){
         //    str
         //}else{100}
-        IsAs isInt =  new IsAs(ast,new Identifier(ast, some),Outline.Integer);
+        IsAs isInt =  new IsAs(new Identifier(ast, some),Outline.Integer);
         Consequence consequence = new Consequence(ast);
         consequence.addStatement(new ReturnStatement(new Identifier(ast, some)));
-        Arm arm1 = new Arm(ast,isInt,consequence);
+        Arm arm1 = new Arm(isInt,consequence);
         Token<String> str = new Token<>("str");
-        IsAs isStr = new IsAs(ast, new Identifier(ast, some),Outline.String,new Identifier(ast,str));
+        IsAs isStr = new IsAs(new Identifier(ast, some),Outline.String,new Identifier(ast,str));
         consequence = new Consequence(ast);
         consequence.addStatement(new ReturnStatement(new Identifier(ast,str)));
-        Arm arm2 = new Arm(ast,isStr,consequence);
+        Arm arm2 = new Arm(isStr,consequence);
         consequence = new Consequence(ast);
         consequence.addStatement(new ReturnStatement(LiteralNode.parse(ast,new Token<>(100))));
-        Arm arm3 = new Arm(ast,consequence);
-        Selections ifs = new Selections(ast,SELECTION_TYPE.IF,arm1,arm2,arm3);
+        Arm arm3 = new Arm(consequence);
+        Selections ifs = new Selections(SELECTION_TYPE.IF,arm1,arm2,arm3);
         body.addStatement(new ReturnStatement(ifs));
     }
 
@@ -606,8 +612,8 @@ public class ASTHelper {
         //var some = 100&"some";
         Token<String> some = new Token<>("some");
         VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.VAR);
-        declarator.declare(new Identifier(ast,some),new PolyNode(ast,LiteralNode.parse(ast,new Token<>(100)),
-                new PolyNode(ast,LiteralNode.parse(ast,new Token<>("some")))));
+        declarator.declare(new Identifier(ast,some),new PolyNode(LiteralNode.parse(ast,new Token<>(100)),
+                new PolyNode(LiteralNode.parse(ast,new Token<>("some")))));
         block.addStatement(declarator);
         mockIsAs(ast, some, block);
         //let result = {...}
@@ -633,8 +639,8 @@ public class ASTHelper {
         FunctionBody body = new FunctionBody(ast);
         mockIsAs(ast, some, body);
 
-        FunctionNode function = new FunctionNode(new Argument(ast,some, new IdentifierTypeNode(new Identifier(ast,new Token<>("Integer")))),body);
-        FunctionCallNode call = new FunctionCallNode(ast,function,LiteralNode.parse(ast,new Token<>(100)));
+        FunctionNode function = new FunctionNode(new Argument(new Identifier(ast,some), new IdentifierTypeNode(new Identifier(ast,new Token<>("Integer")))),body);
+        FunctionCallNode call = new FunctionCallNode(function,LiteralNode.parse(ast,new Token<>(100)));
 
         //let result = some->{...}
         Token<String> result = new Token<>("result");
@@ -662,14 +668,50 @@ public class ASTHelper {
         body.addStatement(new ReturnStatement(new Identifier(ast,new Token<>("y"))));
 
         List<ReferenceNode> refs = new ArrayList<>();
-        refs.add(new ReferenceNode(ast,new Identifier(ast,new Token<>("a")),null));
-        refs.add(new ReferenceNode(ast,new Identifier(ast,new Token<>("b")),null));
+        refs.add(new ReferenceNode(new Identifier(ast,new Token<>("a")),null));
+        refs.add(new ReferenceNode(new Identifier(ast,new Token<>("b")),null));
         List<Argument> args = new ArrayList<>();
-        args.add(new Argument(ast,new Token<>("x"),
+        args.add(new Argument(new Identifier(ast,new Token<>("x")),
                 new IdentifierTypeNode(new Identifier(ast,new Token<>("a")))));
         FunctionNode func = FunctionNode.from(body,refs,args);
         declarator = new VariableDeclarator(ast,VariableKind.LET);
         declarator.declare(new Identifier(ast,new Token<>("f")),func);
+        ast.addStatement(declarator);
+        return ast;
+    }
+
+    public static AST mockDeclare() {
+        /*
+         let f = (x:String->Integer->{name:String,age:Integer},y:String,z:Integer)->x(y,z);
+         */
+        ASF asf = new ASF();
+        AST ast = asf.newAST();
+        //{name:String,age:Integer}
+        List<Variable> members = new ArrayList<>();
+        members.add(new Variable(new Identifier(ast,new Token<>("name")),false,new IdentifierTypeNode(new Identifier(ast,new Token<>("String")))));
+        members.add(new Variable(new Identifier(ast,new Token<>("age")),true,new IdentifierTypeNode(new Identifier(ast,new Token<>("Integer")))));
+        EntityTypeNode entityTypeNode = new EntityTypeNode(members);
+
+        //String->Integer->{name:String,age:Integer}
+        FunctionTypeNode functionTypeNode = new FunctionTypeNode(ast,entityTypeNode,
+                new WrapperTypeNode(ast,Outline.String),new WrapperTypeNode(ast,Outline.Integer));
+        //x:...
+        Argument x = new Argument(new Identifier(ast,new Token<>("x")),functionTypeNode);
+        //y:String
+        Argument y = new Argument(new Identifier(ast,new Token<>("y")),new WrapperTypeNode(ast,Outline.String));
+        //z:Integer
+        Argument z = new Argument(new Identifier(ast,new Token<>("z")),new WrapperTypeNode(ast,Outline.Integer));
+        //x(y,z)
+        FunctionBody body = new FunctionBody(ast);
+        FunctionCallNode call = new FunctionCallNode(new Identifier(ast,new Token<>("x")),
+                new Identifier(ast,new Token<>("y")),
+                new Identifier(ast,new Token<>("z")));
+        body.addStatement(new ReturnStatement(call));
+        //(x,y,z)->x(y,z)
+        FunctionNode f = FunctionNode.from(body,x,y,z);
+
+        VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.LET);
+        declarator.declare(new Identifier(ast,new Token<>("f")), f);
         ast.addStatement(declarator);
         return ast;
     }

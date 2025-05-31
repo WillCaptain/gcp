@@ -10,6 +10,8 @@ import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.node.expression.IsAs;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
+import org.twelve.gcp.node.expression.typeable.EntityTypeNode;
+import org.twelve.gcp.node.expression.typeable.FunctionTypeNode;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
@@ -33,13 +35,11 @@ public interface Inferences {
         return Outline.Ignore;
     }
     Outline visit(BinaryExpression binaryExpression);
-
     Outline visit(UnaryExpression ue);
     Outline visit(TernaryExpression te);
     Outline visit(Assignment assignment);
     Outline visit(VariableDeclarator assignment);
     Outline visit(Identifier identifier);
-    Outline visit(IdentifierTypeNode identifierTypeNode);
     Outline visit(ReferenceNode ref);
     Outline visit(Variable variable);
     Outline visit(Export export);
@@ -63,4 +63,7 @@ public interface Inferences {
     Outline visit(ExportSpecifier exportSpecifier);
     Outline visit(IsAs isAs);
     Outline visit(ReferenceCallNode refCallNode);
+    Outline visit(IdentifierTypeNode identifierTypeNode);
+    Outline visit(FunctionTypeNode functionTypeNode);
+    Outline visit(EntityTypeNode entityTypeNode);
 }

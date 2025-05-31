@@ -27,35 +27,25 @@ public class EntityNode extends ValueNode<EntityNode> {
     private final Node base;
     private final Long scope;
 
-    public EntityNode(AST ast, List<MemberNode> members, Node base, Location loc) {
-        super(ast, loc);
-        this.scope = ast.scopeIndexer().incrementAndGet();
+    public EntityNode(List<MemberNode> members, Node base, Location loc) {
+        super(members.getFirst().ast(), loc);
+        this.scope = this.ast().scopeIndexer().incrementAndGet();
         for (MemberNode member : members) {
             this.addNode(member);
         }
-//        members.forEach(m -> {
-//            this.addNode(m);
-//            this.members.put(m.name().token(),m);
-//            List<MemberNode> member = this.members.get(m.name().token());
-//            if (member == null) {
-//                member = new ArrayList<>();
-//                this.members.put(m.name().token(), member);
-//            }
-//            member.add(m);
-//        });
         this.base = base;
     }
 
-    public EntityNode(AST ast, List<MemberNode> members, Node base) {
-        this(ast, members, base, null);
+    public EntityNode(List<MemberNode> members, Node base) {
+        this(members, base, null);
     }
 
-    public EntityNode(AST ast, List<MemberNode> members, Location loc) {
-        this(ast, members, null, loc);
+    public EntityNode(List<MemberNode> members, Location loc) {
+        this(members, null, loc);
     }
 
-    public EntityNode(AST ast, List<MemberNode> members) {
-        this(ast, members, (Location) null);
+    public EntityNode(List<MemberNode> members) {
+        this(members, (Location) null);
     }
 
     @Override
@@ -81,12 +71,6 @@ public class EntityNode extends ValueNode<EntityNode> {
                 sb.append("\n");
             }
             sb.append(",\n");
-//            index++;
-//            if (index < this.members.keySet().size()) {
-//                sb.append(",\n");
-//            } else {
-//                sb.append("\n");
-//            }
         }
         sb.append("}");
         return sb.toString();

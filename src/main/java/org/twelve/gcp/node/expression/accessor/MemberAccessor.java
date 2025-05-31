@@ -20,8 +20,8 @@ public class MemberAccessor extends Accessor {
     private final Expression entity;
     private final Identifier member;
 
-    public MemberAccessor(AST ast, Expression entity, Identifier member) {
-        super(ast);
+    public MemberAccessor(Expression entity, Identifier member) {
+        super(entity.ast());
         this.entity = entity;
         this.member = member;
         this.addNode(this.entity);

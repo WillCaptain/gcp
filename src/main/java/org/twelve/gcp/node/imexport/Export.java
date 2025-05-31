@@ -12,10 +12,10 @@ import java.util.List;
 public class Export extends Node {
     private final List<ExportSpecifier> specifiers = new ArrayList<>();
 
-    public Export(AST ast, List<Pair<Identifier, Identifier>> vars) {
-        super(ast, null);
+    public Export(List<Pair<Identifier, Identifier>> vars) {
+        super(vars.getFirst().key().ast(), null);
         for (Pair<Identifier, Identifier> var : vars) {
-            this.specifiers.add(this.addNode(new ExportSpecifier(ast, var.key(), var.value())));
+            this.specifiers.add(this.addNode(new ExportSpecifier(var.key(), var.value())));
         }
     }
 

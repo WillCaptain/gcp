@@ -7,8 +7,8 @@ import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 public abstract class ImportExportSpecifier extends Node {
-    public ImportExportSpecifier(AST ast, Identifier a, Identifier b) {
-        super(ast);
+    public ImportExportSpecifier(Identifier a, Identifier b) {
+        super(a.ast());
         Identifier origin = a;//new Identifier(ast, a);
         this.addNode(origin);
         if(b==null){//a without as b
@@ -23,7 +23,7 @@ public abstract class ImportExportSpecifier extends Node {
     @Override
     public String lexeme() {
         if(this.nodes().get(0)==this.nodes().get(1)){
-            return this.nodes().get(0).lexeme();
+            return this.nodes().getFirst().lexeme();
         }else{
             return this.nodes().get(0)+" as "+this.nodes().get(1);
         }

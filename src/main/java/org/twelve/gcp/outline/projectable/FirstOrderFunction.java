@@ -6,10 +6,9 @@ import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.OutlineWrapper;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -44,9 +43,12 @@ public class FirstOrderFunction extends Function<FunctionNode, Generic> implemen
                 rests[i] = args[i + 1];
             }
             Return r = Return.from(from(returns, rests));
+            r.addNothing();
             return new FirstOrderFunction(null, Generic.from(arg), r,null);
         } else {
-            return new FirstOrderFunction(null, Generic.from(args[0]), Return.from(returns),null);
+            Return r = Return.from(returns);
+            r.addNothing();
+            return new FirstOrderFunction(null, Generic.from(args[0]), r,null);
         }
     }
 
@@ -94,21 +96,22 @@ public class FirstOrderFunction extends Function<FunctionNode, Generic> implemen
     }
 
     @Override
-    public Outline project(List<Outline> types) {
+    public Outline project(List<OutlineWrapper> types) {
         FirstOrderFunction f = this;
         if (this.references.size() != types.size()) {
-            ErrorReporter.report(this.node, GCPErrCode.RFERENCE_MIS_MATCH);
+            ErrorReporter.report(this.node, GCPErrCode.REFERENCE_MIS_MATCH);
         }
         for (int i = 0; i < this.references.size(); i++) {
             Reference me = this.references.get(i);
-            Outline you = types.get(i);
+            OutlineWrapper you = types.get(i);
             if (you == null) break;
-            if (!you.is(me)) {
-                ErrorReporter.report(this.node, GCPErrCode.RFERENCE_MIS_MATCH);
+            if (!you.outline().is(me)) {
+                ErrorReporter.report(you.node(), GCPErrCode.REFERENCE_MIS_MATCH);
                 continue;
             }
-            f = cast(f.project(me,you));
+            f = cast(f.project(me,you.outline()));
         }
         return f.eventual();
     }
+
 }

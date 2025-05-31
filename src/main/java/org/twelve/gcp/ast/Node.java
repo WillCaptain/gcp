@@ -180,7 +180,9 @@ public abstract class Node implements Serializable {
      * Recursively checks if node and all children are fully inferred.
      */
     public boolean inferred() {
-        if (!this.outline.inferred()) return false;
+        if (!this.outline.inferred()) {
+            return false;
+        }
         return this.nodes.stream().allMatch(Node::inferred);
     }
 

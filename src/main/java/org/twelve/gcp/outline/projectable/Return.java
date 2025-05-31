@@ -9,6 +9,7 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.builtin.IGNORE;
+import org.twelve.gcp.outline.builtin.NOTHING;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -48,12 +49,20 @@ public class Return extends Genericable<Return, Node> {
             ErrorReporter.report(this.node, GCPErrCode.OUTLINE_MISMATCH);
             return false;
         }
-        if (supposed instanceof UNKNOWN) {
+        if (supposed instanceof UNKNOWN || (supposed instanceof NOTHING)) {
             supposed = returns;
         } else {
             supposed = Option.from(this.node, supposed, returns);
         }
         return true;
+    }
+
+    /**
+     * function created in declare and hof, set supposed to nothing to avoid redundant inference
+     * @return
+     */
+    public boolean addNothing(){
+        return this.addReturn(Nothing);
     }
 
     @Override
@@ -140,7 +149,7 @@ public class Return extends Genericable<Return, Node> {
 
     @Override
     public boolean inferred() {
-        return super.inferred() && this.supposed.inferred();
+        return super.inferred() &&this.supposed.inferred();
     }
 
     @Override

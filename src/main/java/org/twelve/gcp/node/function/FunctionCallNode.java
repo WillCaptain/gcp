@@ -15,12 +15,8 @@ public class FunctionCallNode extends Expression {
     private Expression function;
     private List<Expression> arguments;
 
-    public FunctionCallNode(AST ast, Token<String> funcName, Expression... arguments) {
-        this(ast, new Identifier(ast, funcName), arguments);
-    }
-
-    public FunctionCallNode(AST ast, Expression function, Expression... arguments) {
-        super(ast, null);
+    public FunctionCallNode(Expression function, Expression... arguments) {
+        super(function.ast(), null);
         this.function = function;
         this.addNode(this.function);
         this.arguments = Arrays.asList(arguments);

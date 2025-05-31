@@ -1,7 +1,10 @@
 package org.twelve.gcp.outline.projectable;
 
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.common.CONSTANTS;
+import org.twelve.gcp.node.expression.conditions.Consequence;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.ANY;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -49,10 +52,19 @@ public class FixFunction  implements Projectable{
 
     @Override
     public boolean tryIamYou(Outline another) {
-        if(!(another instanceof Function)) return false;
-        Function you = cast(another);
+        Function you = null;
+        if(another instanceof Function){
+            you = cast(another);
+        }
+        if(another instanceof Generic){
+            you = cast(((Generic)another).min());
+        }
+        if(you==null) return false;
+//        if(!(another instanceof Function)) return false;
+//        Function you = cast(another);
         //参数逆变，返回值协变
-        return you.argument.is(this.argument) && this.returns.is(you.returns);
+//        return (you.argument instanceof ANY || you.argument.is(this.argument)) && this.returns.is(you.returns);
+        return (you.argument.toString().equals(CONSTANTS.ANY_STR)||you.argument.canBe(this.argument)) && this.returns.is(you.returns);
     }
 
     @Override

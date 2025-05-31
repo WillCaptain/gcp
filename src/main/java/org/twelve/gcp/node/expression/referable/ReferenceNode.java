@@ -11,8 +11,8 @@ import org.twelve.gcp.outline.Outline;
  */
 public class ReferenceNode extends Identifier {
     private final TypeNode declared;
-    public ReferenceNode(AST ast, Identifier ref, TypeNode declared) {
-        super(ast, ref.token());
+    public ReferenceNode(Identifier ref, TypeNode declared) {
+        super(ref.ast(), ref.token());
         this.declared = declared;
     }
 
