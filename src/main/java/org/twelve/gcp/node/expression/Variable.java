@@ -9,40 +9,46 @@ import org.twelve.gcp.outline.builtin.ERROR;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
-public class Variable  extends Identifier{
-    private final Identifier name;
+public class Variable extends Identifier {
+    private final Identifier identifier;
     private final TypeNode declared;
     private final Boolean mutable;
 
-    public Variable(Identifier name, Boolean mutable, TypeNode declared) {
-        super(name.ast(),name.token());
+    public Variable(Identifier identifier, Boolean mutable, TypeNode declared) {
+        super(identifier.ast(), identifier.token());
         this.mutable = mutable;
-        this.name = name;
+        this.identifier = identifier;
         this.declared = this.addNode(declared);
     }
 
     @Override
     public Location loc() {
-        if(this.declared==null){
-            return this.name.loc();
-        }else {
-            return new SimpleLocation(this.name.loc().start(), this.declared.loc().end());
+        if (this.declared == null) {
+            return this.identifier.loc();
+        } else {
+            return new SimpleLocation(this.identifier.loc().start(), this.declared.loc().end());
         }
     }
+
+    public Identifier identifier() {
+        return this.identifier;
+    }
+
     @Override
     public String lexeme() {
         String ext = "";
-        if(this.declared!=null){
-            ext = ": "+this.declared.lexeme();
+        if (this.declared != null) {
+            ext = ": " + this.declared.lexeme();
 //            if(this.declared instanceof IdentifierType){
 //                ext += this.declared.lexeme();
 //            }else{
 //                ext += this.declared.outline();
 //            }
-            if(ext.trim().equals(":")) ext = "";
+            if (ext.trim().equals(":")) ext = "";
         }
-        return name.name()+ext;
+        return identifier.name() + ext;
     }
+
     @Override
     protected Outline accept(Inferences inferences) {
         return inferences.visit(this);
@@ -54,9 +60,9 @@ public class Variable  extends Identifier{
 
     @Override
     public Outline outline() {
-        if(this.declared==null || this.declared.outline() instanceof UNKNOWN){
+        if (this.declared == null || this.declared.outline() instanceof UNKNOWN) {
             return this.outline;
-        }else{
+        } else {
             return this.declared.outline();
         }
     }
@@ -64,12 +70,14 @@ public class Variable  extends Identifier{
     public boolean mutable() {
         return this.mutable;
     }
+
     public TypeNode declared() {
         return this.declared;
     }
+
     @Override
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
-        if(!(this.outline instanceof ERROR)) {
+        if (!(this.outline instanceof ERROR)) {
             super.assign(env, inferred);
         }
     }

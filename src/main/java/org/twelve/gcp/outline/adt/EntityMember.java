@@ -4,7 +4,10 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.outline.Outline;
+
+import static org.twelve.gcp.common.Tool.cast;
 
 public class EntityMember {
 
@@ -46,8 +49,8 @@ public class EntityMember {
         return this.outline;
     }
 
-    public Identifier node() {
-        return this.node;
+    public Variable node() {
+        return cast(this.node);
     }
 
     public Modifier modifier() {

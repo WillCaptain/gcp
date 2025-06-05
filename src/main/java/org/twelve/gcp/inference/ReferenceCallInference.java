@@ -7,8 +7,6 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.projectable.ReferAble;
 
-import java.util.stream.Collectors;
-
 import static org.twelve.gcp.common.Tool.cast;
 
 public class ReferenceCallInference implements Inference<ReferenceCallNode>{

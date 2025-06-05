@@ -1,10 +1,14 @@
 package org.twelve.gcp.outline.projectable;
 
+import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.NOTHING;
+
+import java.util.Arrays;
+import java.util.Optional;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -20,24 +24,6 @@ public class Reference extends Genericable<Reference, ReferenceNode> {
     protected Reference createNew() {
         return new Reference(cast(this.node), this.declaredToBe);
     }
-
-//    @Override
-//    public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
-//        if (projected != this) return this;//not me
-//        if (this.projected != null) {
-//            if (projection.is(this.projected)) {
-//                return this.projected;
-//            } else {
-//                return this;
-//            }
-//        }
-//        if (projection.is(this.declaredToBe)) {
-//            this.projected = projection;
-//            return this.projected;
-//        } else {
-//            return this;
-//        }
-//    }
 
     @Override
     public String toString() {
@@ -55,9 +41,15 @@ public class Reference extends Genericable<Reference, ReferenceNode> {
     }
 
     @Override
-    public Outline project(Reference me, Outline you) {
-        if (this.id() != me.id()) return this;
-        return this.project(this, you, new ProjectSession());
+    public Outline project(Pair<Reference,Outline>[] projections) {
+        Reference me = this;
+        Optional<Pair<Reference,Outline>> you = Arrays.stream(projections).filter(p->p.key().id()==me.id()).findFirst();
+        if(you.isPresent()){
+            return this.project(this, you.get().value(), new ProjectSession());
+
+        }else{
+            return this;
+        }
     }
 
     @Override

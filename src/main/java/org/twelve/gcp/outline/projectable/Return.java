@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
+import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
@@ -11,6 +12,8 @@ import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.builtin.IGNORE;
 import org.twelve.gcp.outline.builtin.NOTHING;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
+
+import java.util.List;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -159,9 +162,9 @@ public class Return extends Genericable<Return, Node> {
     }
 
     @Override
-    public Outline project(Reference me, Outline you) {
-        Return projected = cast(super.project(me, you));
-        projected.supposed = this.supposed.project(me,you);
+    public Outline project(Pair<Reference,Outline>[] projections) {
+        Return projected = cast(super.project(projections));
+        projected.supposed = this.supposed.project(projections);
         return projected;
     }
 }

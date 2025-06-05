@@ -7,6 +7,7 @@ import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.expression.*;
+import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.node.imexport.Export;
@@ -480,7 +481,7 @@ public class InferenceTest {
     @Test
     void test_inference_of_reference_in_function() {
         /*
-        let f = func<a,b>(x:a)->{
+        let f = fx<a,b>(x:a)->{
            let y:b = 100;
            y
         }*/
@@ -493,6 +494,35 @@ public class InferenceTest {
         assertInstanceOf(Reference.class, f.returns().supposedToBe());
         assertEquals("b", f.returns().supposedToBe().name());
         assertInstanceOf(INTEGER.class, ((Reference)f.returns().supposedToBe()).extendToBe());
+    }
+
+    @Test
+    void test_inference_of_reference_in_entity(){
+        /*
+        let g = fx<a,b>()->{
+           {
+                z:a = 100,
+                f = fx<c>(x:b,y:c)->y
+            }
+        }*/
+        AST ast = ASTHelper.mockReferenceInEntity();
+        ast.infer();
+        Function<?,?> g = cast(((VariableDeclarator) ast.program().body().get(0)).assignments().get(0).rhs().outline());
+        Entity entity = cast(g.returns().supposedToBe());
+        Reference z = cast(entity.members().getLast().node().outline());
+        //(x,y)->y
+        Function<?,Generic> f = cast(entity.members().getFirst().outline());
+        assertEquals("a",z.name());
+        assertInstanceOf(INTEGER.class, z.extendToBe());
+        assertEquals("b", f.argument().declaredToBe().name());
+        f = cast(f.returns().supposedToBe());
+        assertEquals("c", f.argument().declaredToBe().name());
+        assertEquals("c", ((Generic)f.returns().supposedToBe()).declaredToBe().name());
+    }
+
+    @Test
+    void test_inference_of_reference_in_inherited_entity(){
+
     }
 
     private static AST mockGCPTestAst() {

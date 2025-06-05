@@ -8,7 +8,11 @@ import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.ValueNode;
 import org.twelve.gcp.node.statement.MemberNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.OutlineWrapper;
+import org.twelve.gcp.outline.projectable.ReferAble;
+import org.twelve.gcp.outline.projectable.Reference;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,8 +26,8 @@ import static org.twelve.gcp.common.Tool.cast;
  * 1. 纯object: {name:String, gender:Male|Female}
  * 2. 基础类型扩展出来的object： String{size:Integer}
  */
-public class EntityNode extends ValueNode<EntityNode> {
-//    private final Map<String, MemberNode> members = new HashMap<>();
+public class EntityNode extends ValueNode<EntityNode>{
+    //    private final Map<String, MemberNode> members = new HashMap<>();
     private final Node base;
     private final Long scope;
 
@@ -37,15 +41,11 @@ public class EntityNode extends ValueNode<EntityNode> {
     }
 
     public EntityNode(List<MemberNode> members, Node base) {
-        this(members, base, null);
-    }
-
-    public EntityNode(List<MemberNode> members, Location loc) {
-        this(members, null, loc);
+        this(members, base,null);
     }
 
     public EntityNode(List<MemberNode> members) {
-        this(members, (Location) null);
+        this(members,null, null);
     }
 
     @Override
@@ -94,7 +94,7 @@ public class EntityNode extends ValueNode<EntityNode> {
         Map<String, MemberNode> ms = new HashMap<>();
         for (Node node : this.nodes()) {
             MemberNode m = cast(node);
-            ms.put(m.name().name(),m);
+            ms.put(m.name().name(), m);
         }
         return ms;
     }

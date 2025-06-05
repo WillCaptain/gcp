@@ -9,6 +9,7 @@ import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.expression.BinaryExpression;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.expression.LiteralNode;
+import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.expression.referable.ReferenceCallNode;
 import org.twelve.gcp.node.function.Argument;
@@ -25,6 +26,7 @@ import org.twelve.gcp.outline.primitive.LONG;
 import org.twelve.gcp.outline.primitive.STRING;
 import org.twelve.gcp.outline.projectable.*;
 
+import javax.print.DocFlavor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -578,7 +580,16 @@ public class GCPInference {
     }
 
     @Test
-    void test_gpc_only_reference_for_simple_function(){
+    void test_gcp_only_reference_for_simple_function(){
+        /*
+        let f = fx<a,b>(x:a)->{
+           let y:b = 100;
+           y
+        }
+        let f1 = f<String,Long>;
+        f<String,String>;//String(b) doesn't match Integer(y:b=100)
+        f1(100);
+        */
         AST ast = ASTHelper.mockReferenceInFunction();
         VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.LET);
         ReferenceCallNode rCall = new ReferenceCallNode(new Identifier(ast,new Token<>("f")),
@@ -607,6 +618,13 @@ public class GCPInference {
 
     @Test
     void test_gcp_argument_reference_for_simple_function(){
+        /*
+        let f = func<a,b>(x:a)->{
+           let y:b = 100;
+           y
+        }
+        f(100)
+        */
         AST ast = ASTHelper.mockReferenceInFunction();
         FunctionCallNode fCall = new FunctionCallNode(new Identifier(ast,new Token<>("f")),LiteralNode.parse(ast,new Token<>(100)));
         ast.addStatement(new ReturnStatement(fCall));
@@ -615,6 +633,48 @@ public class GCPInference {
         assertInstanceOf(INTEGER.class,ret);
     }
 
+    @Test
+    void test_gcp_only_reference_for_entity_return_function(){
+        /*
+        let g = fx<a,b>()->{
+           {
+                z:a = 100,
+                f = fx<c>(x:b,y:c)->y
+            }
+        }*/
+        AST ast = ASTHelper.mockReferenceInEntity();
+        //g<Integer,String>
+        ReferenceCallNode rCall = new ReferenceCallNode(new Identifier(ast,new Token<>("g")),
+                new IdentifierTypeNode(new Identifier(ast,new Token<>("Integer"))),
+                new IdentifierTypeNode(new Identifier(ast,new Token<>("String"))));
+        FunctionCallNode fCall = new FunctionCallNode(rCall);
+        //g<Integer,String>.f
+        MemberAccessor accessor = new MemberAccessor(fCall,new Identifier(ast,new Token<>("f")));
+        VariableDeclarator f1Declare = new VariableDeclarator(ast,VariableKind.LET);
+        f1Declare.declare(new Identifier(ast,new Token<>("f1")),accessor);
+        ast.addStatement(f1Declare);
+        //g<Integer,String>.f<Long>
+        ReferenceCallNode call = new ReferenceCallNode(new Identifier(ast,new Token<>("f1")),
+                new IdentifierTypeNode(new Identifier(ast,new Token<>("Long"))));
+        VariableDeclarator f2Declare = new VariableDeclarator(ast,VariableKind.LET);
+        f2Declare.declare(new Identifier(ast,new Token<>("f2")),call);
+        ast.addStatement(f2Declare);
+        ast.asf().infer();
+
+        //let f1 = g<Integer,String>().f;
+        FirstOrderFunction f1 = cast(f1Declare.assignments().getFirst().lhs().outline());
+        Function<?,Generic> retF1 = cast(f1.returns().supposedToBe());
+        assertInstanceOf(STRING.class, f1.argument().declaredToBe());
+        assertInstanceOf(Reference.class, retF1.argument().declaredToBe());
+        assertEquals("c", retF1.argument().declaredToBe().toString());
+        assertEquals("c", ((Generic)retF1.returns().supposedToBe()).declaredToBe().toString());
+
+        //let f2 = f1<Long>;
+        FirstOrderFunction f2 = cast(f2Declare.assignments().getFirst().lhs().outline());
+        Function<?,Generic> retF2 = cast(f2.returns().supposedToBe());
+        assertInstanceOf(LONG.class, retF2.argument().declaredToBe());
+        assertInstanceOf(LONG.class, ((Generic)retF2.returns().supposedToBe()).declaredToBe());
+    }
     private static AST mockGCPTestAst() {
         ASF asf = new ASF();
         AST ast = asf.newAST();

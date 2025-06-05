@@ -2,6 +2,7 @@ package org.twelve.gcp.outline.projectable;
 
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
+import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.adt.Entity;
@@ -446,12 +447,12 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     @Override
-    public Outline project(Reference me, Outline you) {
+    public Outline project(Pair<Reference,Outline>[] projections) {
         G copied = this.copy();
-        copied.extendToBe = this.extendToBe.project(me,you);
-        copied.hasToBe = this.hasToBe.project(me,you);
-        copied.declaredToBe = this.declaredToBe.project(me,you);
-        copied.definedToBe = this.definedToBe.project(me,you);
+        copied.extendToBe = this.extendToBe.project(projections);
+        copied.hasToBe = this.hasToBe.project(projections);
+        copied.declaredToBe = this.declaredToBe.project(projections);
+        copied.definedToBe = this.definedToBe.project(projections);
         return copied;
     }
 }

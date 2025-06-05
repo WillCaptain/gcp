@@ -3,6 +3,7 @@ package org.twelve.gcp.inference;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
@@ -38,7 +39,7 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
                Entity entity = cast(generic.definedToBe());
                AccessorGeneric g = new AccessorGeneric(node);
 //               Generic g = new Generic(node);
-               entity.addMember(node.member().name(), g, Modifier.PUBLIC, false, node.member());
+               entity.addMember(node.member().name(), g, Modifier.PUBLIC, false, new Variable(node.member(),false,null));
                return g;
            }
         }

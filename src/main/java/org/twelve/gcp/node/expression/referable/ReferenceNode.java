@@ -17,6 +17,15 @@ public class ReferenceNode extends Identifier {
     }
 
     @Override
+    public String lexeme() {
+        if(declared==null){
+            return super.lexeme();
+        }else{
+            return super.lexeme()+":"+declared.lexeme();
+        }
+    }
+
+    @Override
     protected Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }

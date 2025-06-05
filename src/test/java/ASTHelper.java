@@ -27,6 +27,7 @@ import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
+import org.twelve.gcp.outline.projectable.Reference;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -653,7 +654,7 @@ public class ASTHelper {
 
     public static AST mockReferenceInFunction() {
         /*
-        let f = func<a,b>(x:a)->{
+        let f = fx<a,b>(x:a)->{
            let y:b = 100;
            y
         }*/
@@ -712,6 +713,47 @@ public class ASTHelper {
 
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.LET);
         declarator.declare(new Identifier(ast,new Token<>("f")), f);
+        ast.addStatement(declarator);
+        return ast;
+    }
+
+    public static AST mockReferenceInEntity() {
+        /*
+        let g = fx<a,b>()->{
+           {
+                z:a = 100,
+                f = fx<c>(x:b,y:c)->y
+            }
+        }*/
+        ASF asf = new ASF();
+        AST ast = asf.newAST();
+        List<MemberNode> members = new ArrayList<>();
+        //z:a=100
+        members.add(new MemberNode(new Identifier(ast, new Token<>("z")),
+                new IdentifierTypeNode(new Identifier(ast, new Token<>("a"))),
+                LiteralNode.parse(ast, new Token<>(100)), false));
+        //f = fx<c>(x:b,y:c)->y
+        FunctionBody body = new FunctionBody(ast);
+        body.addStatement(new ReturnStatement(new Identifier(ast, new Token<>("y"))));
+        List<ReferenceNode> refs = new ArrayList<>();
+        refs.add(new ReferenceNode(new Identifier(ast,new Token<>("c")),null));
+        List<Argument> args = new ArrayList<>();
+        args.add(new Argument(new Identifier(ast, new Token<>("x")), new IdentifierTypeNode(new Identifier(ast, new Token<>("b")))));
+        args.add(new Argument(new Identifier(ast, new Token<>("y")), new IdentifierTypeNode(new Identifier(ast, new Token<>("c")))));
+        FunctionNode f = FunctionNode.from(body, refs, args);
+        members.add(new MemberNode(new Identifier(ast, new Token<>("f")), f, false));
+        EntityNode entity = new EntityNode(members, null);
+
+        //<a,b>
+        refs = new ArrayList<>();
+        refs.add(new ReferenceNode(new Identifier(ast, new Token<>("a")), null));
+        refs.add(new ReferenceNode(new Identifier(ast, new Token<>("b")), null));
+
+        body = new FunctionBody(ast);
+        body.addStatement(new ReturnStatement(entity));
+        FunctionNode g = FunctionNode.from(body, refs, new ArrayList<>());
+        VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.LET);
+        declarator.declare(new Identifier(ast, new Token<>("g")), g);
         ast.addStatement(declarator);
         return ast;
     }

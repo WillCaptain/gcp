@@ -1,11 +1,13 @@
 package org.twelve.gcp.outline;
 
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.primitive.*;
 import org.twelve.gcp.outline.projectable.Reference;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -117,7 +119,7 @@ public interface Outline extends Serializable {
 
     long id();
 
-    default Outline project(Reference me, Outline you){
+    default Outline project(Pair<Reference,Outline>[] projections){
         return this;
     }
     default  Outline eventual(){

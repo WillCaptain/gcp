@@ -252,7 +252,7 @@ public class AstStructureTest {
     @Test
     void test_reference_in_function(){
         /*
-        let f = func<a,b>(x:a)->{
+        let f = fx<a,b>(x:a)->{
            let y:b = 100;
            y
         }*/
@@ -260,7 +260,7 @@ public class AstStructureTest {
         String expected = """
                 module default
                 
-                let f = func<a,b>(x: a)->{
+                let f = fx<a,b>(x: a)->{
                   let y: b = 100;
                   y
                 };""";

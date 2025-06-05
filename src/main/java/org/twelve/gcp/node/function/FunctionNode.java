@@ -2,12 +2,14 @@ package org.twelve.gcp.node.function;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.expression.referable.ReferAbleNode;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.statement.ReturnStatement;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.UNIT;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,7 +20,9 @@ import java.util.stream.Collectors;
  * function, map, array, entity
  * are able to have reference type sub structure
  */
-public class FunctionNode extends ReferAbleNode {
+public class FunctionNode extends Expression implements ReferAbleNode {
+    private final List<ReferenceNode> refs = new ArrayList<>();
+
     public static FunctionNode from(FunctionBody funcBody, Argument... arguments) {
         return from(funcBody, new ArrayList<>(), new ArrayList<>(Arrays.asList(arguments)));
     }
@@ -58,9 +62,12 @@ public class FunctionNode extends ReferAbleNode {
     private final FunctionBody body;
 
     public FunctionNode(Argument argument, FunctionBody body, ReferenceNode... refs) {
-        super(body.ast(), refs);
+        super(body.ast(),null);
         this.argument = this.addNode(argument);
         this.body = this.addNode(body);
+        for (ReferenceNode ref : refs) {
+            this.refs.add(this.addNode(ref));
+        }
 
     }
 
@@ -78,12 +85,12 @@ public class FunctionNode extends ReferAbleNode {
         if (this.refs.isEmpty()) {
             return argument().lexeme() + "->" + body().lexeme();
         } else {
-            return new StringBuilder().append("func<")
+            return new StringBuilder().append("fx<")
                     .append(
-                    this.refs.stream().map(Identifier::name).collect(Collectors.joining(",")))
-                    .append(">(")
-                    .append(argument().lexeme())
-                    .append(")->")
+                    this.refs.stream().map(Identifier::lexeme).collect(Collectors.joining(",")))
+                    .append(">")
+                    .append((argument().lexeme().equals("()"))? argument.lexeme():("("+argument().lexeme()+")"))
+                    .append("->")
                     .append(body.lexeme())
                     .toString();
         }
@@ -97,6 +104,10 @@ public class FunctionNode extends ReferAbleNode {
     @Override
     protected Outline accept(Inferences inferences) {
         return inferences.visit(this);
+    }
+
+    public List<ReferenceNode> refs() {
+        return this.refs;
     }
 
 //    @Override
