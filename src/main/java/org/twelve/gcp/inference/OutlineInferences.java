@@ -74,6 +74,16 @@ public class OutlineInferences implements Inferences {
     }
 
     @Override
+    public Outline visit(As asNode) {
+        return new AsInference().infer(asNode,this);
+    }
+
+    @Override
+    public Outline visit(ArrayNode arrayNode) {
+        return new ArrayNodeInference().infer(arrayNode,this);
+    }
+
+    @Override
     public Outline visit(ReferenceNode ref) {
         return new ReferenceNodeInference().infer(ref,this);
     }

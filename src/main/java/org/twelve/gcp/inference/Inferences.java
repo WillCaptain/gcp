@@ -66,4 +66,6 @@ public interface Inferences {
     Outline visit(IdentifierTypeNode identifierTypeNode);
     Outline visit(FunctionTypeNode functionTypeNode);
     Outline visit(EntityTypeNode entityTypeNode);
+    Outline visit(As asNode);
+    Outline visit(ArrayNode arrayNode);
 }

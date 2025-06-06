@@ -84,11 +84,11 @@ public class InferenceTest {
         AST ast = asf.newAST();
 
         List<Identifier> namespace = new ArrayList<>();
-        namespace.add(new Identifier(ast,new Token<>("me", 10)));
+        namespace.add(new Identifier(ast, new Token<>("me", 10)));
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Identifier(ast,new Token<>("age")), new IdentifierTypeNode(new Identifier(ast,new Token<>("Integer"))), LiteralNode.parse(ast, new Token("some")));
+        var.declare(new Identifier(ast, new Token<>("age")), new IdentifierTypeNode(new Identifier(ast, new Token<>("Integer"))), LiteralNode.parse(ast, new Token("some")));
         ast.program().body().addStatement(var);
         asf.infer();
         assertTrue(asf.inferred());
@@ -112,11 +112,11 @@ public class InferenceTest {
         LiteralNode<Integer> num = LiteralNode.parse(ast, new Token<>(100));
 
         List<Identifier> namespace = new ArrayList<>();
-        namespace.add(new Identifier(ast,new Token<>("me", 10)));
+        namespace.add(new Identifier(ast, new Token<>("me", 10)));
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Identifier(ast,new Token<>("age")), str);
+        var.declare(new Identifier(ast, new Token<>("age")), str);
         ast.program().body().addStatement(var);
         Assignment assignment = new Assignment(new Identifier(ast, new Token<>("age")), num);
         ast.addStatement(assignment);
@@ -142,11 +142,11 @@ public class InferenceTest {
         LiteralNode<Integer> i = LiteralNode.parse(ast, new Token<>(100));
 
         List<Identifier> namespace = new ArrayList<>();
-        namespace.add(new Identifier(ast,new Token<>("me", 10)));
+        namespace.add(new Identifier(ast, new Token<>("me", 10)));
         ast.program().setNamespace(namespace);
 
         VariableDeclarator var = new VariableDeclarator(ast, VariableKind.VAR);
-        var.declare(new Identifier(ast,new Token<>("age")), new PolyNode(str, i));
+        var.declare(new Identifier(ast, new Token<>("age")), new PolyNode(str, i));
         ast.program().body().addStatement(var);
         Assignment assignment = new Assignment(new Identifier(ast, new Token<>("age")), f);
         ast.addStatement(assignment);
@@ -271,9 +271,9 @@ public class InferenceTest {
          */
         AST ast = mockGCPTestAst();
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
-        declare.declare(new Identifier(ast,new Token<>("a")), LiteralNode.parse(ast, new Token<>(100d)));
-        declare.declare(new Identifier(ast,new Token<>("b")), LiteralNode.parse(ast, new Token<>(100)));
-        declare.declare(new Identifier(ast,new Token<>("c")), LiteralNode.parse(ast, new Token<>("some")));
+        declare.declare(new Identifier(ast, new Token<>("a")), LiteralNode.parse(ast, new Token<>(100d)));
+        declare.declare(new Identifier(ast, new Token<>("b")), LiteralNode.parse(ast, new Token<>(100)));
+        declare.declare(new Identifier(ast, new Token<>("c")), LiteralNode.parse(ast, new Token<>("some")));
         ast.addStatement(declare);
         //a+b should be double
         BinaryExpression add1 = new BinaryExpression(new Identifier(ast, new Token<>("a")), new Identifier(ast, new Token<>("b"))
@@ -397,10 +397,26 @@ public class InferenceTest {
     }
 
     @Test
-    void test_declare_infer(){
+    void test_declare_infer() {
         AST ast = ASTHelper.mockDeclare();
         ast.asf().infer();
         assertTrue(ast.asf().inferred());
+    }
+
+    @Test
+    void test_as() {
+        AST ast = ASTHelper.mockAs();
+        ast.asf().infer();
+        Assignment a = ((VariableDeclarator) ast.program().body().statements().get(0)).assignments().getFirst();
+        Entity ea = cast(a.lhs().outline());
+        assertEquals("name", ea.members().get(0).name());
+        assertEquals("String", ea.members().get(0).outline().toString());
+        Assignment b = ((VariableDeclarator) ast.program().body().statements().get(1)).assignments().getFirst();
+        Entity eb = cast(b.lhs().outline());
+        assertEquals("name", eb.members().get(0).name());
+        assertEquals("Integer", eb.members().get(0).outline().toString());
+        assertEquals(1,ast.errors().size());
+        assertEquals(b.rhs(),ast.errors().get(0).node());
     }
 
     @Test
@@ -472,8 +488,8 @@ public class InferenceTest {
         assertInstanceOf(INTEGER.class, ((Option) result).options().getFirst());
         assertInstanceOf(STRING.class, ((Option) result).options().getLast());
 
-        FunctionNode function = cast(((FunctionCallNode)assignment.rhs()).function());
-        assertEquals(1,ast.errors().size());
+        FunctionNode function = cast(((FunctionCallNode) assignment.rhs()).function());
+        assertEquals(1, ast.errors().size());
         Generic arg = cast(function.argument().outline());
         assertInstanceOf(INTEGER.class, arg.couldBe());
     }
@@ -487,17 +503,17 @@ public class InferenceTest {
         }*/
         AST ast = ASTHelper.mockReferenceInFunction();
         ast.infer();
-        Assignment assignment = ((VariableDeclarator)ast.program().body().statements().getFirst()).assignments().getFirst();
+        Assignment assignment = ((VariableDeclarator) ast.program().body().statements().getFirst()).assignments().getFirst();
         FirstOrderFunction f = cast(assignment.lhs().outline());
-        assertInstanceOf(Reference.class,f.argument().declaredToBe());
+        assertInstanceOf(Reference.class, f.argument().declaredToBe());
         assertEquals("a", f.argument().declaredToBe().name());
         assertInstanceOf(Reference.class, f.returns().supposedToBe());
         assertEquals("b", f.returns().supposedToBe().name());
-        assertInstanceOf(INTEGER.class, ((Reference)f.returns().supposedToBe()).extendToBe());
+        assertInstanceOf(INTEGER.class, ((Reference) f.returns().supposedToBe()).extendToBe());
     }
 
     @Test
-    void test_inference_of_reference_in_entity(){
+    void test_inference_of_reference_in_entity() {
         /*
         let g = fx<a,b>()->{
            {
@@ -507,21 +523,21 @@ public class InferenceTest {
         }*/
         AST ast = ASTHelper.mockReferenceInEntity();
         ast.infer();
-        Function<?,?> g = cast(((VariableDeclarator) ast.program().body().get(0)).assignments().get(0).rhs().outline());
+        Function<?, ?> g = cast(((VariableDeclarator) ast.program().body().get(0)).assignments().get(0).rhs().outline());
         Entity entity = cast(g.returns().supposedToBe());
         Reference z = cast(entity.members().getLast().node().outline());
         //(x,y)->y
-        Function<?,Generic> f = cast(entity.members().getFirst().outline());
-        assertEquals("a",z.name());
+        Function<?, Generic> f = cast(entity.members().getFirst().outline());
+        assertEquals("a", z.name());
         assertInstanceOf(INTEGER.class, z.extendToBe());
         assertEquals("b", f.argument().declaredToBe().name());
         f = cast(f.returns().supposedToBe());
         assertEquals("c", f.argument().declaredToBe().name());
-        assertEquals("c", ((Generic)f.returns().supposedToBe()).declaredToBe().name());
+        assertEquals("c", ((Generic) f.returns().supposedToBe()).declaredToBe().name());
     }
 
     @Test
-    void test_inference_of_reference_in_inherited_entity(){
+    void test_inference_of_reference_in_inherited_entity() {
 
     }
 
@@ -529,7 +545,7 @@ public class InferenceTest {
         ASF asf = new ASF();
         AST ast = asf.newAST();
         List<Identifier> namespace = new ArrayList<>();
-        namespace.add(new Identifier(ast,new Token<>("test")));
+        namespace.add(new Identifier(ast, new Token<>("test")));
         ast.setNamespace(namespace);
         return ast;
     }

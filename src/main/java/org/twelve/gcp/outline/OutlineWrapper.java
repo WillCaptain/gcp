@@ -21,11 +21,11 @@ public record OutlineWrapper(Node node, Outline outline) implements Outline {
 
     @Override
     public boolean tryYouAreMe(Outline another) {
+        Outline you = another;
         if(another instanceof  OutlineWrapper){
-            return this.outline.tryYouAreMe(((OutlineWrapper) another).outline);
-        }else {
-            return this.outline.tryYouAreMe(another);
+            you = ((OutlineWrapper) another).outline;
         }
+        return this.outline.tryYouAreMe(you) ||you.tryIamYou(this.outline);
     }
 
     @Override

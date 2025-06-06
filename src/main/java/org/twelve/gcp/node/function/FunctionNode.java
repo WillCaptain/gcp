@@ -83,14 +83,14 @@ public class FunctionNode extends Expression implements ReferAbleNode {
     @Override
     public String lexeme() {
         if (this.refs.isEmpty()) {
-            return argument().lexeme() + "->" + body().lexeme();
+            return argument().lexeme() + body().lexeme();
         } else {
             return new StringBuilder().append("fx<")
                     .append(
                     this.refs.stream().map(Identifier::lexeme).collect(Collectors.joining(",")))
                     .append(">")
                     .append((argument().lexeme().equals("()"))? argument.lexeme():("("+argument().lexeme()+")"))
-                    .append("->")
+//                    .append("->")
                     .append(body.lexeme())
                     .toString();
         }

@@ -8,6 +8,7 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.common.Modifier;
+import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
 
 import java.util.HashMap;
@@ -64,9 +65,11 @@ public abstract class ProductADT extends ADT {
     public boolean maybe(Outline another) {
         if (another instanceof ProductADT) {
             return this.buildIn.is(((ProductADT) another).buildIn);
-        } else {
-            return true;
         }
+        if ((another instanceof OutlineWrapper && ((OutlineWrapper) another).outline() instanceof ProductADT)) {
+            return this.buildIn.is(((ProductADT) ((OutlineWrapper)another).outline()).buildIn);
+        }
+        return true;
     }
 
     @Override
@@ -113,8 +116,8 @@ public abstract class ProductADT extends ADT {
     public String toString() {
         StringBuilder sb = new StringBuilder("{");
         List<EntityMember> ms = this.members();
-        for(int i=0; i<ms.size();i++){
-            sb.append(ms.get(i).toString()+(i==ms.size()-1?"":","));
+        for (int i = 0; i < ms.size(); i++) {
+            sb.append(ms.get(i).toString() + (i == ms.size() - 1 ? "" : ","));
         }
         sb.append("}");
         return sb.toString();
@@ -174,9 +177,9 @@ public abstract class ProductADT extends ADT {
         }
     }
 
-    public boolean replaceMember(String name, Outline outline){
+    public boolean replaceMember(String name, Outline outline) {
         EntityMember removed = this.members.remove(name);
-        return this.addMember(name,outline,removed.modifier(),removed.mutable()== Mutable.True,removed.node());
+        return this.addMember(name, outline, removed.modifier(), removed.mutable() == Mutable.True, removed.node());
     }
 
     public boolean addMember(String name, Outline outline, Modifier modifier, Boolean mutable, Identifier node) {

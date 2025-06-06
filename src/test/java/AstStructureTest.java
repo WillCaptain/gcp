@@ -161,11 +161,7 @@ public class AstStructureTest {
         String expected = """
                 module default
                 
-                let add = x->{
-                  y->{
-                    x+y
-                  }
-                };""";
+                let add = x->y->x+y;""";
         assertEquals(expected,ast.lexeme());
     }
 
@@ -187,12 +183,8 @@ public class AstStructureTest {
                 module test
                 
                 let person = {
-                  get_name = ()->{
-                    this.name
-                  },
-                  get_my_name = ()->{
-                    name
-                  },
+                  get_name = ()->this.name,
+                  get_my_name = ()->name,
                   name = "Will",
                 };
                 let name_1 = person.name;
@@ -231,20 +223,14 @@ public class AstStructureTest {
     }
     @Test
     void test_declare(){
+        String expected = """
+                module default
+                
+                let f = x: String->Integer->{name: String, var age: Integer}->y: String->z: Integer->x(y,z);""";
         /*
          let f = (x:String->Integer->{name:String,age:Integer},y:String,z:Integer)->x(y,z);
          */
         AST ast = ASTHelper.mockDeclare();
-        String expected = """
-                module default
-                
-                let f = x: String->Integer->{name: String, var age: Integer}->{
-                  y: String->{
-                    z: Integer->{
-                      x(y,z)
-                    }
-                  }
-                };""";
 
         assertEquals(expected,ast.lexeme());
     }
@@ -264,6 +250,36 @@ public class AstStructureTest {
                   let y: b = 100;
                   y
                 };""";
+        assertEquals(expected,ast.lexeme());
+    }
+
+    @Test
+    void test_as(){
+        AST ast = ASTHelper.mockAs();
+        String expected = """
+                module default
+                
+                let a = {
+                  name = "Will",
+                  age = 20,
+                } as {name: String};
+                let b = {
+                  name = "Will",
+                  age = 20,
+                } as {name: Integer};""";
+        assertEquals(expected,ast.lexeme());
+    }
+
+    @Test
+    void test_array(){
+        AST ast = ASTHelper.mockArrayDefinition();
+        String expected = """
+                module default
+                
+                let a = [1,2,3,4];
+                let b: [String] = [];
+                let c = [...5];
+                let d = [1...6,2,x->x*2];""";
         assertEquals(expected,ast.lexeme());
     }
 }

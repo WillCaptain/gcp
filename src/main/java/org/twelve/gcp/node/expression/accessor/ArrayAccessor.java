@@ -1,4 +1,4 @@
-package org.twelve.gcp.node.expression.todo;
+package org.twelve.gcp.node.expression.accessor;
 
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.AST;

@@ -14,4 +14,13 @@ public class FunctionBody extends Body {
         return inferences.visit(this);
     }
 
+    @Override
+    public String lexeme() {
+        String arrow = "->";
+        if(this.nodes().size()==1){
+            return arrow+this.nodes().getFirst().lexeme();
+        }else{
+            return arrow+super.lexeme();
+        }
+    }
 }
