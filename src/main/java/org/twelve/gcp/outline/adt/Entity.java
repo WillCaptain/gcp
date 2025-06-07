@@ -8,6 +8,7 @@ import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.exception.GCPRuntimeException;
 import org.twelve.gcp.node.expression.Variable;
+import org.twelve.gcp.node.expression.typeable.WrapperTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
 import org.twelve.gcp.outline.projectable.ProjectSession;
@@ -224,15 +225,19 @@ public class Entity extends ProductADT implements Projectable {
         List<EntityMember> ms = new ArrayList<>();
         for (String key : this.members.keySet()) {
             EntityMember m = this.members.get(key);
+            Variable n = m.node();
             Outline mProjected = m.outline().project(projections);
             if(m.node().declared()!=null){
                 Outline declared = m.node().outline().project(projections);
-                if(!mProjected.is(declared)){
-                    ErrorReporter.report(m.node(),GCPErrCode.OUTLINE_MISMATCH,mProjected+" doesn't match with "+declared);
+                if(declared.id()!=m.node().outline().id()){
+                    n = new Variable(n.identifier(),n.mutable(),new WrapperTypeNode(n.ast(),declared));
                 }
+//                if(!mProjected.is(declared)){
+//                    ErrorReporter.report(m.node(),GCPErrCode.OUTLINE_MISMATCH,mProjected+" doesn't match with "+declared);
+//                }
             }
 
-            ms.add(EntityMember.from(m.name(),mProjected,m.modifier(),m.mutable().toBool(),m.node()));
+            ms.add(EntityMember.from(m.name(),mProjected,m.modifier(),m.mutable().toBool(),n));
         }
         if(this.base==null) {
             projected = new Entity(this.node, this.buildIn, ms);

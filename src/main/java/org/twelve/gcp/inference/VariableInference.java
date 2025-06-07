@@ -5,7 +5,6 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
@@ -30,6 +29,6 @@ public class VariableInference implements Inference<Variable> {
 
     private Outline inferDeclared(TypeNode declared, Inferences inferences) {
         if(declared==null) return Outline.Unknown;
-        return ((OutlineWrapper)declared.infer(inferences)).outline();
+        return declared.infer(inferences);
     }
 }

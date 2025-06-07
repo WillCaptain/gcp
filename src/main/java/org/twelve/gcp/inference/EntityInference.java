@@ -4,7 +4,6 @@ import org.twelve.gcp.common.SCOPE_TYPE;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.EntityNode;
-import org.twelve.gcp.node.statement.MemberNode;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.ProductADT;
@@ -38,7 +37,7 @@ public class EntityInference implements Inference<EntityNode> {
         node.members().forEach((k, v) -> {
 //            for (MemberNode v : vs) {
                 Outline outline = v.infer(inferences);
-                entity.addMember(k, outline, v.modifier(), v.mutable(), v.name());
+                entity.addMember(k, outline, v.modifier(), v.mutable(), v.identifier());
 //            }
         });
         return entity;

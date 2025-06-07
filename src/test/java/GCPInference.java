@@ -6,9 +6,7 @@ import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.operator.BinaryOperator;
-import org.twelve.gcp.node.expression.BinaryExpression;
-import org.twelve.gcp.node.expression.Identifier;
-import org.twelve.gcp.node.expression.LiteralNode;
+import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.expression.referable.ReferenceCallNode;
@@ -20,6 +18,7 @@ import org.twelve.gcp.node.statement.*;
 import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
+import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.primitive.INTEGER;
 import org.twelve.gcp.outline.primitive.LONG;
@@ -660,7 +659,19 @@ public class GCPInference {
         f2Declare.declare(new Identifier(ast,new Token<>("f2")),call);
         ast.addStatement(f2Declare);
         ast.asf().infer();
+        //check initialed
+        VariableDeclarator g = cast(ast.program().body().statements().getFirst());
+        Function<?,?> goutline = cast(g.assignments().getFirst().lhs().outline());
+        Entity originEntity = cast(goutline.returns().supposedToBe());
+        EntityMember originZ = originEntity.members().getLast();
+        assertEquals("a",originZ.outline().toString());
+        assertEquals("a",originZ.node().outline().toString());
 
+        //check g<Integer,String>
+        Entity entity = cast(((Function<?,Generic>)rCall.outline()).returns().supposedToBe());
+        EntityMember z = entity.members().getLast();
+        assertInstanceOf(INTEGER.class,z.outline());
+        assertInstanceOf(INTEGER.class,z.node().outline());
         //let f1 = g<Integer,String>().f;
         FirstOrderFunction f1 = cast(f1Declare.assignments().getFirst().lhs().outline());
         Function<?,Generic> retF1 = cast(f1.returns().supposedToBe());

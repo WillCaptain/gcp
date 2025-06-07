@@ -1,18 +1,13 @@
 package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.Location;
-import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.SimpleLocation;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.ValueNode;
 import org.twelve.gcp.node.statement.MemberNode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.OutlineWrapper;
-import org.twelve.gcp.outline.projectable.ReferAble;
-import org.twelve.gcp.outline.projectable.Reference;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,7 +89,7 @@ public class EntityNode extends ValueNode<EntityNode>{
         Map<String, MemberNode> ms = new HashMap<>();
         for (Node node : this.nodes()) {
             MemberNode m = cast(node);
-            ms.put(m.name().name(), m);
+            ms.put(m.identifier().name(), m);
         }
         return ms;
     }

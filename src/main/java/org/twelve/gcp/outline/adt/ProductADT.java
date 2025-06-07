@@ -1,14 +1,12 @@
 package org.twelve.gcp.outline.adt;
 
 import com.sun.xml.ws.developer.Serialization;
-import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.common.Modifier;
-import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
 
 import java.util.HashMap;
@@ -66,9 +64,9 @@ public abstract class ProductADT extends ADT {
         if (another instanceof ProductADT) {
             return this.buildIn.is(((ProductADT) another).buildIn);
         }
-        if ((another instanceof OutlineWrapper && ((OutlineWrapper) another).outline() instanceof ProductADT)) {
-            return this.buildIn.is(((ProductADT) ((OutlineWrapper)another).outline()).buildIn);
-        }
+//        if ((another instanceof OutlineWrapper && ((OutlineWrapper) another).outline() instanceof ProductADT)) {
+//            return this.buildIn.is(((ProductADT) ((OutlineWrapper)another).outline()).buildIn);
+//        }
         return true;
     }
 

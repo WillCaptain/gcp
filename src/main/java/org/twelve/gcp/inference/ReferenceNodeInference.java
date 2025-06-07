@@ -4,7 +4,6 @@ import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.projectable.Reference;
 import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;

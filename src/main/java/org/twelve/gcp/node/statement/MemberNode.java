@@ -1,6 +1,5 @@
 package org.twelve.gcp.node.statement;
 
-import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.inference.Inferences;
@@ -31,12 +30,13 @@ public class MemberNode extends VariableDeclarator {
 
     @Override
     public Outline outline() {
-        return this.expression().outline();
+//        return this.expression().outline();
+        return this.identifier().outline();
     }
 
     @Override
     public String lexeme() {
-        return (this.mutable() ? "mute " : "") + this.name().lexeme() +
+        return (this.mutable() ? "mute " : "") + this.identifier().lexeme() +
                 " = " +
                 this.expression().lexeme();
     }
@@ -47,7 +47,7 @@ public class MemberNode extends VariableDeclarator {
         return this.outline();
     }
 
-    public Identifier name() {
+    public Identifier identifier() {
         return cast(this.assignments().getFirst().lhs());
     }
 
@@ -56,7 +56,7 @@ public class MemberNode extends VariableDeclarator {
     }
 
     public Modifier modifier() {
-        return this.name().modifier();
+        return this.identifier().modifier();
     }
 
     public Boolean mutable() {

@@ -2,16 +2,13 @@ package org.twelve.gcp.node.expression.typeable;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.OutlineWrapper;
 
 public abstract class TypeNode extends Node {
     public TypeNode(AST ast) {
         super(ast);
     }
-    @Override
-    public Outline infer(Inferences inferences) {
-        return new OutlineWrapper(this, super.infer(inferences));
-    }
+//    @Override
+//    public Outline infer(Inferences inferences) {
+//        return new OutlineWrapper(this, super.infer(inferences));
+//    }
 }
