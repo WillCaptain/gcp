@@ -1,19 +1,20 @@
 package org.twelve.gcp.outline.projectable;
 
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.outline.Outline;
 
 import static org.twelve.gcp.common.Tool.cast;
 
 
-public abstract class Function<T extends Node,G extends Outline> implements Projectable  {
+public abstract class Function<T extends Node, A extends Outline> implements Projectable  {
     protected long id;
     protected final T node;
 
-    protected G argument;
+    protected A argument;
     protected Return returns;
 
-    public Function(T node, G argument, Return returns) {
+    public Function(T node, A argument, Return returns) {
         this.node = node;
         this.id = Counter.getAndIncrement();
 
@@ -52,7 +53,7 @@ public abstract class Function<T extends Node,G extends Outline> implements Proj
         return this.returns;
     }
 
-    public G argument() {
+    public A argument() {
         return argument;
     }
 
@@ -78,5 +79,10 @@ public abstract class Function<T extends Node,G extends Outline> implements Proj
         return new FixFunction(this.node(),
                 this.argument instanceof Projectable?((Projectable) this.argument).guess():this.argument,
                 this.returns.guess());
+    }
+
+    @Override
+    public boolean containsUnknown() {
+        return this.argument.containsUnknown()||this.returns.containsUnknown();
     }
 }

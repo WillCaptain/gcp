@@ -3,6 +3,7 @@ package org.twelve.gcp.inference;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.LiteralUnionNode;
 import org.twelve.gcp.node.expression.*;
+import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.Block;
 import org.twelve.gcp.node.expression.body.FunctionBody;
@@ -10,6 +11,7 @@ import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.node.expression.IsAs;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
+import org.twelve.gcp.node.expression.typeable.ArrayTypeNode;
 import org.twelve.gcp.node.expression.typeable.EntityTypeNode;
 import org.twelve.gcp.node.expression.typeable.FunctionTypeNode;
 import org.twelve.gcp.node.function.Argument;
@@ -68,4 +70,6 @@ public interface Inferences {
     Outline visit(EntityTypeNode entityTypeNode);
     Outline visit(As asNode);
     Outline visit(ArrayNode arrayNode);
+    Outline visit(ArrayTypeNode arrayTypeNode);
+    Outline visit(ArrayAccessor arrayAccessor);
 }

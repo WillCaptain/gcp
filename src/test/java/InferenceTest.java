@@ -374,9 +374,9 @@ public class InferenceTest {
         ast.asf().infer();
         Entity person = cast(ast.program().body().statements().get(3).nodes().get(0).nodes().get(0).outline());
         assertEquals(4, person.members().size());
-        EntityMember getFullName = person.members().get(0);
-        assertTrue(getFullName.outline() instanceof Function);
-        assertTrue(((Function) getFullName.outline()).returns().supposedToBe() instanceof STRING);
+        EntityMember getFullName = person.members().getFirst();
+        assertInstanceOf(Function.class, getFullName.outline());
+        assertInstanceOf(STRING.class,((Function<?,?>) getFullName.outline()).returns().supposedToBe());
     }
 
     @Test
@@ -538,7 +538,26 @@ public class InferenceTest {
 
     @Test
     void test_inference_of_reference_in_inherited_entity() {
+//todo
+    }
 
+    @Test
+    void test_inference_of_array_definition(){
+        AST ast = ASTHelper.mockArrayDefinition();
+        assertTrue(ast.asf().infer());
+        assertTrue(ast.errors().isEmpty());
+        //let a = [1,2,3,4];
+        Variable a = cast(((VariableDeclarator)ast.program().body().statements().get(0)).assignments().getFirst().lhs());
+        assertEquals("[Integer]",a.outline().toString());
+        //let b: [String] = [];
+        Variable b = cast(((VariableDeclarator)ast.program().body().statements().get(1)).assignments().getFirst().lhs());
+        assertEquals("[String]",b.outline().toString());
+        //let c: [] = [...5];
+        Variable c = cast(((VariableDeclarator)ast.program().body().statements().get(2)).assignments().getFirst().lhs());
+        assertEquals("[Integer]",c.outline().toString());
+        //let d = [1...6,2,x->x+"2",x->x%2==0];""";
+        Variable d = cast(((VariableDeclarator)ast.program().body().statements().get(3)).assignments().getFirst().lhs());
+        assertEquals("[String]",d.outline().toString());
     }
 
     private static AST mockGCPTestAst() {

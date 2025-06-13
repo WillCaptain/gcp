@@ -1,5 +1,6 @@
 package org.twelve.gcp.outline.projectable;
 
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Option;
@@ -9,17 +10,17 @@ import static org.twelve.gcp.common.Tool.cast;
 /**
  * outline泛化类型
  */
-public class Generic extends Genericable<Generic, Argument> {
+public class Generic extends Genericable<Generic, Node> {
     //if(x is A as y){...}
     protected Outline couldBe = Any;
-    private Generic(Argument node, Outline declared) {
+    private Generic(Node node, Outline declared) {
         super(node, declared);
     }
 
     public static Generic from(Outline declared) {
         return new Generic(null,declared);
     }
-    public static Generic from(Argument node, Outline declared){
+    public static Generic from(Node node, Outline declared){
         return new Generic(node,declared);
     }
 

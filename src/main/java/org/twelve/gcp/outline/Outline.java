@@ -119,10 +119,14 @@ public interface Outline extends Serializable {
 
     long id();
 
-    default Outline project(Pair<Reference,Outline>[] projections){
+    default Outline project(Reference reference,OutlineWrapper projection){
         return this;
     }
     default  Outline eventual(){
         return this;
+    }
+
+    default boolean containsUnknown(){
+        return false;
     }
 }

@@ -50,7 +50,7 @@ public class ASF {
      * 2. Runs inference in rounds (max 4 iterations) until no further progress is made.
      * 3. Marks unresolved nodes as errors.
      */
-    public void infer() {
+    public boolean infer() {
         // Initialize namespaces and first inference pass
         this.asts.forEach(ast -> {
             String namespaceKey = ast.namespace().lexeme() + "." + ast.name();
@@ -71,6 +71,7 @@ public class ASF {
             }
         }
 
+        return this.asts.stream().allMatch(a->a.inferred());
         // Flag unresolved nodes as errors
         //this.asts.forEach(AST::markUnknowns);
     }

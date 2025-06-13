@@ -185,7 +185,7 @@ public class AstStructureTest {
                 let person = {
                   get_name = ()->this.name,
                   get_my_name = ()->name,
-                  name = "Will",
+                  name = "Will"
                 };
                 let name_1 = person.name;
                 let name_2 = person.get_name();""";
@@ -226,7 +226,7 @@ public class AstStructureTest {
         String expected = """
                 module default
                 
-                let f = x: String->Integer->{name: String, var age: Integer}->y: String->z: Integer->x(y,z);""";
+                let f = (x: String->Integer->{name: String, var age: Integer})->(y: String)->(z: Integer)->x(y,z);""";
         /*
          let f = (x:String->Integer->{name:String,age:Integer},y:String,z:Integer)->x(y,z);
          */
@@ -261,25 +261,56 @@ public class AstStructureTest {
                 
                 let a = {
                   name = "Will",
-                  age = 20,
+                  age = 20
                 } as {name: String};
                 let b = {
                   name = "Will",
-                  age = 20,
+                  age = 20
                 } as {name: Integer};""";
         assertEquals(expected,ast.lexeme());
     }
 
     @Test
-    void test_array(){
+    void test_array_definition(){
         AST ast = ASTHelper.mockArrayDefinition();
         String expected = """
                 module default
                 
                 let a = [1,2,3,4];
                 let b: [String] = [];
-                let c = [...5];
-                let d = [1...6,2,x->x*2];""";
+                let c: [] = [...5];
+                let d = [1...6,2,x->x+"2",x->x%2==0];""";
+        assertEquals(expected,ast.lexeme());
+    }
+
+    @Test
+    void test_array_as_argument_definition(){
+        AST ast = ASTHelper.mockArrayAsArgument();
+        String expected = """
+                module default
+                
+                let f = x->x[0];
+                let g = (x: [])->i->{
+                  let y = x[i];
+                  x = ["will","zhang"];
+                  y
+                };
+                let r = fx<a>(x: [a])->{
+                  var b = [1,2];
+                  b = x;
+                  let c: a = x[0];
+                  c
+                };
+                f([{
+                  name = "Will"
+                }]);
+                f(100);
+                g(["a","b"],0);
+                g([1],"idx");
+                let r1 = r<Integer>;
+                r1([1,2]);
+                let r2 = r<String>;
+                r([1,2]);""";
         assertEquals(expected,ast.lexeme());
     }
 }

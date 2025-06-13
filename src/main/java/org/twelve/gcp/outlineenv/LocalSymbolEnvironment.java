@@ -33,6 +33,7 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         defineOutline(root,Outline.Long);
         defineOutline(root,Outline.Unit);
         defineOutline(root,Outline.Number);
+        defineOutline(root,Outline.Unknown);
     }
     private void defineOutline(AstScope root, Outline outline){
         root.defineOutline(outline.name(),outline,null);

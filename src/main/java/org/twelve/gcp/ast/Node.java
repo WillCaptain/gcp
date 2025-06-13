@@ -223,7 +223,7 @@ public abstract class Node implements Serializable {
         return this.getClass().getSimpleName();
     }
 
-    public int index() {
+    public int nodeIndex() {
         return this.parent().nodes().indexOf(this);
     }
 

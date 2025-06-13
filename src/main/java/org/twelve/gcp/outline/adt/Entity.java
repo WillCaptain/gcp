@@ -10,6 +10,7 @@ import org.twelve.gcp.exception.GCPRuntimeException;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.expression.typeable.WrapperTypeNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 import org.twelve.gcp.outline.projectable.Projectable;
@@ -220,15 +221,15 @@ public class Entity extends ProductADT implements Projectable {
     }
 
     @Override
-    public Outline project(Pair<Reference,Outline>[] projections) {
+    public Outline project(Reference reference, OutlineWrapper projection) {
         Entity projected;
         List<EntityMember> ms = new ArrayList<>();
         for (String key : this.members.keySet()) {
             EntityMember m = this.members.get(key);
             Variable n = m.node();
-            Outline mProjected = m.outline().project(projections);
-            if(m.node().declared()!=null){
-                Outline declared = m.node().outline().project(projections);
+            Outline mProjected = m.outline().project(reference,projection);
+            if(m.node()!=null && m.node().declared()!=null){
+                Outline declared = m.node().outline().project(reference,projection);
                 if(declared.id()!=m.node().outline().id()){
                     n = new Variable(n.identifier(),n.mutable(),new WrapperTypeNode(n.ast(),declared));
                 }
@@ -242,7 +243,7 @@ public class Entity extends ProductADT implements Projectable {
         if(this.base==null) {
             projected = new Entity(this.node, this.buildIn, ms);
         }else {
-            projected = new Entity(this.node, (ProductADT) this.base.project(projections), ms);
+            projected = new Entity(this.node, (ProductADT) this.base.project(reference,projection), ms);
         }
         return projected;
     }

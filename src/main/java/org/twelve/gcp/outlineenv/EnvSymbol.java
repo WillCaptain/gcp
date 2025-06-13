@@ -62,7 +62,7 @@ public class EnvSymbol {
      */
     public boolean update(Outline outline) {
         if (outline == null || (outline instanceof UNKNOWN)) return false;
-        if(this.declared instanceof UNKNOWN){
+        if(this.declared.containsUnknown()){
             this.declared = outline;
         }
         this.outline = outline;

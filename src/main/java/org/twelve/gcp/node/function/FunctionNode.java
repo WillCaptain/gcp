@@ -89,7 +89,7 @@ public class FunctionNode extends Expression implements ReferAbleNode {
                     .append(
                     this.refs.stream().map(Identifier::lexeme).collect(Collectors.joining(",")))
                     .append(">")
-                    .append((argument().lexeme().equals("()"))? argument.lexeme():("("+argument().lexeme()+")"))
+                    .append((argument().lexeme().startsWith("("))? argument.lexeme():("("+argument().lexeme()+")"))
 //                    .append("->")
                     .append(body.lexeme())
                     .toString();

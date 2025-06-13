@@ -17,6 +17,7 @@ import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.node.statement.*;
 import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.Array;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Option;
@@ -156,9 +157,8 @@ public class GCPInference {
         //f(10)
         FunctionCallNode call1 = new FunctionCallNode(new Identifier(ast, new Token<>("f")), LiteralNode.parse(ast, new Token<>(100)));
         ast.addStatement(new ExpressionStatement(call1));
-        ast.asf().infer();
+       assertTrue(ast.asf().infer());
 
-//        Generic returns = cast(((Return)((Function) f.outline()).returns()).supposedToBe());
         Return returns = cast(((FirstOrderFunction) f.outline()).returns());
         assertInstanceOf(STRING.class, ((Generic) returns.supposedToBe()).hasToBe());
 
@@ -470,6 +470,38 @@ public class GCPInference {
         assertInstanceOf(INTEGER.class, call3.outline());
     }
 
+    @Test
+    void test_gcp_declared_hof_projection(){
+        /*
+         * let f = fx<a>(x:a->{name:?,age:Integer})->{
+         *   x("Will").name
+         * }
+         * f<Integer>;
+         * f(n->{name=n,age=30})
+         */
+        AST ast = ASTHelper.mockDeclaredHofProjection();
+        assertTrue(ast.asf().infer());
+//        Function f = cast(ast.program().body().statements().get(1).get(0).outline());
+        assertEquals(1,ast.errors().size());
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().getFirst().errorCode());
+        Outline name = ast.program().body().statements().get(2).outline();
+        assertInstanceOf(STRING.class,name);
+    }
+
+    @Test
+    void test_gcp_extend_hof_projection(){
+        /*
+         * let f = x->{
+         *   x = a->{name=a};
+         *   x("Will").name
+         * }
+         * f(n->{name=n})
+         */
+        AST ast = ASTHelper.mockExtendHofProjection();
+        assertTrue(ast.asf().infer());
+        Outline name = ast.program().body().statements().get(1).outline();
+        assertInstanceOf(STRING.class,name);;
+    }
 
     @Test
     void test_entity_hof_projection_1() {
@@ -602,8 +634,7 @@ public class GCPInference {
         ast.addStatement(new ExpressionStatement(rCall));
         FunctionCallNode fCall = new FunctionCallNode(new Identifier(ast,new Token<>("f1")),LiteralNode.parse(ast,new Token<>(100)));
         ast.addStatement(new ReturnStatement(fCall));
-        ast.asf().infer();
-        assertTrue(ast.inferred());
+        assertTrue(ast.asf().infer());
         Outline f1 = ast.program().body().statements().get(1).nodes().getFirst().nodes().getFirst().outline();
         assertInstanceOf(FirstOrderFunction.class,f1);
         assertInstanceOf(STRING.class,((FirstOrderFunction)f1).argument().declaredToBe());
@@ -664,8 +695,8 @@ public class GCPInference {
         Function<?,?> goutline = cast(g.assignments().getFirst().lhs().outline());
         Entity originEntity = cast(goutline.returns().supposedToBe());
         EntityMember originZ = originEntity.members().getLast();
-        assertEquals("a",originZ.outline().toString());
-        assertEquals("a",originZ.node().outline().toString());
+        assertEquals("<a>",originZ.outline().toString());
+        assertEquals("<a>",originZ.node().outline().toString());
 
         //check g<Integer,String>
         Entity entity = cast(((Function<?,Generic>)rCall.outline()).returns().supposedToBe());
@@ -677,14 +708,45 @@ public class GCPInference {
         Function<?,Generic> retF1 = cast(f1.returns().supposedToBe());
         assertInstanceOf(STRING.class, f1.argument().declaredToBe());
         assertInstanceOf(Reference.class, retF1.argument().declaredToBe());
-        assertEquals("c", retF1.argument().declaredToBe().toString());
-        assertEquals("c", ((Generic)retF1.returns().supposedToBe()).declaredToBe().toString());
+        assertEquals("<c>", retF1.argument().declaredToBe().toString());
+        assertEquals("<c>", ((Generic)retF1.returns().supposedToBe()).declaredToBe().toString());
 
         //let f2 = f1<Long>;
         FirstOrderFunction f2 = cast(f2Declare.assignments().getFirst().lhs().outline());
         Function<?,Generic> retF2 = cast(f2.returns().supposedToBe());
         assertInstanceOf(LONG.class, retF2.argument().declaredToBe());
         assertInstanceOf(LONG.class, ((Generic)retF2.returns().supposedToBe()).declaredToBe());
+    }
+    @Test
+    void test_array_projection(){
+        AST ast = ASTHelper.mockArrayAsArgument();
+        assertTrue(ast.asf().infer());
+        //f([{name = "Will"}]) : {name: String};
+        Entity outline_1 = cast(ast.program().body().statements().get(3).get(0).outline());
+        assertEquals("name",outline_1.members().get(0).name());
+        assertInstanceOf(STRING.class,outline_1.members().get(0).outline());
+        //f(100) : `any`;
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(0).errorCode());
+        assertEquals("100",ast.errors().get(0).node().toString());
+        //g(["a","b"],0) : String;
+        Outline outline_2 = ast.program().body().statements().get(5).get(0).outline();
+        assertInstanceOf(STRING.class,outline_2);
+        //g([1],"idx") : Integer; plus "idx" mis match error
+        Outline outline_3 = ast.program().body().statements().get(5).get(0).outline();
+        assertInstanceOf(STRING.class,outline_3);
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(1).errorCode());
+        assertEquals("\"idx\"",ast.errors().get(1).node().toString());
+        //r1([1,2]) : Integer;
+        Outline outline_4 = ast.program().body().statements().get(8).get(0).outline();
+        assertInstanceOf(INTEGER.class,outline_4);
+        //let r2 = r<String>;
+        Function<?,?> outline_5 = cast(ast.program().body().statements().get(9).get(0).get(0).outline());
+        assertInstanceOf(STRING.class,outline_5.returns().supposedToBe());
+        Array arr = cast(((Genericable)outline_5.argument()).declaredToBe());
+        assertInstanceOf(STRING.class,arr.itemOutline());
+        //r([1,2]) : Integer;
+        Outline outline_6 = ast.program().body().statements().get(10).get(0).outline();
+        assertInstanceOf(INTEGER.class,outline_6);
     }
     private static AST mockGCPTestAst() {
         ASF asf = new ASF();

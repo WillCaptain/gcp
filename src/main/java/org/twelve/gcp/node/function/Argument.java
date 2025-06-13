@@ -54,8 +54,10 @@ public class Argument extends Identifier {
         if(this.declared!=null){
             ext = ": "+this.declared.lexeme();
             if(ext.trim().equals(":")) ext = "";
+            return "("+this.name() + ext+")";
+        }else{
+            return this.name();
         }
-        return this.name() + ext;
     }
 
     @Override
@@ -81,7 +83,7 @@ public class Argument extends Identifier {
     }
 
     @Override
-    public int index() {
+    public int nodeIndex() {
         return this.index;
     }
 

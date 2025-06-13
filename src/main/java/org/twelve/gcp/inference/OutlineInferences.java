@@ -2,6 +2,7 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.node.LiteralUnionNode;
 import org.twelve.gcp.node.expression.*;
+import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.Block;
 import org.twelve.gcp.node.expression.body.FunctionBody;
@@ -9,6 +10,7 @@ import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.node.expression.IsAs;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
+import org.twelve.gcp.node.expression.typeable.ArrayTypeNode;
 import org.twelve.gcp.node.expression.typeable.EntityTypeNode;
 import org.twelve.gcp.node.expression.typeable.FunctionTypeNode;
 import org.twelve.gcp.node.function.Argument;
@@ -81,6 +83,16 @@ public class OutlineInferences implements Inferences {
     @Override
     public Outline visit(ArrayNode arrayNode) {
         return new ArrayNodeInference().infer(arrayNode,this);
+    }
+
+    @Override
+    public Outline visit(ArrayTypeNode arrayTypeNode) {
+        return new ArrayTypeNodeInference().infer(arrayTypeNode,this);
+    }
+
+    @Override
+    public Outline visit(ArrayAccessor arrayAccessor) {
+        return new ArrayAccessorInference().infer(arrayAccessor,this);
     }
 
     @Override

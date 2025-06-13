@@ -64,6 +64,13 @@ public class Identifier extends Assignable {
             return;
 
         }
+        //handle half declared type like [],[,],entity
+        if(symbol.declared().containsUnknown() && inferred.is(this.outline)){
+            symbol.update(inferred);
+            this.outline = inferred;
+            return;
+        }
+
         //定位与判定是否mutable
         if (symbol.outline() instanceof Poly) {
             Poly poly = cast(symbol.outline());

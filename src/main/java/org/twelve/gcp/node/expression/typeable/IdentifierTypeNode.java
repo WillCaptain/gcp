@@ -13,6 +13,7 @@ public class IdentifierTypeNode extends TypeNode {
         this.identifier = identifier;
     }
     public String name(){
+        if(this.identifier.name().equals("?")) return "Unknown";
         return this.identifier.name();
     }
     @Override
@@ -27,7 +28,7 @@ public class IdentifierTypeNode extends TypeNode {
 
     @Override
     public String lexeme() {
-        return this.name();
+        return this.identifier.name();
     }
 
 }

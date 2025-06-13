@@ -5,6 +5,7 @@ import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.builtin.NOTHING;
 
 import java.util.Arrays;
@@ -27,7 +28,7 @@ public class Reference extends Genericable<Reference, ReferenceNode> {
 
     @Override
     public String toString() {
-        return this.name();
+        return "<"+this.name()+">";
     }
 
     @Override
@@ -37,15 +38,16 @@ public class Reference extends Genericable<Reference, ReferenceNode> {
 
     @Override
     public Outline guess() {
-        return this.eventual();//todo
+//        return this.eventual();//todo
+        return this;
     }
 
     @Override
-    public Outline project(Pair<Reference,Outline>[] projections) {
-        Reference me = this;
-        Optional<Pair<Reference,Outline>> you = Arrays.stream(projections).filter(p->p.key().id()==me.id()).findFirst();
-        if(you.isPresent()){
-            return this.project(this, you.get().value(), new ProjectSession());
+    public Outline project(Reference reference, OutlineWrapper projection) {
+//        Reference me = this;
+//        Optional<Pair<Reference,Outline>> you = Arrays.stream(projections).filter(p->p.key().id()==me.id()).findFirst();
+        if(reference.id()==this.id){
+            return this.project(this, projection.outline(), new ProjectSession());
 
         }else{
             return this;

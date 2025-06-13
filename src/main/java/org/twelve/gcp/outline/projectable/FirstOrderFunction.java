@@ -79,15 +79,15 @@ public class FirstOrderFunction extends Function<FunctionNode, Generic> implemen
     }
 
     @Override
-    public Outline project(Pair<Reference, Outline>[] projections) {
+    public Outline project(Reference reference,OutlineWrapper projection) {
         List<Reference> refs = new ArrayList<>(this.references);
-        for (Pair<Reference, Outline> projection : projections) {
-            refs.removeIf(r -> r.id() == projection.key().id());
-        }
+//        for (Pair<Reference, Outline> projection : projections) {
+            refs.removeIf(r -> r.id() == reference.id());
+//        }
         Generic arg = this.argument();
         Return ret = this.returns();
-        arg = cast(arg.project(projections));
-        ret = cast(ret.project(projections));
+        arg = cast(arg.project(reference,projection));
+        ret = cast(ret.project(reference,projection));
         return new FirstOrderFunction(this.node, arg, ret, refs);
     }
 
@@ -108,19 +108,19 @@ public class FirstOrderFunction extends Function<FunctionNode, Generic> implemen
         if (this.references.size() != types.size()) {
             ErrorReporter.report(this.node, GCPErrCode.REFERENCE_MIS_MATCH);
         }
-        List<Pair<Reference, Outline>> projections = new ArrayList<>();
+//        List<Pair<Reference, Outline>> projections = new ArrayList<>();
         for (int i = 0; i < this.references.size(); i++) {
             Reference me = this.references.get(i);
             OutlineWrapper you = types.get(i);
             if (you == null) break;
             if (you.outline().is(me)) {
-                projections.add(new Pair<>(me, you.outline()));
-            } else {
+                f = cast(f.project(me,you));
+            }else {
                 ErrorReporter.report(you.node(), GCPErrCode.REFERENCE_MIS_MATCH);
-                projections.add(new Pair<>(me, me.guess()));
+                f = cast(f.project(me,new OutlineWrapper(you.node(),me.guess())));
             }
         }
-        f = cast(f.project(projections.toArray(Pair[]::new)));
+
         return f.eventual();
     }
 

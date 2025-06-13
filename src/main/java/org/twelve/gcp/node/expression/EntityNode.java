@@ -67,7 +67,8 @@ public class EntityNode extends ValueNode<EntityNode>{
             }
             sb.append(",\n");
         }
-        sb.append("}");
+        sb.replace(sb.length()-2,sb.length(),"\n}");
+//        sb.append("}");
         return sb.toString();
     }
 

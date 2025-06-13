@@ -137,7 +137,10 @@ public abstract class ProductADT extends ADT {
             }
         }
     }
-
+    @Override
+    public boolean containsUnknown() {
+        return this.members().stream().anyMatch(m->m.outline.containsUnknown());
+    }
     /**
      * 添加单个member
      *

@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 public class ArrayNode extends Expression {
     private final Expression[] values;
+    private Expression processor;
     private Expression step = null;
     private Expression end = null;
     private Expression begin = null;
@@ -25,8 +26,9 @@ public class ArrayNode extends Expression {
         this(ast,new Expression[0]);
     }
 
-    public ArrayNode(AST ast, Expression condition, Expression begin, @NotNull Expression end, Expression step) {
+    public ArrayNode(AST ast, Expression begin, @NotNull Expression end, Expression step,Expression processor, Expression condition) {
         super(ast, null);
+        this.processor = processor;
         this.condition = condition;
         this.begin = begin;
         this.end = end;
@@ -43,6 +45,9 @@ public class ArrayNode extends Expression {
             sb.append("...").append(this.end.lexeme());
             if (this.step != null) {
                 sb.append(",").append(this.step.lexeme());
+            }
+            if(this.processor!=null){
+                sb.append(",").append(this.processor.lexeme());
             }
             if (this.condition != null) {
                 sb.append(",").append(this.condition.lexeme());
@@ -67,6 +72,9 @@ public class ArrayNode extends Expression {
         return this.values;
     }
 
+    public Expression processor(){
+        return this.processor;
+    }
     public Expression step() {
         return this.step;
     }

@@ -2,19 +2,14 @@ package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.adt.Poly;
-import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.OperateAble;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
-
-import static org.twelve.gcp.outline.Outline.*;
 
 public abstract class Assignable extends Expression {
     public Assignable(AST ast, Location loc) {
@@ -30,7 +25,8 @@ public abstract class Assignable extends Expression {
         if (this.outline instanceof Genericable) {
             Genericable<?,?> me = ((Genericable<?,?>) this.outline);
             if (inferred instanceof Generic) {
-                if (me.node().index() > ((Generic) inferred).node().index()) {//bigger index argument refer smaller
+                if (inferred.node()!=null &&
+                        me.node().nodeIndex() > ((Generic) inferred).node().nodeIndex()) {//bigger index argument refer smaller
                     me.addExtendToBe(inferred);
                 }
             } else {
@@ -38,12 +34,13 @@ public abstract class Assignable extends Expression {
             }
         }
 
-        if(inferred.canBe(this.outline)) return;
+        if(!(inferred instanceof Genericable && ((Genericable<?, ?>) inferred).isEmpty())
+                && inferred.canBe(this.outline)) return;
 
         if (inferred instanceof OperateAble) {
             OperateAble<?> you = (OperateAble<?>) inferred;
             if (this.outline instanceof Generic) {
-                if (((Generic) this.outline).node().index() < you.node().index()) {
+                if (((Generic) this.outline).node().nodeIndex() < you.node().nodeIndex()) {
                     you.addHasToBe(this.outline);
                 }
             } else {

@@ -60,7 +60,7 @@ public class Variable extends Identifier {
 
     @Override
     public Outline outline() {
-        if (this.declared == null || this.declared.outline() instanceof UNKNOWN) {
+        if (this.declared == null || this.declared.outline().containsUnknown()) {
             return this.outline;
         } else {
             return this.declared.outline();

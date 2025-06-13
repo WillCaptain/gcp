@@ -8,7 +8,7 @@ import org.twelve.gcp.outline.builtin.ANY;
 
 import static org.twelve.gcp.common.Tool.cast;
 
-public class FixFunction  implements Projectable{
+public class FixFunction  implements Projectable {
     protected long id;
     protected final Node node;
     private final Outline argument;
@@ -30,7 +30,11 @@ public class FixFunction  implements Projectable{
     @Override
     public String toString() {
         FixFunction guess = cast(this.guess());
-        return guess.argument.toString() + "->" + guess.returns.toString();
+        String arg = guess.argument.toString();
+        if(guess.argument instanceof FixFunction){
+            arg = "("+arg+")";
+        }
+        return arg + "->" + guess.returns.toString();
     }
 
     @Override
