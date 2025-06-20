@@ -15,7 +15,6 @@ public class ReferenceCallInference implements Inference<ReferenceCallNode>{
         Outline hostOutline = node.host().infer(inferences);
         if(hostOutline instanceof ReferAble){
             ReferAble referAble = cast(hostOutline);
-//            return referAble.project(node.types().stream().map(t->(OutlineWrapper)t.infer(inferences)).toList());
             return referAble.project(node.types().stream().map(t->new OutlineWrapper(node,t.infer(inferences))).toList());
         }else {
             ErrorReporter.report(node, GCPErrCode.NOT_REFER_ABLE);

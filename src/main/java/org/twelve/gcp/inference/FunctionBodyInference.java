@@ -7,6 +7,7 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.builtin.IGNORE;
 import org.twelve.gcp.outline.projectable.Return;
+import org.twelve.gcp.outline.projectable.Returnable;
 
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class FunctionBodyInference extends BodyInference<FunctionBody> {
                 ((Option) inferred).options().add(Outline.Unit);
             }
         }
-        Return returns = Return.from(node.parent());
+        Returnable returns = Return.from(node.parent());
         returns.addReturn(inferred);
 //        returns.replaceIgnores();
         return returns;

@@ -11,6 +11,7 @@ import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.Generic;
+import org.twelve.gcp.outline.projectable.Genericable;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -50,18 +51,22 @@ public class Argument extends Identifier {
 
     @Override
     public String lexeme() {
-        String ext = "";
-        if(this.declared!=null){
-            ext = ": "+this.declared.lexeme();
-            if(ext.trim().equals(":")) ext = "";
-            return "("+this.name() + ext+")";
+        if(this.outline instanceof UNKNOWN) {
+            String ext = "";
+            if (this.declared != null) {
+                ext = ": " + this.declared.lexeme();
+                if (ext.trim().equals(":")) ext = "";
+                return "(" + this.name() + ext + ")";
+            } else {
+                return this.name();
+            }
         }else{
-            return this.name();
+            return "(" + this.name() + ":"+this.outline + ")";
         }
     }
 
     @Override
-    public Generic outline() {
+    public Genericable<?,?> outline() {
         return cast(super.outline());
     }
 

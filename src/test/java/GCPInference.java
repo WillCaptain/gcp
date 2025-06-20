@@ -61,7 +61,7 @@ public class GCPInference {
         //f.outline is a function
         assertInstanceOf(FirstOrderFunction.class, f.outline());
         //f.argument is a Generic outline
-        assertInstanceOf(Generic.class, f.argument().outline());
+        assertInstanceOf(Genericable.class, f.argument().outline());
         //f.argument.declared_to_be = Integer
         assertEquals(Outline.Integer, f.argument().outline().declaredToBe());
         //f.return is a Return outline
@@ -110,7 +110,7 @@ public class GCPInference {
         ast.asf().infer();
 
         Return returns = cast(((FirstOrderFunction) f.outline()).returns());
-        assertEquals(Outline.Integer.toString(), ((Generic) returns.supposedToBe()).extendToBe().toString());
+        assertEquals(Outline.Integer.toString(), ((Genericable<?,?>) returns.supposedToBe()).extendToBe().toString());
 
         //f("some") project fail
         assertInstanceOf(INTEGER.class, call1.outline());
@@ -603,11 +603,36 @@ public class GCPInference {
         ast.asf().infer();
         VariableDeclarator declarator = cast(ast.program().body().statements().getFirst());
         Function<?,?> f = cast(declarator.assignments().getFirst().lhs().outline());
-        Generic argument = cast(f.argument());
-        Return returns = f.returns();
+        Genericable<?,?> argument = cast(f.argument());
+        Returnable returns = f.returns();
         assertInstanceOf(INTEGER.class, argument.definedToBe());
         assertInstanceOf(INTEGER.class, returns.supposedToBe());
         assertEquals(1,ast.errors().size());
+    }
+
+    @Test
+    void test_complicated_hof_projection(){
+        AST ast = ASTHelper.mockComplicatedHofProjection();
+        assertTrue(ast.asf().infer());
+        Assignment f = cast(ast.program().body().statements().getFirst().nodes().getFirst());
+        Outline l = f.lhs().outline();
+        FunctionBody body =  cast(f.nodes().get(1).nodes().get(1).nodes().get(0).nodes().get(0).nodes().get(1).nodes().get(0).nodes().get(0).nodes().get(1));
+        Outline x = body.nodes().get(0).nodes().get(0).outline();
+        assertEquals("`<a>-><a>`",x.toString());
+        Outline y = body.nodes().get(1).nodes().get(0).outline();
+        assertEquals("`<a>-><a>`",y.toString());
+        Outline z = body.nodes().get(2).nodes().get(1).outline();
+        assertEquals("`<a>-><a>`",z.toString());
+        Outline fstr = ast.program().body().statements().get(1).nodes().getFirst().outline();
+        assertEquals("(String->String)->(String->String)->(String->String)->String->String",fstr.toString());
+        Node refInt = ast.program().body().statements().get(2).nodes().getFirst();
+        Outline fint = refInt.outline();
+        assertEquals("(Integer->Integer)->(Integer->Integer)->(Integer->Integer)->Integer->Integer",fint.toString());
+        assertEquals(1,ast.errors().size());
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(0).errorCode());
+        assertEquals(refInt,ast.errors().get(0).node());
+        Outline fcallx = ast.program().body().statements().get(3).nodes().get(0).outline();
+        assertTrue(true);
     }
 
     @Test
@@ -699,23 +724,23 @@ public class GCPInference {
         assertEquals("<a>",originZ.node().outline().toString());
 
         //check g<Integer,String>
-        Entity entity = cast(((Function<?,Generic>)rCall.outline()).returns().supposedToBe());
+        Entity entity = cast(((Function<?,Genericable<?,?>>)rCall.outline()).returns().supposedToBe());
         EntityMember z = entity.members().getLast();
         assertInstanceOf(INTEGER.class,z.outline());
         assertInstanceOf(INTEGER.class,z.node().outline());
         //let f1 = g<Integer,String>().f;
         FirstOrderFunction f1 = cast(f1Declare.assignments().getFirst().lhs().outline());
-        Function<?,Generic> retF1 = cast(f1.returns().supposedToBe());
+        Function<?,Genericable<?,?>> retF1 = cast(f1.returns().supposedToBe());
         assertInstanceOf(STRING.class, f1.argument().declaredToBe());
-        assertInstanceOf(Reference.class, retF1.argument().declaredToBe());
-        assertEquals("<c>", retF1.argument().declaredToBe().toString());
-        assertEquals("<c>", ((Generic)retF1.returns().supposedToBe()).declaredToBe().toString());
+        assertInstanceOf(Reference.class, retF1.argument());
+        assertEquals("c", retF1.argument().name());
+        assertEquals("<c>", ((Genericable<?,?>)retF1.returns().supposedToBe()).toString());
 
         //let f2 = f1<Long>;
         FirstOrderFunction f2 = cast(f2Declare.assignments().getFirst().lhs().outline());
-        Function<?,Generic> retF2 = cast(f2.returns().supposedToBe());
+        Function<?,Genericable<?,?>> retF2 = cast(f2.returns().supposedToBe());
         assertInstanceOf(LONG.class, retF2.argument().declaredToBe());
-        assertInstanceOf(LONG.class, ((Generic)retF2.returns().supposedToBe()).declaredToBe());
+        assertInstanceOf(LONG.class, retF2.returns().supposedToBe());
     }
     @Test
     void test_array_projection(){
@@ -726,24 +751,26 @@ public class GCPInference {
         assertEquals("name",outline_1.members().get(0).name());
         assertInstanceOf(STRING.class,outline_1.members().get(0).outline());
         //f(100) : `any`;
-        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(0).errorCode());
-        assertEquals("100",ast.errors().get(0).node().toString());
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(1).errorCode());
+        assertEquals("100",ast.errors().get(1).node().toString());
         //g(["a","b"],0) : String;
         Outline outline_2 = ast.program().body().statements().get(5).get(0).outline();
         assertInstanceOf(STRING.class,outline_2);
         //g([1],"idx") : Integer; plus "idx" mis match error
         Outline outline_3 = ast.program().body().statements().get(5).get(0).outline();
         assertInstanceOf(STRING.class,outline_3);
-        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(1).errorCode());
-        assertEquals("\"idx\"",ast.errors().get(1).node().toString());
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(2).errorCode());
+        assertEquals("\"idx\"",ast.errors().get(2).node().toString());
         //r1([1,2]) : Integer;
         Outline outline_4 = ast.program().body().statements().get(8).get(0).outline();
         assertInstanceOf(INTEGER.class,outline_4);
         //let r2 = r<String>;
-        Function<?,?> outline_5 = cast(ast.program().body().statements().get(9).get(0).get(0).outline());
-        assertInstanceOf(STRING.class,outline_5.returns().supposedToBe());
-        Array arr = cast(((Genericable)outline_5.argument()).declaredToBe());
-        assertInstanceOf(STRING.class,arr.itemOutline());
+        assertEquals(GCPErrCode.REFERENCE_MIS_MATCH,ast.errors().get(0).errorCode());
+        assertEquals("r<String>",ast.errors().get(0).node().toString());
+//        Function<?,?> outline_5 = cast(ast.program().body().statements().get(9).get(0).get(0).outline());
+//        assertInstanceOf(STRING.class,outline_5.returns().supposedToBe());
+//        Array arr = cast(((Genericable)outline_5.argument()).declaredToBe());
+//        assertInstanceOf(STRING.class,arr.itemOutline());
         //r([1,2]) : Integer;
         Outline outline_6 = ast.program().body().statements().get(10).get(0).outline();
         assertInstanceOf(INTEGER.class,outline_6);

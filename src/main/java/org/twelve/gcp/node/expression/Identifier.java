@@ -49,10 +49,14 @@ public class Identifier extends Assignable {
     }
 
 
+    protected  EnvSymbol lookupSymbol(LocalSymbolEnvironment env, String name){
+        return env.lookupSymbol(name);
+    }
     @Override
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
         if (this.outline == Error) return;
-        EnvSymbol symbol = env.current().lookupSymbol(this.name());
+//        EnvSymbol symbol = env.current().lookupSymbol(this.name());
+        EnvSymbol symbol = lookupSymbol(env,this.name());
         if (symbol == null) return;
         if (!symbol.outline().inferred()) {
             if (!inferred.canBe(symbol.declared())) {

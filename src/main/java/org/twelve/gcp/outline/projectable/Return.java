@@ -19,7 +19,7 @@ import java.util.List;
 
 import static org.twelve.gcp.common.Tool.cast;
 
-public class Return extends Genericable<Return, Node> {
+public class Return extends Genericable<Return, Node> implements Returnable {
     @Setter
     @Getter
     private Outline argument;
@@ -30,22 +30,23 @@ public class Return extends Genericable<Return, Node> {
         super(node, declared);
     }
 
-    public static Return from(Node node, Outline declared) {
+    public static Returnable from(Node node, Outline declared) {
+        if (declared instanceof Returnable) return cast(declared);
         return new Return(node, declared);
     }
 
-    public static Return from(Node node) {
-        return new Return(node, Any);
+    public static Returnable from(Node node) {
+        return from(node, Any);
     }
 
-    public static Return from(Outline declared) {
-        return new Return(null, declared);
+    public static Returnable from(Outline declared) {
+        return from(null, declared);
     }
 
     /**
      * for high order function
      */
-    public static Return from() {
+    public static Returnable from() {
         return from(Any);
     }
 
@@ -62,15 +63,6 @@ public class Return extends Genericable<Return, Node> {
         return true;
     }
 
-    /**
-     * function created in declare and hof, set supposed to nothing to avoid redundant inference
-     *
-     * @return
-     */
-    public boolean addNothing() {
-        return this.addReturn(Nothing);
-    }
-
     @Override
     public boolean tryIamYou(Outline another) {
         if (this.supposed instanceof UNKNOWN) {
@@ -81,37 +73,51 @@ public class Return extends Genericable<Return, Node> {
     }
 
     @Override
+    protected Outline projectMySelf(Outline projection, ProjectSession session) {
+        //todo
+        return super.projectMySelf(projection, session);
+    }
+
+    @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
-//        if (session.getProjection(this) != null) {
-//            return session.getProjection(this);
-//        }
+        //project myself
         if (projected.id() == this.id()) {
             return this.projectMySelf(projection, session);
         }
-        //投影对应的参数时，才真正得到投影值
+        //project related argument in the return constraints
         if (this.argument.id() == projected.id()) {
-            if (supposed instanceof UNKNOWN) {//投影HOF返回值
-//                return this.projectLambda(this, cast(projection), session);
-//                return this.projectLambda(cast(this.node().outline()), cast(projection), session);
-                return supposed;
+            if (supposedToBe() instanceof UNKNOWN) {//投影HOF返回值
+                return supposedToBe();
             } //else {//投影FOF返回值
-            if (supposed instanceof Projectable) {
-                return ((Projectable) supposed).project(projected, projection, session);
+            if (supposedToBe() instanceof Projectable) {
+                return ((Projectable) supposedToBe()).project(projected, projection, session);
             } else {
-                return supposed;
+                if(supposedToBe() instanceof NOTHING){//in higher function, don't return nothing
+                    return this;
+                }else {
+                    return supposedToBe();
+                }
             }
             //}
-        } //投影关联类型，不实例化投影
-        if (supposed instanceof UNKNOWN) {
+        }
+        //it is an irrelevant projection
+        if (supposedToBe() instanceof UNKNOWN) {
             return this;
         } else {
             Return result = this.copy();
             this.projectConstraints(result, projected, projection, session);
-            if (!(this.supposed instanceof UNKNOWN) && (!result.max().is(result.supposed) || !result.supposed.is(result.min()))) {
+            if (!(this.supposedToBe() instanceof UNKNOWN) && (!result.max().is(result.supposedToBe()) || !result.supposedToBe().is(result.min()))) {
                 ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.supposed);
             }
             return result;
         }
+    }
+
+    @Override
+    protected void projectConstraints(Genericable<?, ?> me, Projectable projected, Outline projection, ProjectSession session) {
+        super.projectConstraints(me, projected, projection, session);
+        Outline outline = tryProject(((Return) me).supposed, projected, projection, session);
+        ((Return) me).supposed =outline;
     }
 
     @Override
@@ -142,7 +148,7 @@ public class Return extends Genericable<Return, Node> {
     }
 
     public Outline supposedToBe() {
-        if (this.supposed == null && declaredToBe != null) {
+        if (this.supposed == Nothing && declaredToBe != Any) {
             return declaredToBe;
         } else {
             return this.supposed;
@@ -156,7 +162,7 @@ public class Return extends Genericable<Return, Node> {
 
     @Override
     public boolean inferred() {
-        return super.inferred() && this.supposed.inferred();
+        return super.inferred() && this.supposedToBe().inferred();
     }
 
     @Override
@@ -167,19 +173,28 @@ public class Return extends Genericable<Return, Node> {
         return (outline instanceof ANY) ? this.max() : outline;
     }
 
+    /**
+     * project reference, it is purely for <T> projection
+     * different from project outline
+     */
     @Override
     public Outline project(Reference reference, OutlineWrapper projection) {
-        Return projected = cast(super.project(reference,projection));
-        projected.supposed = this.supposed.project(reference,projection);
+        Return projected = cast(super.project(reference, projection));
+        projected.supposed = this.supposed.project(reference, projection);
         return projected;
     }
 
     @Override
     public String toString() {
+        String ret;
         if (this.supposed == null || this.supposed instanceof UNKNOWN || this.supposed instanceof NOTHING) {
-            return super.toString();
+            ret = super.toString();
         } else {
-            return this.supposed.toString();
+            ret = this.supposed.toString();
         }
+        if(ret.equals("`null`")){
+            ret = "?"+this.id;
+        }
+        return ret;
     }
 }

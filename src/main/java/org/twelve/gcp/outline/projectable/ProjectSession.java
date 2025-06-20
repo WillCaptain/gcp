@@ -11,6 +11,7 @@ public class ProjectSession {
         return this.projections.get(projected.id());
     }
     public void addProjection(Projectable projected,Outline projection){
+        if(projected.id()==projection.id()) return;
         this.projections.put(projected.id(),projection);
     }
 

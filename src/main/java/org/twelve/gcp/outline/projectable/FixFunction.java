@@ -60,8 +60,8 @@ public class FixFunction  implements Projectable {
         if(another instanceof Function){
             you = cast(another);
         }
-        if(another instanceof Generic){
-            you = cast(((Generic)another).min());
+        if(another instanceof Genericable<?,?>){
+            you = cast(((Genericable<?,?>)another).min());
         }
         if(you==null) return false;
 //        if(!(another instanceof Function)) return false;

@@ -38,9 +38,9 @@ public class NumericAble implements Projectable {
 
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
-        Outline l = left instanceof Generic ? ((Generic) left).project(projected, projection,session) : left;
-        Outline r = right instanceof Generic ? ((Generic) right).project(projected, projection,session) : right;
-        if (l instanceof Generic || r instanceof Generic) {
+        Outline l = left instanceof Genericable<?,?> ? ((Genericable<?,?>) left).project(projected, projection,session) : left;
+        Outline r = right instanceof Genericable<?,?> ? ((Genericable<?,?>) right).project(projected, projection,session) : right;
+        if (l instanceof Genericable<?,?> || r instanceof Genericable<?,?>) {
             return new NumericAble(l, r, cast(this.node));
         }
         return getExactNumberOutline(l, r);

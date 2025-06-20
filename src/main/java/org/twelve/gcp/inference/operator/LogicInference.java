@@ -5,6 +5,7 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.BinaryExpression;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.projectable.Generic;
+import org.twelve.gcp.outline.projectable.Genericable;
 
 public class LogicInference implements OperatorInference {
     @Override
@@ -13,17 +14,17 @@ public class LogicInference implements OperatorInference {
         if (left == Outline.Boolean && right == Outline.Boolean) {
             return Outline.Boolean;
         }
-        if (left == Outline.Boolean && right instanceof Generic) {
-            ((Generic) right).addDefinedToBe(Outline.Boolean);
+        if (left == Outline.Boolean && right instanceof Genericable<?,?>) {
+            ((Genericable<?,?>) right).addDefinedToBe(Outline.Boolean);
             return Outline.Boolean;
         }
-        if (right == Outline.Boolean && left instanceof Generic) {
-            ((Generic) left).addDefinedToBe(Outline.Boolean);
+        if (right == Outline.Boolean && left instanceof Genericable<?,?>) {
+            ((Genericable<?,?>) left).addDefinedToBe(Outline.Boolean);
             return Outline.Boolean;
         }
-        if (left instanceof Generic && right instanceof Generic) {
-            ((Generic) left).addDefinedToBe(Outline.Boolean);
-            ((Generic) right).addDefinedToBe(Outline.Boolean);
+        if (left instanceof Genericable<?,?> && right instanceof Genericable<?,?>) {
+            ((Genericable<?,?>) left).addDefinedToBe(Outline.Boolean);
+            ((Genericable<?,?>) right).addDefinedToBe(Outline.Boolean);
             return Outline.Boolean;
         }
         ErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);

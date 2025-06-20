@@ -8,16 +8,17 @@ import org.twelve.gcp.outline.primitive.STRING;
 import org.twelve.gcp.outline.primitive.NUMBER;
 import org.twelve.gcp.outline.projectable.Addable;
 import org.twelve.gcp.outline.projectable.Generic;
+import org.twelve.gcp.outline.projectable.Genericable;
 
 public class AddInference implements OperatorInference {
 
     @Override
     public Outline infer(Outline left, Outline right, BinaryExpression node) {
-        if (left instanceof Generic) {
-            ((Generic) left).addDefinedToBe(Option.StringOrNumber);
+        if (left instanceof Genericable<?,?>) {
+            ((Genericable<?,?>) left).addDefinedToBe(Option.StringOrNumber);
         }
-        if (right instanceof Generic) {
-            ((Generic) right).addDefinedToBe(Option.StringOrNumber);
+        if (right instanceof Genericable<?,?>) {
+            ((Genericable<?,?>) right).addDefinedToBe(Option.StringOrNumber);
         }
         if ((!(left instanceof UNKNOWN) && !left.is(Option.StringOrNumber)) || (!(right instanceof UNKNOWN) && !right.is(Option.StringOrNumber))) {
             return Outline.Error;

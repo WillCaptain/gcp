@@ -7,6 +7,7 @@ import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.ERROR;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
+import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 public class Variable extends Identifier {
@@ -80,5 +81,10 @@ public class Variable extends Identifier {
         if (!(this.outline instanceof ERROR)) {
             super.assign(env, inferred);
         }
+    }
+
+    @Override
+    protected EnvSymbol lookupSymbol(LocalSymbolEnvironment env, String name) {
+        return env.current().lookupSymbol(name);
     }
 }

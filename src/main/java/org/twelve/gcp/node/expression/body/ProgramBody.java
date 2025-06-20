@@ -62,6 +62,7 @@ public class ProgramBody extends Body {
         if (exports.size() > 0) {
             sb.append(this.exports().stream().reduce("", (acc, i) -> acc + i.lexeme() + "\n", (s, s2) -> s + s2)+"\n");
         }
+        if(sb.isEmpty()) return "";
         return sb.substring(0,sb.length()-1);
     }
 

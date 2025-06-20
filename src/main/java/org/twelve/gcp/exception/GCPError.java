@@ -21,6 +21,10 @@ public class GCPError {
         return this.errorCode;
     }
 
+    public String message(){
+        return this.message;
+    }
+
     @Override
     public String toString() {
         return this.errorCode().toString().toLowerCase()+ (message.isEmpty() ?"":(": " + message));

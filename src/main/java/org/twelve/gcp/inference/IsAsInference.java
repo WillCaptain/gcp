@@ -6,6 +6,7 @@ import org.twelve.gcp.node.expression.IsAs;
 import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.projectable.Generic;
+import org.twelve.gcp.outline.projectable.Genericable;
 
 public class IsAsInference implements Inference<IsAs> {
     @Override
@@ -14,8 +15,8 @@ public class IsAsInference implements Inference<IsAs> {
         if(!node.b().canBe(lhs)){
             ErrorReporter.report(node, GCPErrCode.TYPE_CAST_NEVER_SUCCEED,node.a()+" will never be "+node.b());
         }else{
-            if(lhs instanceof Generic){
-                ((Generic) lhs).addCouldBe(node.b());//its a hint to indicate it is possible to be
+            if(lhs instanceof Genericable<?,?>){
+//                ((Genericable<?,?>) lhs).addCouldBe(node.b());//its a hint to indicate it is possible to be
             }
         }
         if(node.parent() instanceof Arm){

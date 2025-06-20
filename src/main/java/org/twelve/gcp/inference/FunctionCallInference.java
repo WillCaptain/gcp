@@ -19,6 +19,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
     @Override
     public Outline infer(FunctionCallNode node, Inferences inferences) {
         Outline func = node.function().invalidate().infer(inferences);
+//        func.toString();
         if (func == null) {
             ErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_DEFINED);
             return Outline.Error;
@@ -114,7 +115,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      * @return 虚拟的函数返回
      */
     private Outline project(Genericable<?, ?> generic, Node argument) {
-        Return returns = Return.from(generic.node());
+        Returnable returns = Return.from(generic.node());
         HigherOrderFunction defined = new HigherOrderFunction(generic.node(), cast(argument.outline()), returns);
         generic.addDefinedToBe(defined);
         return returns;
@@ -137,9 +138,16 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
 
         //先投影参数
         Outline projectedArg = function.argument().project(function.argument(), argument.outline(), session);
-//        if (function.argument().project(function.argument(), argument.outline(), session) == Outline.Error) {
-//            return Outline.Error;
-//        }
+        //change the argument constraints
+        if(projectedArg.node()!=null && projectedArg.id()==projectedArg.node().outline().id()
+                && projectedArg!=projectedArg.node().outline()){
+            Genericable<?,?> origin = cast(projectedArg.node().outline());
+            Genericable<?,?> projected = cast(projectedArg);
+            origin.addExtendToBe(projected.extendToBe());
+            origin.addHasToBe(projected.declaredToBe());
+            origin.addHasToBe(projected.hasToBe());
+            origin.addDefinedToBe(projected.definedToBe());
+        }
         //再投影返回值
         Outline result = function.returns().project(function.argument(), projectedArg, session);
         if (result instanceof FirstOrderFunction) {

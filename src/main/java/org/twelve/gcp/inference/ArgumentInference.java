@@ -8,8 +8,11 @@ import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.projectable.Generic;
+import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
+
+import static org.twelve.gcp.common.Tool.cast;
 
 /**
  * outline as declared outline constraint of generic
@@ -18,13 +21,13 @@ import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 public class ArgumentInference implements Inference<Argument> {
     @Override
     public Outline infer(Argument node, Inferences inferences) {
-        if(node.token()== Token.unit()) return Generic.from(node, Outline.Unit);
+        if (node.token() == Token.unit()) return Generic.from(node, Outline.Unit);
         LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
         EnvSymbol symbol = oEnv.lookupAll(node.name());
         if (symbol == null) {
             Expression defaultValue = node.defaultValue();
-            Outline outline = inferDeclared(node.declared(),inferences);
-            Generic generic = Generic.from(node, outline);
+            Outline outline = inferDeclared(node.declared(), inferences);
+            Genericable<?, ?> generic = Generic.from(node, outline);
             if (defaultValue != null) {
                 generic.addExtendToBe(defaultValue.infer(inferences));
             }
@@ -32,7 +35,7 @@ public class ArgumentInference implements Inference<Argument> {
 //            node.ast().cache().add(id.id());
             return generic;
         } else {
-            if(symbol.node()!=node){
+            if (symbol.node() != node) {
                 ErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
             }
             return symbol.outline();
@@ -40,7 +43,7 @@ public class ArgumentInference implements Inference<Argument> {
     }
 
     private Outline inferDeclared(TypeNode declared, Inferences inferences) {
-        if(declared==null) return Outline.Unknown;
+        if (declared == null) return Outline.Unknown;
         return declared.infer(inferences);
     }
 }

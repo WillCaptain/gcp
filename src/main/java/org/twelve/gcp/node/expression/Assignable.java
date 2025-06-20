@@ -24,9 +24,9 @@ public abstract class Assignable extends Expression {
         //generic处理
         if (this.outline instanceof Genericable) {
             Genericable<?,?> me = ((Genericable<?,?>) this.outline);
-            if (inferred instanceof Generic) {
+            if (inferred instanceof Genericable<?,?>) {
                 if (inferred.node()!=null &&
-                        me.node().nodeIndex() > ((Generic) inferred).node().nodeIndex()) {//bigger index argument refer smaller
+                        me.node().nodeIndex() > inferred.node().nodeIndex()) {//bigger index argument refer smaller
                     me.addExtendToBe(inferred);
                 }
             } else {
@@ -39,12 +39,12 @@ public abstract class Assignable extends Expression {
 
         if (inferred instanceof OperateAble) {
             OperateAble<?> you = (OperateAble<?>) inferred;
-            if (this.outline instanceof Generic) {
-                if (((Generic) this.outline).node().nodeIndex() < you.node().nodeIndex()) {
+            if (this.outline instanceof Genericable<?,?>) {
+                if (this.outline.node().nodeIndex() < you.node().nodeIndex()) {
                     you.addHasToBe(this.outline);
                 }
             } else {
-                ((Generic) inferred).addHasToBe(this.outline);
+                ((Genericable<?,?>) inferred).addHasToBe(this.outline);
             }
         }
         if (!inferred.is(this.outline)) {

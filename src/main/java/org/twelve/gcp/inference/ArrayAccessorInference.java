@@ -5,7 +5,6 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Array;
-import org.twelve.gcp.outline.primitive.LONG;
 import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outline.projectable.Genericable;
 
@@ -25,7 +24,7 @@ public class ArrayAccessorInference implements Inference<ArrayAccessor> {
             return ((Array) array).itemOutline();
         }
         if (array instanceof Genericable) {
-            Generic itemOutline = Generic.from(null);
+            Genericable<?,?> itemOutline = Generic.from(node,null);
             ((Genericable<?,?>)array).addDefinedToBe(new Array(node,itemOutline));
             return itemOutline;
         }

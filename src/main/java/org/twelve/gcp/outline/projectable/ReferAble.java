@@ -5,6 +5,9 @@ import org.twelve.gcp.outline.OutlineWrapper;
 
 import java.util.List;
 
+/**
+ * projector for references
+ */
 public interface ReferAble {
     List<Reference> references();
 

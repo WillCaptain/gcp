@@ -9,6 +9,7 @@ import org.twelve.gcp.outline.adt.Array;
 import org.twelve.gcp.outline.builtin.Array_;
 import org.twelve.gcp.outline.projectable.Function;
 import org.twelve.gcp.outline.projectable.Generic;
+import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -51,7 +52,7 @@ public class ArrayNodeInference implements Inference<ArrayNode> {
         if(node.processor()!=null){
             Outline processor = node.processor().infer(inferences);
             if (processor instanceof Function<?, ?>) {
-                Function<?, Generic> f = cast(processor);
+                Function<?, Genericable<?,?>> f = cast(processor);
                 outline = f.returns().project(f.argument(), Outline.Integer, new ProjectSession());
             } else {
                 ErrorReporter.report(node.condition(), GCPErrCode.NOT_A_FUNCTION);
@@ -61,7 +62,7 @@ public class ArrayNodeInference implements Inference<ArrayNode> {
         if (node.condition() != null) {
             Outline condition = node.condition().infer(inferences);
             if (condition instanceof Function<?, ?>) {
-                Function<?, Generic> f = cast(condition);
+                Function<?, Genericable<?,?>> f = cast(condition);
                 if (!f.returns().supposedToBe().is(Outline.Boolean)) {
                     ErrorReporter.report(node.condition(), GCPErrCode.CONDITION_IS_NOT_BOOL);
                 }

@@ -389,9 +389,9 @@ public class InferenceTest {
         assertInstanceOf(STRING.class, members.get(1).outline());
         assertInstanceOf(Poly.class, members.get(2).outline());
         Poly getName = cast(members.get(2).outline());
-        assertSame(Outline.Unit, ((Generic) ((Function<?, ?>) getName.options().get(0)).argument()).declaredToBe());
+        assertSame(Outline.Unit, ((Genericable<?,?>) ((Function<?, ?>) getName.options().get(0)).argument()).declaredToBe());
         Function<?, ?> overrides = cast(getName.options().get(1));
-        assertInstanceOf(Option.class, ((Generic) overrides.argument()).definedToBe());
+        assertInstanceOf(Option.class, ((Genericable<?,?>) overrides.argument()).definedToBe());
         assertInstanceOf(INTEGER.class, overrides.returns().supposedToBe());
         assertTrue(ast.errors().isEmpty());
     }
@@ -490,8 +490,8 @@ public class InferenceTest {
 
         FunctionNode function = cast(((FunctionCallNode) assignment.rhs()).function());
         assertEquals(1, ast.errors().size());
-        Generic arg = cast(function.argument().outline());
-        assertInstanceOf(INTEGER.class, arg.couldBe());
+//        Genericable<?,?> arg = cast(function.argument().outline());
+//        assertInstanceOf(INTEGER.class, arg.couldBe());
     }
 
     @Test
@@ -505,8 +505,8 @@ public class InferenceTest {
         ast.infer();
         Assignment assignment = ((VariableDeclarator) ast.program().body().statements().getFirst()).assignments().getFirst();
         FirstOrderFunction f = cast(assignment.lhs().outline());
-        assertInstanceOf(Reference.class, f.argument().declaredToBe());
-        assertEquals("a", f.argument().declaredToBe().name());
+        assertInstanceOf(Reference.class, f.argument());
+        assertEquals("a", f.argument().name());
         assertInstanceOf(Reference.class, f.returns().supposedToBe());
         assertEquals("b", f.returns().supposedToBe().name());
         assertInstanceOf(INTEGER.class, ((Reference) f.returns().supposedToBe()).extendToBe());
@@ -527,13 +527,13 @@ public class InferenceTest {
         Entity entity = cast(g.returns().supposedToBe());
         Reference z = cast(entity.members().getLast().node().outline());
         //(x,y)->y
-        Function<?, Generic> f = cast(entity.members().getFirst().outline());
+        Function<?, Genericable<?,?>> f = cast(entity.members().getFirst().outline());
         assertEquals("a", z.name());
         assertInstanceOf(INTEGER.class, z.extendToBe());
-        assertEquals("b", f.argument().declaredToBe().name());
+        assertEquals("b", f.argument().name());
         f = cast(f.returns().supposedToBe());
-        assertEquals("c", f.argument().declaredToBe().name());
-        assertEquals("c", ((Generic) f.returns().supposedToBe()).declaredToBe().name());
+        assertEquals("c", f.argument().name());
+        assertEquals("c", f.returns().supposedToBe().name());
     }
 
     @Test

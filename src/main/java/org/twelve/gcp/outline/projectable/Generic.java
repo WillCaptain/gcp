@@ -12,15 +12,17 @@ import static org.twelve.gcp.common.Tool.cast;
  */
 public class Generic extends Genericable<Generic, Node> {
     //if(x is A as y){...}
-    protected Outline couldBe = Any;
+//    protected Outline couldBe = Any;
     private Generic(Node node, Outline declared) {
         super(node, declared);
     }
 
-    public static Generic from(Outline declared) {
+    public static Genericable<?,?> from(Outline declared) {
+        if(declared instanceof Reference) return cast(declared);
         return new Generic(null,declared);
     }
-    public static Generic from(Node node, Outline declared){
+    public static Genericable<?,?> from(Node node, Outline declared){
+        if(declared instanceof Reference) return cast(declared);
         return new Generic(node,declared);
     }
 
@@ -29,14 +31,14 @@ public class Generic extends Genericable<Generic, Node> {
         return new Generic(cast(this.node), this.declaredToBe);
     }
 
-    public void addCouldBe(Outline outline){
-        if(couldBe==Any){
-            couldBe = outline;
-        }else{
-            couldBe = Option.from(this.node,couldBe,outline);
-        }
-    }
-    public Outline couldBe() {
-        return couldBe;
-    }
+//    public void addCouldBe(Outline outline){
+//        if(couldBe==Any){
+//            couldBe = outline;
+//        }else{
+//            couldBe = Option.from(this.node,couldBe,outline);
+//        }
+//    }
+//    public Outline couldBe() {
+//        return couldBe;
+//    }
 }

@@ -1078,7 +1078,7 @@ public class ASTHelper {
     public static AST mockExtendHofProjection() {
         /*
          * let f = x->{
-         *   x = a->{name=a};
+         *   x = a->{name=a,age=10};
          *   x("Will").name
          * }
          * f(n->{name=n})
@@ -1090,8 +1090,10 @@ public class ASTHelper {
         FunctionBody fbody = new FunctionBody(ast);
         FunctionBody abody = new FunctionBody(ast);
         List<MemberNode> members = new ArrayList<>();
-        members.add(new MemberNode(new Identifier(ast,new Token<>("name")),
-                new Identifier(ast,new Token<>("a")),false));
+        members.add(new MemberNode(new Identifier(ast, new Token<>("name")),
+                new Identifier(ast, new Token<>("a")), false));
+        members.add(new MemberNode(new Identifier(ast, new Token<>("age")),
+                LiteralNode.parse(ast, new Token<>(10)), false));
         Expression entity = new EntityNode(members);
         abody.addStatement(new ReturnStatement(entity));
         Expression a = new FunctionNode(new Argument(new Identifier(ast, new Token<>("a"))), abody);
@@ -1105,17 +1107,70 @@ public class ASTHelper {
         fbody.addStatement(new ReturnStatement(name));
         fDel.declare(new Identifier(ast, new Token<>("f")), f);
         ast.addStatement(fDel);
-        //f(n->{name=n,age=30})
+        //f(n->{name=n})
         FunctionBody body = new FunctionBody(ast);
         List<MemberNode> ms = new ArrayList<>();
         ms.add(new MemberNode(new Identifier(ast, new Token<>("name")),
                 new Identifier(ast, new Token<>("n")), false));
-        ms.add(new MemberNode(new Identifier(ast, new Token<>("age")),
-                LiteralNode.parse(ast, new Token<>(30)), false));
+//        ms.add(new MemberNode(new Identifier(ast, new Token<>("age")),
+//                LiteralNode.parse(ast, new Token<>(30)), false));
         body.addStatement(new ReturnStatement(new EntityNode(ms)));
         Expression someone = new FunctionNode(new Argument(new Identifier(ast, new Token<>("n"))), body);
         call = new FunctionCallNode(new Identifier(ast, new Token<>("f")), someone);
         ast.addStatement(new ReturnStatement(call));
+        return ast;
+    }
+
+    public static AST mockComplicatedHofProjection() {
+        /*
+         * let f = fx<a>(x:a->a,y,z)->{
+         *   x = b->b+"some";
+         *   y = x;
+         *   x = z;
+         *   y
+         * };
+         * f<String>;
+         * f<Integer>;
+         * f(n->"some");
+         */
+        ASF asf = new ASF();
+        AST ast = asf.newAST();
+        VariableDeclarator fDel = new VariableDeclarator(ast,VariableKind.LET);
+        FunctionBody body = new FunctionBody(ast);
+        FunctionBody bodyb = new FunctionBody(ast);
+        bodyb.addStatement(new ReturnStatement(new BinaryExpression(
+                new Identifier(ast,new Token<>("b")),LiteralNode.parse(ast,new Token<>("some")),
+                new OperatorNode<>(ast,BinaryOperator.ADD))));
+        Expression fb = FunctionNode.from(bodyb,new Argument(new Identifier(ast,new Token<>("b"))));
+        Statement f2b = new Assignment(new Identifier(ast,new Token<>("x")),fb);
+        body.addStatement(f2b);
+        body.addStatement(new Assignment(new Identifier(ast,new Token<>("y")),
+                        new Identifier(ast,new Token<>("x"))));
+        body.addStatement(new Assignment(new Identifier(ast,new Token<>("x")),
+                new Identifier(ast,new Token<>("z"))));
+        body.addStatement(new ReturnStatement(new Identifier(ast,new Token<>("y"))));
+        List<ReferenceNode> refs = new ArrayList<>();
+        refs.add(new ReferenceNode(new Identifier(ast,new Token<>("a")),null));
+        List<Argument> args = new ArrayList<>();
+        TypeNode type = new FunctionTypeNode(ast,new IdentifierTypeNode(new Identifier(ast,new Token<>("a"))),
+                new IdentifierTypeNode(new Identifier(ast,new Token<>("a"))));
+        args.add(new Argument(new Identifier(ast,new Token<>("x")),type));
+        args.add(new Argument(new Identifier(ast,new Token<>("y"))));
+        args.add(new Argument(new Identifier(ast,new Token<>("z"))));
+        Expression f = FunctionNode.from(body,refs,args);
+        fDel.declare(new Identifier(ast,new Token<>("f")),f);
+        ast.addStatement(fDel);
+        ast.addStatement(new ExpressionStatement(new ReferenceCallNode(
+                new Identifier(ast,new Token<>("f")),
+                new IdentifierTypeNode(new Identifier(ast,new Token<>("String"))))));
+        ast.addStatement(new ExpressionStatement(new ReferenceCallNode(
+                new Identifier(ast,new Token<>("f")),
+                new IdentifierTypeNode(new Identifier(ast,new Token<>("Integer"))))));
+        body = new FunctionBody(ast);
+        body.addStatement(new ReturnStatement(LiteralNode.parse(ast,new Token<>("some"))));
+        ast.addStatement(new ExpressionStatement(new FunctionCallNode(
+                new Identifier(ast,new Token<>("f")),
+                FunctionNode.from(body,new Argument(new Identifier(ast,new Token<>("n")))))));
         return ast;
     }
 }

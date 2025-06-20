@@ -1,13 +1,9 @@
 package org.twelve.gcp.outline.projectable;
 
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.node.expression.typeable.FunctionTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -16,33 +12,34 @@ import static org.twelve.gcp.common.Tool.cast;
  * x->x(10), 此时x.defined_to_be = higher order function
  */
 public class HigherOrderFunction extends Function<Node, Outline> {
-    public static HigherOrderFunction from(FunctionTypeNode node, Return returns, Outline... args) {
+    public static HigherOrderFunction from(FunctionTypeNode node, Returnable returns, Outline... args) {
         if (args.length > 1) {
             Outline arg = args[0];
             Outline[] rests = new Outline[args.length - 1];
             for (int i = 0; i < rests.length; i++) {
                 rests[i] = args[i + 1];
             }
-            Return r = Return.from(from(null, returns, rests));
-            r.addNothing();
+            Returnable r = Return.from(from(null, returns, rests));
+//            r.addNothing();
             return new HigherOrderFunction(null, arg, r);
         } else {
-            Return r = Return.from(returns);
-            r.addNothing();
-            return new HigherOrderFunction(node, args[0], r);
+//            Return r = Return.from(returns);
+//            r.addNothing();
+            return new HigherOrderFunction(node, args[0], returns);
         }
     }
 
-    public HigherOrderFunction(Node node, Outline argument, Return returns) {
+    public HigherOrderFunction(Node node, Outline argument, Returnable returns) {
         super(node, argument, returns);
-        returns.addNothing();
+//        this.argument = Nothing;
+        returns.addReturn(Nothing);//.setInferred();
     }
 
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
-        Outline argument = this.argument instanceof Generic ?
-                ((Generic) this.argument).project(projected, projection, session) : this.argument;
-        Return returns = this.returns();
+        Outline argument = this.argument instanceof Genericable<?,?> ?
+                ((Genericable<?,?>) this.argument).project(projected, projection, session) : this.argument;
+        Returnable returns = this.returns();
         if (this.returns().definedToBe() instanceof HigherOrderFunction) {
             returns = Return.from(returns.node(), returns.declaredToBe());
 //            returns.addDefinedToBe(((HigherOrderFunction) this.returns().definedToBe()).doProject(projected, projection, session));
@@ -66,9 +63,9 @@ public class HigherOrderFunction extends Function<Node, Outline> {
     @Override
     public Outline project(Reference reference, OutlineWrapper projection) {
         Outline arg = this.argument();
-        Return ret = this.returns();
+        Returnable ret = this.returns();
         arg = cast(arg.project(reference, projection));
-        ret = cast(ret.project(reference, projection));
+        ret = Return.from(ret.project(reference, projection));
         return new HigherOrderFunction(this.node, arg, ret);
     }
 }

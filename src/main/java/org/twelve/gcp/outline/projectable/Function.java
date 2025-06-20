@@ -12,9 +12,9 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
     protected final T node;
 
     protected A argument;
-    protected Return returns;
+    protected Returnable returns;
 
-    public Function(T node, A argument, Return returns) {
+    public Function(T node, A argument, Returnable returns) {
         this.node = node;
         this.id = Counter.getAndIncrement();
 
@@ -49,7 +49,7 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
         return this.argument.equals(you.argument) && this.returns.equals(you.returns);
     }
 
-    public Return returns() {
+    public Returnable returns() {
         return this.returns;
     }
 

@@ -16,9 +16,15 @@ import static org.twelve.gcp.common.Tool.cast;
 /**
  * 传统泛型
  */
-public class Reference extends Genericable<Reference, ReferenceNode> {
-    public Reference(ReferenceNode node, Outline declared) {
+public class Reference extends Genericable<Reference, ReferenceNode> implements Returnable{
+    private Outline argument;
+
+    private Reference(ReferenceNode node, Outline declared) {
         super(node, declared);
+    }
+
+    public static Reference from(ReferenceNode node, Outline declared){
+        return new Reference(node,declared);
     }
 
     @Override
@@ -37,9 +43,24 @@ public class Reference extends Genericable<Reference, ReferenceNode> {
     }
 
     @Override
+    public void setArgument(Outline argument) {
+        this.argument = argument;
+    }
+
+    @Override
     public Outline guess() {
 //        return this.eventual();//todo
         return this;
+    }
+
+    @Override
+    public Outline supposedToBe() {
+        return Nothing;
+    }
+
+    @Override
+    public boolean addReturn(Outline ret) {
+        return false;
     }
 
     @Override

@@ -119,6 +119,12 @@ public interface Outline extends Serializable {
 
     long id();
 
+    /**
+     * project one reference
+     * @param reference to be projected
+     * @param projection the real type for the reference
+     * @return the real type
+     */
     default Outline project(Reference reference,OutlineWrapper projection){
         return this;
     }
