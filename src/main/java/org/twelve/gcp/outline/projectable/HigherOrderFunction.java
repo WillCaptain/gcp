@@ -5,6 +5,8 @@ import org.twelve.gcp.node.expression.typeable.FunctionTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
 
+import java.util.Map;
+
 import static org.twelve.gcp.common.Tool.cast;
 
 /**

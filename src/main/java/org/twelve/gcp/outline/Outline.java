@@ -4,10 +4,12 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.primitive.*;
+import org.twelve.gcp.outline.projectable.FirstOrderFunction;
 import org.twelve.gcp.outline.projectable.Reference;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -102,11 +104,22 @@ public interface Outline extends Serializable {
     }
 
     default <T extends Outline> T copy() {
-        try {
-            return cast(this.getClass().newInstance());
-        } catch (Exception e) {
-            return null;
+        return cast(this);
+//        try {
+//            return cast(this.getClass().newInstance());
+//        } catch (Exception e) {
+//            return cast(this);
+////            return null;
+//        }
+    }
+
+    default Outline copy(Map<Long, Outline> cache) {
+        Outline copied = cast(cache.get(this.id()));
+        if (copied == null) {
+            copied = this.copy();
+            cache.put(this.id(), copied);
         }
+        return copied;
     }
 
     default boolean beAssignedAble() {
@@ -121,18 +134,20 @@ public interface Outline extends Serializable {
 
     /**
      * project one reference
-     * @param reference to be projected
+     *
+     * @param reference  to be projected
      * @param projection the real type for the reference
      * @return the real type
      */
-    default Outline project(Reference reference,OutlineWrapper projection){
-        return this;
-    }
-    default  Outline eventual(){
+    default Outline project(Reference reference, OutlineWrapper projection) {
         return this;
     }
 
-    default boolean containsUnknown(){
+    default Outline eventual() {
+        return this;
+    }
+
+    default boolean containsUnknown() {
         return false;
     }
 }

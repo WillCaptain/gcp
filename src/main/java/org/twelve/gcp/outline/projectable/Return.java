@@ -16,6 +16,7 @@ import org.twelve.gcp.outline.builtin.NOTHING;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -132,7 +133,15 @@ public class Return extends Genericable<Return, Node> implements Returnable {
         copied.supposed = this.supposed;
         copied.argument = this.argument;
         return copied;
+    }@Override
+    public Return copy(Map<Long, Outline> cache) {
+        if(cache.containsKey(this.id())) return cast(cache.get(this.id()));
+        Return copied = super.copy(cache);
+        copied.supposed = this.supposed.copy(cache);
+        copied.argument = this.argument;
+        return copied;
     }
+
 
     public void replaceIgnores() {
         if (this.supposed == Ignore) {

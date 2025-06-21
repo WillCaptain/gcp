@@ -1,16 +1,16 @@
 package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.builtin.Array_;
-import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 import org.twelve.gcp.outline.projectable.Projectable;
 import org.twelve.gcp.outline.projectable.Reference;
+
+import java.util.Map;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -90,7 +90,22 @@ public class Array extends ProductADT implements Projectable {//} implements Gen
         }
     }
 
-//    @Override
+    @Override
+    public boolean emptyConstraint() {
+        return this.itemOutline instanceof Projectable && ((Projectable) this.itemOutline).emptyConstraint();
+    }
+
+    @Override
+    public Array copy(Map<Long, Outline> cache) {
+        Array copied = cast(cache.get(this.id()));
+        if(copied==null){
+            copied = new Array(this.node,this.itemOutline.copy(cache));
+            cache.put(this.id(),copied);
+        }
+        return copied;
+    }
+
+    //    @Override
 //    public void addHasToBe(Outline hasToBe) {
 //        if(!(hasToBe instanceof Array)) return;
 //        if(this.itemOutline instanceof Genericable<?,?>){

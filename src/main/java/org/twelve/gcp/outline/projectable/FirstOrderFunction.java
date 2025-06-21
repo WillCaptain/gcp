@@ -1,15 +1,19 @@
 package org.twelve.gcp.outline.projectable;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -17,23 +21,24 @@ import static org.twelve.gcp.common.Tool.cast;
 /**
  * 正常定义的function
  */
-public class FirstOrderFunction extends Function<FunctionNode, Genericable<?,?>> implements ReferAble {
+public class FirstOrderFunction extends Function<FunctionNode, Genericable<?, ?>> implements ReferAble {
 
     @Setter
     @Getter
     private ProjectSession session;
+    @NonNull
     private final List<Reference> references;
 
-    private FirstOrderFunction(FunctionNode node, Genericable<?,?> argument, Returnable returns) {
+    private FirstOrderFunction(FunctionNode node, Genericable<?, ?> argument, Returnable returns) {
         this(node, argument, returns, new ArrayList<>());
     }
 
-    private FirstOrderFunction(FunctionNode node, Genericable<?,?> argument, Returnable returns, List<Reference> references) {
+    private FirstOrderFunction(FunctionNode node, Genericable<?, ?> argument, Returnable returns, List<Reference> references) {
         super(node, argument, returns);
-        this.references = references;
+        this.references = references == null ? new ArrayList<>() : references;
     }
 
-    public static FirstOrderFunction from(FunctionNode node, Genericable<?,?> argument, Returnable returns) {
+    public static FirstOrderFunction from(FunctionNode node, Genericable<?, ?> argument, Returnable returns) {
         return new FirstOrderFunction(node, argument, returns, new ArrayList<>());
     }
 
@@ -54,14 +59,14 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?,?>>
         }
     }
 
-    public static FirstOrderFunction from(FunctionNode node, Genericable<?,?> argument, Returnable returns, List<Reference> references) {
+    public static FirstOrderFunction from(FunctionNode node, Genericable<?, ?> argument, Returnable returns, List<Reference> references) {
         return new FirstOrderFunction(node, argument, returns, references);
     }
 
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
         Outline argProjection = this.argument.project(projected, projection, session);
-        Genericable<?,?> argument = argProjection instanceof Genericable<?,?> ? cast(argProjection) : Generic.from(argProjection);
+        Genericable<?, ?> argument = argProjection instanceof Genericable<?, ?> ? cast(argProjection) : Generic.from(argProjection);
         Outline r = this.returns.project(projected, projection, session);
         Returnable returns = (r instanceof Returnable) ? cast(r) : Return.from(this.node, this.returns.declaredToBe());
         return new FirstOrderFunction(this.node, argument, returns);
@@ -69,7 +74,21 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?,?>>
 
     @Override
     public FirstOrderFunction copy() {
-        return new FirstOrderFunction(this.node, this.argument, this.returns);
+        Map<Long, Outline> cache = new HashMap<>();
+        return copy(cache);
+
+    }
+
+    @Override
+    public FirstOrderFunction copy(Map<Long, Outline> cache) {
+        if (cache.containsKey(this.id())) return cast(cache.get(this.id()));
+        //clone all references
+        List<Reference> refs = new ArrayList<>();
+        for (Reference ref : this.references) {
+            refs.add(cast(ref.copy(cache)));
+        }
+        Genericable<?, ?> arg = cast(this.argument().copy(cache));
+        return new FirstOrderFunction(cast(this.node()), arg, cast(this.returns().copy(cache)),refs);
     }
 
     @Override
@@ -78,33 +97,33 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?,?>>
     }
 
     @Override
-    public Outline project(Reference reference,OutlineWrapper projection) {
+    public Outline project(Reference reference, OutlineWrapper projection) {
         List<Reference> refs = new ArrayList<>(this.references);
 //        for (Pair<Reference, Outline> projection : projections) {
-            refs.removeIf(r -> r.id() == reference.id());
+        refs.removeIf(r -> r.id() == reference.id());
 //        }
-        Genericable<?,?> arg = this.argument();
+        Genericable<?, ?> arg = this.argument();
         Returnable ret = this.returns();
         Outline projected = arg.project(reference, projection);
-        if(projected instanceof Genericable<?,?>){
+        if (projected instanceof Genericable<?, ?>) {
             arg = cast(projected);
-        }else {
-            arg = Generic.from(this.node.argument(),projected);
+        } else {
+            arg = Generic.from(this.node.argument(), projected);
         }
-        ret = cast(ret.project(reference,projection));
+        ret = cast(ret.project(reference, projection));
         return new FirstOrderFunction(this.node, arg, ret, refs);
     }
 
-    @Override
-    public Outline eventual() {
-        Genericable<?,?> arg = cast(this.argument().eventual());
-        Return ret = cast(this.returns().eventual());
-        if (arg != this.argument() || ret != this.returns()) {
-            return new FirstOrderFunction(this.node, arg, ret);
-        } else {
-            return this;
-        }
-    }
+//    @Override
+//    public Outline eventual() {
+//        Genericable<?,?> arg = cast(this.argument().eventual());
+//        Return ret = cast(this.returns().eventual());
+//        if (arg != this.argument() || ret != this.returns()) {
+//            return new FirstOrderFunction(this.node, arg, ret);
+//        } else {
+//            return this;
+//        }
+//    }
 
     @Override
     public Outline project(List<OutlineWrapper> types) {
@@ -118,10 +137,10 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?,?>>
             OutlineWrapper you = types.get(i);
             if (you == null) break;
             if (you.outline().is(me)) {
-                f = cast(f.project(me,you));
-            }else {
+                f = cast(f.project(me, you));
+            } else {
                 ErrorReporter.report(you.node(), GCPErrCode.REFERENCE_MIS_MATCH);
-                f = cast(f.project(me,new OutlineWrapper(you.node(),me.guess())));
+                f = cast(f.project(me, new OutlineWrapper(you.node(), me.guess())));
             }
         }
 

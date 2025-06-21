@@ -1,7 +1,6 @@
 package org.twelve.gcp.outline.projectable;
 
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.outline.Outline;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -84,5 +83,10 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
     @Override
     public boolean containsUnknown() {
         return this.argument.containsUnknown()||this.returns.containsUnknown();
+    }
+
+    @Override
+    public boolean emptyConstraint() {
+        return (this.argument() instanceof Projectable && ((Projectable) this.argument()).emptyConstraint()) || this.returns.emptyConstraint();
     }
 }

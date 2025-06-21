@@ -4,6 +4,8 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.expression.BinaryExpression;
 import org.twelve.gcp.outline.Outline;
 
+import java.util.Map;
+
 import static org.twelve.gcp.common.Tool.cast;
 import static org.twelve.gcp.common.Tool.getExactNumberOutline;
 
@@ -37,6 +39,16 @@ public class NumericAble implements Projectable {
     }
 
     @Override
+    public NumericAble copy(Map<Long, Outline> cache){
+        NumericAble copied = cast(cache.get(this.id()));
+        if(copied==null){
+            copied = new NumericAble(left.copy(cache),right.copy(cache),node);
+            cache.put(this.id(),copied);
+        }
+        return copied;
+    }
+
+    @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
         Outline l = left instanceof Genericable<?,?> ? ((Genericable<?,?>) left).project(projected, projection,session) : left;
         Outline r = right instanceof Genericable<?,?> ? ((Genericable<?,?>) right).project(projected, projection,session) : right;
@@ -49,6 +61,12 @@ public class NumericAble implements Projectable {
     @Override
     public Outline guess() {
         return Number;
+    }
+
+    @Override
+    public boolean emptyConstraint() {
+        return (this.left instanceof Projectable && ((Projectable) this.left).emptyConstraint()) ||
+                ((this.right instanceof Projectable && ((Projectable) this.right).emptyConstraint()));
     }
 
 }

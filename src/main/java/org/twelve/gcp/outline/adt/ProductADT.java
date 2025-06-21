@@ -111,6 +111,20 @@ public abstract class ProductADT extends ADT {
     }
 
     @Override
+    public ProductADT copy(Map<Long, Outline> cache) {
+        ProductADT copied = cast(cache.get(this.id()));
+        if(copied==null){
+            copied = cast(super.copy());
+            ProductADT finalCopied = copied;
+            this.members.forEach((k, v)->{
+                finalCopied.members.put(k,EntityMember.from(v.name(), v.outline.copy(cache), v.modifier(), v.mutable()==Mutable.True, v.node()));
+            });
+            cache.put(this.id(),copied);
+        }
+        return copied;
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("{");
         List<EntityMember> ms = this.members();

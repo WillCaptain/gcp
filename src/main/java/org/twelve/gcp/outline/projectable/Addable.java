@@ -5,6 +5,9 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.primitive.STRING;
 
+import java.util.Map;
+
+import static org.twelve.gcp.common.Tool.cast;
 import static org.twelve.gcp.common.Tool.getExactNumberOutline;
 
 /**
@@ -56,8 +59,24 @@ public class Addable implements Projectable, OperateAble {
     }
 
     @Override
+    public boolean emptyConstraint() {
+        return (this.left instanceof Projectable && ((Projectable) this.left).emptyConstraint()) ||
+                ((this.right instanceof Projectable && ((Projectable) this.right).emptyConstraint()));
+    }
+
+    @Override
     public Addable copy() {
         return new Addable(node,left,right);
+    }
+
+    @Override
+    public Addable copy(Map<Long, Outline> cache){
+        Addable copied = cast(cache.get(this.id()));
+        if(copied==null){
+            copied = new Addable(node,left.copy(cache),right.copy(cache));
+            cache.put(this.id(),copied);
+        }
+        return copied;
     }
 
     @Override

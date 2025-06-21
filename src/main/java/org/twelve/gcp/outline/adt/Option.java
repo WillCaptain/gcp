@@ -3,6 +3,7 @@ package org.twelve.gcp.outline.adt;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
+import org.twelve.gcp.outline.projectable.NumericAble;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -65,6 +66,19 @@ public class Option extends SumADT {
         Option copies = new Option(this.node());
         copies.options.addAll(this.options);
         return copies;
+    }
+
+    @Override
+    public Option copy(Map<Long, Outline> cache) {
+        Option copied = cast(cache.get(this.id()));
+        if(copied==null){
+            copied = new Option(this.node());
+            for (Outline option : this.options) {
+                copied.options.add(option.copy(cache));
+            }
+            cache.put(this.id(),copied);
+        }
+        return copied;
     }
 
     @Override

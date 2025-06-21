@@ -2,9 +2,7 @@ package org.twelve.gcp.outline.projectable;
 
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
-import org.twelve.gcp.node.expression.conditions.Consequence;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.builtin.ANY;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -55,6 +53,12 @@ public class FixFunction  implements Projectable {
     }
 
     @Override
+    public boolean emptyConstraint() {
+        return (this.argument instanceof Projectable && ((Projectable) this.argument).emptyConstraint()) ||
+                ((this.returns instanceof Projectable && ((Projectable) this.returns).emptyConstraint()));
+    }
+
+    @Override
     public boolean tryIamYou(Outline another) {
         Function you = null;
         if(another instanceof Function){
@@ -71,8 +75,8 @@ public class FixFunction  implements Projectable {
         return (you.argument.toString().equals(CONSTANTS.ANY_STR)||you.argument.canBe(this.argument)) && this.returns.is(you.returns);
     }
 
-    @Override
-    public FixFunction copy() {
-        return new FixFunction(node,argument,returns);
-    }
+//    @Override
+//    public FixFunction copy() {
+//        return new FixFunction(node,argument,returns);
+//    }
 }

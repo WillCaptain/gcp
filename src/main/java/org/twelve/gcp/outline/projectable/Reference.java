@@ -9,6 +9,7 @@ import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.builtin.NOTHING;
 
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -81,5 +82,19 @@ public class Reference extends Genericable<Reference, ReferenceNode> implements 
             ErrorReporter.report(this.node, GCPErrCode.NOT_INITIALIZED);
         }
         return this.extendToBe().eventual();
+    }
+
+    @Override
+    public Reference copy() {
+        Reference copied = super.copy();
+        copied.argument = this.argument;
+        return copied;
+    }
+
+    @Override
+    public Reference copy(Map<Long, Outline> cache) {
+        Reference copied = super.copy(cache);
+        copied.argument = this.argument;
+        return copied;
     }
 }

@@ -12,4 +12,5 @@ public interface ReferAble {
     List<Reference> references();
 
     Outline project(List<OutlineWrapper> types);
+    Outline copy();
 }

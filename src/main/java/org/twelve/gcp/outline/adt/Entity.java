@@ -3,7 +3,6 @@ package org.twelve.gcp.outline.adt;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.common.Mutable;
-import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.exception.GCPRuntimeException;
@@ -12,6 +11,7 @@ import org.twelve.gcp.node.expression.typeable.WrapperTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
+import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 import org.twelve.gcp.outline.projectable.Projectable;
 import org.twelve.gcp.outline.projectable.Reference;
@@ -29,7 +29,7 @@ import static org.twelve.gcp.common.Tool.cast;
  * @author huizi 2024
  */
 public class Entity extends ProductADT implements Projectable {
-//    private final List<Reference> references;
+    //    private final List<Reference> references;
     private long id;
     /**
      * Entity的基Entity
@@ -119,6 +119,20 @@ public class Entity extends ProductADT implements Projectable {
     }
 
     @Override
+    public Entity copy(Map<Long, Outline> cache) {
+        Entity copied = cast(cache.get(this.id()));
+        if(copied==null){
+            List<EntityMember> members = new ArrayList<>();
+            for (EntityMember m : this.members()) {
+                members.add(EntityMember.from(m.name(), m.outline.copy(cache), m.modifier(), m.mutable()==Mutable.True, m.node()));
+            }
+            copied = new Entity(this.node,this.buildIn,members);
+            cache.put(this.id(),copied);
+        }
+        return copied;
+    }
+
+    @Override
     public List<EntityMember> members() {
         List<EntityMember> members = super.members();
         List<EntityMember> base = this.baseMembers();
@@ -170,21 +184,23 @@ public class Entity extends ProductADT implements Projectable {
 
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
-        if (this.id() == projected.id()) {//project myself
-//            if (session.getProjection(projected) != null) {
-//                return session.getProjection(projected);
-//            }
+        if (this.id() == projected.id()) {//project myself:{a} project{a,b}
             Entity outline = Entity.from(projection.node());
-//            List<EntityMember> projectedMembers = this.members();//get projected members
-            for (EntityMember m2 : ((Entity) projection).members()) {//match projection members
-                Optional<EntityMember> m1 = this.getMember(m2.name());//find matched member in projected
-                if (m1.isPresent() && m1.get().outline() instanceof Projectable) {
-                    Projectable p = cast(m1.get().outline());
-                    outline.addMember(m2.name(), p.project(p, m2.outline(), session)
-                            , m2.modifier(), m2.mutable() == Mutable.True, m2.node());
-                } else {
-                    outline.addMember(m2.name(), m2.outline(), m2.modifier(), m2.mutable() == Mutable.True, m2.node());
+            for (EntityMember yourMember : ((Entity) projection).members()) {//match projection members
+                Optional<EntityMember> myMember = this.getMember(yourMember.name());//find matched member in projected
+                if (myMember.isPresent()) {//project a
+                    if (myMember.get().outline() instanceof Projectable) {//project member if me is projectable
+                        Projectable me = cast(myMember.get().outline());
+                        outline.addMember(yourMember.name(), me.project(me, yourMember.outline(), session),
+                                yourMember.modifier(), yourMember.mutable() == Mutable.True, yourMember.node());
+                        continue;
+                    }
+                    //if you are genericable and i'm not, add me as your constraint
+                    if(yourMember.outline() instanceof Genericable<?,?>){
+                        ((Genericable<?, ?>) yourMember.outline()).addHasToBe(myMember.get().outline());
+                    }
                 }
+                outline.addMember(yourMember.name(), yourMember.outline(), yourMember.modifier(), yourMember.mutable() == Mutable.True, yourMember.node());
             }
             if (outline.is(this)) {
 //                session.addProjection(projected, outline);
@@ -221,29 +237,34 @@ public class Entity extends ProductADT implements Projectable {
     }
 
     @Override
+    public boolean emptyConstraint() {
+        return this.members().stream().map(m->m.outline).anyMatch(o-> o instanceof Projectable && ((Projectable) o).emptyConstraint());
+    }
+
+    @Override
     public Outline project(Reference reference, OutlineWrapper projection) {
         Entity projected;
         List<EntityMember> ms = new ArrayList<>();
         for (String key : this.members.keySet()) {
             EntityMember m = this.members.get(key);
             Variable n = m.node();
-            Outline mProjected = m.outline().project(reference,projection);
-            if(m.node()!=null && m.node().declared()!=null){
-                Outline declared = m.node().outline().project(reference,projection);
-                if(declared.id()!=m.node().outline().id()){
-                    n = new Variable(n.identifier(),n.mutable(),new WrapperTypeNode(n.ast(),declared));
+            Outline mProjected = m.outline().project(reference, projection);
+            if (m.node() != null && m.node().declared() != null) {
+                Outline declared = m.node().outline().project(reference, projection);
+                if (declared.id() != m.node().outline().id()) {
+                    n = new Variable(n.identifier(), n.mutable(), new WrapperTypeNode(n.ast(), declared));
                 }
 //                if(!mProjected.is(declared)){
 //                    ErrorReporter.report(m.node(),GCPErrCode.OUTLINE_MISMATCH,mProjected+" doesn't match with "+declared);
 //                }
             }
 
-            ms.add(EntityMember.from(m.name(),mProjected,m.modifier(),m.mutable().toBool(),n));
+            ms.add(EntityMember.from(m.name(), mProjected, m.modifier(), m.mutable().toBool(), n));
         }
-        if(this.base==null) {
+        if (this.base == null) {
             projected = new Entity(this.node, this.buildIn, ms);
-        }else {
-            projected = new Entity(this.node, (ProductADT) this.base.project(reference,projection), ms);
+        } else {
+            projected = new Entity(this.node, (ProductADT) this.base.project(reference, projection), ms);
         }
         return projected;
     }

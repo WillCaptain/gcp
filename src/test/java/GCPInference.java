@@ -591,6 +591,23 @@ public class GCPInference {
         }
 
     }
+    @Test
+    void test_extend_entity_projection(){
+        /**
+         * let f = fx<a,b>(x, y:a, z:{age:b})->{
+         * 	 x = {name="Will”, age = y};
+         * 	 z = x;
+         * 	 x.age
+         * }
+         * let g = f({age=10});
+         * let h = g(20);
+         * f({age="10"},20);
+         * h{age="100"})
+         */
+        AST ast = ASTHelper.mockExtendEntityProjection();
+        assertTrue(ast.asf().infer());
+        //assertTrue(false);
+    }
 
     @Test
     void test_gcp_recursive_projection(){
@@ -765,7 +782,7 @@ public class GCPInference {
         Outline outline_4 = ast.program().body().statements().get(8).get(0).outline();
         assertInstanceOf(INTEGER.class,outline_4);
         //let r2 = r<String>;
-        assertEquals(GCPErrCode.REFERENCE_MIS_MATCH,ast.errors().get(0).errorCode());
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(0).errorCode());
         assertEquals("r<String>",ast.errors().get(0).node().toString());
 //        Function<?,?> outline_5 = cast(ast.program().body().statements().get(9).get(0).get(0).outline());
 //        assertInstanceOf(STRING.class,outline_5.returns().supposedToBe());

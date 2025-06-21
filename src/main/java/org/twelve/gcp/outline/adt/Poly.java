@@ -73,6 +73,23 @@ public class Poly extends SumADT {
     }
 
     @Override
+    public Poly copy(Map<Long, Outline> cache) {
+        Poly copied = cast(cache.get(this.id()));
+        if(copied==null){
+            copied = Poly.from(this.node(), false);
+            for (Outline option : this.options) {
+                copied.options.add(option.copy(cache));
+            }
+            for (Outline declared : this.declared) {
+                copied.declared.add(declared.copy(cache));
+            }
+            copied.meta.putAll(this.meta);
+            cache.put(this.id(),copied);
+        }
+        return copied;
+    }
+
+    @Override
     public boolean tryIamYou(Outline another) {
         //参数传递给Poly，自己必须是Poly，而且可完整替代
         if (another instanceof Poly) {

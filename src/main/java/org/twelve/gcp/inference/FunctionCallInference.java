@@ -135,7 +135,8 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             //开始一个projection session
             session = new ProjectSession();
         }
-
+        Outline back = function;
+        function = function.copy();
         //先投影参数
         Outline projectedArg = function.argument().project(function.argument(), argument.outline(), session);
         //change the argument constraints

@@ -58,17 +58,16 @@ public class ASF {
             scope.attachModule(ast.infer());  // First inference attempt
         });
 
-        // Fixed-point iteration (up to 4 times)
-//        int maxIterations = 4;
+        // Fixed-point iteration (up to 2 times)
         while (!this.inferred()) {
             for (AST ast : this.asts) {
                 ast.infer();  // Refine inferences
             }
-            this.leftTimes--;
             if (this.leftTimes == 0) {
                 // ErrorReporter.report(GCPErrCode.POSSIBLE_ENDLESS_LOOP);
                 break;  // Prevents infinite loops for circular dependencies
             }
+            this.leftTimes--;
         }
 
         return this.asts.stream().allMatch(a->a.inferred());

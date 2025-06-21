@@ -6,9 +6,9 @@ import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.OperateAble;
+import org.twelve.gcp.outline.projectable.Projectable;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 public abstract class Assignable extends Expression {
@@ -34,17 +34,14 @@ public abstract class Assignable extends Expression {
             }
         }
 
-        if(!(inferred instanceof Genericable && ((Genericable<?, ?>) inferred).isEmpty())
-                && inferred.canBe(this.outline)) return;
+//        if(!(inferred instanceof Projectable && ((Projectable) inferred).emptyConstraint())
+//                && inferred.canBe(this.outline)) return;
 
         if (inferred instanceof OperateAble) {
             OperateAble<?> you = (OperateAble<?>) inferred;
-            if (this.outline instanceof Genericable<?,?>) {
-                if (this.outline.node().nodeIndex() < you.node().nodeIndex()) {
-                    you.addHasToBe(this.outline);
-                }
-            } else {
-                ((Genericable<?,?>) inferred).addHasToBe(this.outline);
+            if (!(this.outline instanceof Genericable<?, ?>) ||
+                    this.outline.node().nodeIndex() < you.node().nodeIndex()) {
+                you.addHasToBe(this.outline);
             }
         }
         if (!inferred.is(this.outline)) {

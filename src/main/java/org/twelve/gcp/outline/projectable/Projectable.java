@@ -39,4 +39,6 @@ public interface Projectable extends Outline {
 
     Outline guess();
 
+    boolean emptyConstraint();
+
 }
