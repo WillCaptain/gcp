@@ -2,6 +2,8 @@ package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.projectable.ProjectSession;
+import org.twelve.gcp.outline.projectable.Projectable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +16,7 @@ import static org.twelve.gcp.common.Tool.cast;
  * poly持有的每个类型都可能有不同的mutable属性
  * poly每个类型都可能对应不同的node，这在函数重复定义重载时可更清晰的表达
  */
-public class Poly extends SumADT {
+public class Poly extends SumADT{
     /**
      * meta中记录了poly对应个类型的节点和mutable信息
      */
@@ -66,6 +68,7 @@ public class Poly extends SumADT {
     @Override
     public Poly copy() {
         Poly copied = Poly.from(this.node(), false);
+        copied.id = this.id;
         copied.declared.addAll(this.declared);
         copied.options.addAll(this.options);
         copied.meta.putAll(this.meta);
@@ -211,4 +214,20 @@ public class Poly extends SumADT {
             return options.stream().map(Object::toString).collect(Collectors.joining("&"));
         }
     }
+    @Override
+    public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
+        Poly copied = this.copy();
+        copied.options = this.projectList(this.options,projected,projection,session);
+        copied.declared = this.projectList(this.declared,projected,projection,session);
+        return copied;
+    }
+
+    @Override
+    public Outline guess() {
+        Poly copied = this.copy();
+        copied.options = this.guessList(this.options);
+        copied.declared = this.guessList(this.declared);
+        return copied;
+    }
+
 }

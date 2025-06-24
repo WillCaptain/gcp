@@ -4,7 +4,11 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.ANY;
 import org.twelve.gcp.outline.builtin.NOTHING;
 
-public interface Generalizable extends Projectable {
+/**
+ * an outline can be generalized, including
+ * Generiable, Returnable
+ */
+public interface Generalizable extends Projectable,Constrainable {
     Outline declaredToBe();
 
     Outline definedToBe();
@@ -16,12 +20,6 @@ public interface Generalizable extends Projectable {
     Outline min();
 
     Outline max();
-
-    void addDefinedToBe(Outline defined);
-
-    void addExtendToBe(Outline outline);
-
-    void addHasToBe(Outline outline);
 
     @Override
     default boolean emptyConstraint() {

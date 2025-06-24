@@ -2,7 +2,7 @@ package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.projectable.Function;
+import org.twelve.gcp.outline.projectable.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * Option表明了多种类型中的一种
  * Poly表明了同时拥有多种类型
  */
-public abstract class SumADT extends ADT {
+public abstract class SumADT extends ADT implements Constrainable, Projectable {
     /**
      * Sum ADT为非标类型，所以有node对应
      */
@@ -24,7 +24,7 @@ public abstract class SumADT extends ADT {
      * 声明类型组，即在Sum ADT声明时规定的类型
      * 声明后的类型不能再动态添加类型
      */
-    protected final List<Outline> declared = new ArrayList<>();
+    protected List<Outline> declared = new ArrayList<>();
     /**
      * Sum ADT拥有的选项
      */
@@ -79,15 +79,15 @@ public abstract class SumADT extends ADT {
 
     protected boolean sum(List<Outline> list, Outline outline) {
         for (Outline o : list) {
-            if (outline instanceof Function) {
-                if (outline.equals(o)) return false;//已经有了完全一致的function
+            if (outline instanceof Projectable) {
+                if (outline.equals(o)) return false;//已经有了完全一致的projectable
             } else {
                 if (outline.is(o)) return false;//已经有基类了，忽略新outline
-//                if (o.is(outline)) {//outline是基类，去掉已有的，把基类加进来
-//                    list.remove(o);
-//                    list.add(outline);
-//                    return false;
-//                }
+                if (o.is(outline)) {//outline是基类，去掉已有的，把基类加进来
+                    list.remove(o);
+                    list.add(outline);
+                    return false;
+                }
             }
         }
         list.add(outline);
@@ -109,17 +109,18 @@ public abstract class SumADT extends ADT {
      * 如果基类只有一个，匹配成功
      * 如果超过一个，但其中有一个是equal的，返回equal的
      * 否则是模棱两可的匹配，返回错误
+     *
      * @param outline
      * @return
      */
     public Outline match(Outline outline) {
         List<Outline> matched = this.options.stream().filter(o -> outline.canBe(o)).collect(Collectors.toList());
-        if(matched.size()==0) {
+        if (matched.size() == 0) {
             return null;//未能匹配
         }
-        if(matched.size()==1) {
+        if (matched.size() == 1) {
             return matched.get(0);
-        }else {
+        } else {
             Optional<Outline> equals = matched.stream().filter(o -> outline.equals(o)).findFirst();
             if (equals.isPresent()) {
                 return equals.get();
@@ -133,4 +134,65 @@ public abstract class SumADT extends ADT {
     public boolean inferred() {
         return this.options.stream().allMatch(Outline::inferred);
     }
+
+    @Override
+    public boolean addDefinedToBe(Outline defined) {
+        boolean result = true;
+        for (Outline option : this.options()) {
+            if (option instanceof Generalizable) {
+                result = result||((Generalizable) option).addDefinedToBe(defined);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public void addExtendToBe(Outline extend) {
+        for (Outline option : this.options()) {
+            if (option instanceof Generalizable) {
+                ((Generalizable) option).addDefinedToBe(extend);
+            }
+        }
+    }
+
+    @Override
+    public void addHasToBe(Outline hasto) {
+        for (Outline option : this.options()) {
+            if (option instanceof Generalizable) {
+                ((Generalizable) option).addDefinedToBe(hasto);
+            }
+        }
+    }
+
+    protected List<Outline> projectList(List<Outline> list, Projectable projected, Outline projection, ProjectSession session) {
+        List<Outline> options = new ArrayList<>();
+        for (Outline option : list) {
+            if(option instanceof Projectable) {
+                options.add(((Projectable) option).project(projected,projection,session));
+            }else{
+                options.add(option);
+            }
+        }
+
+        return options;
+    }
+
+    protected List<Outline> guessList(List<Outline> list){
+        List<Outline> options = new ArrayList<>();
+        for (Outline option : list) {
+            if(option instanceof Projectable) {
+                options.add(((Projectable) option).guess());
+            }else{
+                options.add(option);
+            }
+        }
+        return options;
+    }
+
+    @Override
+    public boolean emptyConstraint() {
+        return this.options.stream().anyMatch(o->(o instanceof Projectable) &&
+                ((Projectable) o).emptyConstraint());
+    }
+
 }

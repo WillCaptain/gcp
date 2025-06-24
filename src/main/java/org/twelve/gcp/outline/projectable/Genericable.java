@@ -55,19 +55,46 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         return this.id;
     }
 
+    /**
+     * add constraint for extend, hasto or defined
+     * @param target
+     * @param constraint
+     * @return
+     */
+    private Outline addConstraint(Outline target, Outline constraint) {
+        if (target instanceof ANY || target instanceof NOTHING) {
+            return constraint;
+        }
+        if (target instanceof Poly) {
+            ((Poly) target).sum(constraint, false);
+            return target;
+        }
+        if(target.equals(constraint)) return target;
+        Poly result = Poly.from(this.node(), false, target, constraint);
+        if(result.options().size()==1){
+            return result.options().getFirst();
+        }else{
+            return result;
+        }
+    }
+
     public void addExtendToBe(Outline outline) {
         if (outline instanceof NOTHING) return;
         //find down stream maximum constraint
         Outline downConstraint = this.declaredToBe == Any ? this.hasToBe : declaredToBe;
         downConstraint = downConstraint == Any ? this.definedToBe : downConstraint;
-        if (outline.equals(downConstraint)) return;
+//        if (outline.equals(downConstraint)) {
+//            return;
+//        }
 
         if (!outline.is(downConstraint)) {
             ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + downConstraint);
             return;
         }
 
+        this.extendToBe = this.addConstraint(this.extendToBe,outline);
 
+        /*
         if (this.extendToBe instanceof Poly) {
             ((Poly) this.extendToBe).sum(outline, true);
             return;
@@ -81,6 +108,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             return;
         }
         ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL);
+        */
 
     }
 
@@ -107,6 +135,9 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             return;
         }
 
+        this.hasToBe = this.addConstraint(this.hasToBe,outline);
+
+        /*
         if (this.hasToBe instanceof Poly) {
             ((Poly) this.hasToBe).sum(outline, true);
             return;
@@ -120,10 +151,12 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (!this.hasToBe.is((outline))) {
             ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + this.hasToBe);
         }
+         */
     }
 
-    public void addDefinedToBe(Outline outline) {
-        if (outline instanceof ANY) return;
+    @Override
+    public boolean addDefinedToBe(Outline outline) {
+        if (outline instanceof ANY) return true;
         //find up stream minimum constraint
         Outline upConstraint = this.hasToBe == Any ? this.declaredToBe : this.hasToBe;
         upConstraint = upConstraint == Any ? this.extendToBe : upConstraint;
@@ -131,9 +164,13 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         //is chain不满足，退出
         if (!upConstraint.is(outline)) {
             ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + upConstraint);
-            return;
+            return false;
         }
 
+        this.definedToBe = this.addConstraint(this.definedToBe,outline);
+        return true;
+
+        /*
         //第一次赋值，直接赋值并退出
         if (this.definedToBe == Any) {
             this.definedToBe = outline;
@@ -173,6 +210,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
                 ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL);
             }
         }
+         */
     }
 
     public Outline max() {
@@ -198,14 +236,14 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     @Override
     public G copy(Map<Long, Outline> cache) {
         G copied = cast(cache.get(this.id()));
-        if(copied==null){
+        if (copied == null) {
             copied = this.createNew();
             copied.extendToBe = this.extendToBe.copy(cache);
             copied.hasToBe = this.hasToBe.copy(cache);
             copied.definedToBe = this.definedToBe.copy(cache);
             copied.declaredToBe = this.declaredToBe.copy(cache);
             copied.id = this.id;
-            cache.put(this.id(),copied);
+            cache.put(this.id(), copied);
         }
         return copied;
     }
@@ -240,9 +278,9 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             Genericable<?, ?> g = cast(another);
             return (g.max().is(this.max()) || this.max() == Nothing) && (this.min().is(g.min()) || this.min() == Any);
         } else {
-            if(this.min() instanceof ANY){
+            if (this.min() instanceof ANY) {
                 return this.max().is(another);
-            }else {
+            } else {
                 return this.min().is(another);
             }
         }
@@ -347,7 +385,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         //return a_ -> b_
         if (b.max().is(d_) && d_.is(b.min())) {
             //b_ = b.project(d_)
-            Returnable b_ = Return.from(b.project(b, d_, session));
+            Returnable b_ = Return.from(d_.node(),b.project(b, d_, session));
             b_.addReturn(d_);
             //project argument again to make sure the cached projection is fetched
             if (a_ instanceof Projectable) {
@@ -365,17 +403,17 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     private Outline projectOutline(Outline projection, ProjectSession session) {
-        if (this.definedToBe instanceof Genericable<?, ?>) {
-            ((Genericable<?, ?>) this.definedToBe).addExtendToBe(projection);
+        if (this.definedToBe instanceof Constrainable) {
+            ((Constrainable) this.definedToBe).addExtendToBe(projection);
         }
-        if (this.hasToBe instanceof Genericable<?, ?>) {
-            ((Genericable<?, ?>) this.hasToBe).addExtendToBe(projection);
+        if (this.hasToBe instanceof Constrainable) {
+            ((Constrainable) this.hasToBe).addExtendToBe(projection);
         }
-        if (this.declaredToBe instanceof Genericable<?, ?>) {
-            ((Genericable<?, ?>) this.declaredToBe).addExtendToBe(projection);
+        if (this.declaredToBe instanceof Constrainable) {
+            ((Constrainable) this.declaredToBe).addExtendToBe(projection);
         }
-        if (this.extendToBe instanceof Genericable<?, ?>) {
-            ((Genericable<?, ?>) this.extendToBe).addHasToBe(projection);
+        if (this.extendToBe instanceof Constrainable) {
+            ((Constrainable) this.extendToBe).addHasToBe(projection);
         }
         return projection;
     }
@@ -383,20 +421,24 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     /**
      * genericable(a) project function(b)
      * projection each constraint in genericable(a) with function(b), they will be infected by each other
+     *
      * @param projection
      * @param session
      * @return return copy of function(b) infected by genericable(a) constraints
      */
     private Outline projectFunction(FirstOrderFunction projection, ProjectSession session) {
         //project defined
-        Outline outline = projectFunctionConstraint(this.definedToBe,projection,session);
+        Outline outline = projectFunctionConstraint(this.definedToBe, projection, session);
         //project has to
-        outline = projectFunctionConstraint(this.hasToBe,outline,session);
+        outline = projectFunctionConstraint(this.hasToBe, outline, session);
         //project declared
-        outline = projectFunctionConstraint(this.declaredToBe,outline,session);
+        outline = projectFunctionConstraint(this.declaredToBe, outline, session);
         //extend to project
         if (!(this.extendToBe instanceof NOTHING)) {
-            this.projectLambda(cast(outline), cast(this.extendToBe), session);
+            Function<?,?> extProjected = cast(outline);
+            FirstOrderFunction extProjection = cast(this.extendToBe);
+            session.disable(s-> this.projectLambda(extProjected, extProjection, s));
+//        this.projectLambda(cast(outline), cast(this.extendToBe), session);
         }
 
         if (outline.is(this)) {
@@ -412,8 +454,8 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             if (projected instanceof Function) {
                 projection = this.projectLambda(cast(projected), cast(projection), session);
             }
-            if (projected instanceof Genericable) {
-                ((Genericable<?, ?>) projected).projectMySelf(projection, session);
+            if (projected instanceof Projectable) {
+                ((Projectable) projected).project(cast(projected),projection, session);
             }
         }
         return projection;
@@ -423,8 +465,9 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
      * genericable(a) project entity(b)
      * project entity(b) to each constraint of genericable(a) except extend
      * project extend to entity(b)
+     *
      * @param projection entity(b)
-     * @param session projection cache
+     * @param session    projection cache
      * @return infected copy of entity(b)
      */
     private Outline projectEntity(Entity projection, ProjectSession session) {

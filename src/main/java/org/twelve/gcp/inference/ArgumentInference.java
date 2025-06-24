@@ -24,7 +24,7 @@ public class ArgumentInference implements Inference<Argument> {
         if (node.token() == Token.unit()) return Generic.from(node, Outline.Unit);
         LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
         EnvSymbol symbol = oEnv.lookupAll(node.name());
-        if (symbol == null) {
+        if (symbol == null || !symbol.scope().equals(node.scope())) {
             Expression defaultValue = node.defaultValue();
             Outline outline = inferDeclared(node.declared(), inferences);
             Genericable<?, ?> generic = Generic.from(node, outline);

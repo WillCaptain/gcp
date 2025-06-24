@@ -3,7 +3,7 @@ package org.twelve.gcp.outline.adt;
 import org.twelve.gcp.outline.Outline;
 
 public abstract class ADT implements Outline {
-    private long id;
+    protected long id;
 
     public ADT(){
         this.id = Counter.getAndIncrement();

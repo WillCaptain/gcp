@@ -30,7 +30,9 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
         if(outline instanceof Genericable){
             Genericable generic = cast(outline);
             if(generic.definedToBe() instanceof ANY){
-                generic.addDefinedToBe(Entity.from(node.entity()));
+                if(!generic.addDefinedToBe(Entity.from(node.entity()))){
+                    return Outline.Error;
+                }
             }
             Optional<EntityMember> member = ((Entity) generic.definedToBe()).members().stream().filter(m -> m.name().equals(node.member().name())).findFirst();
            if(member.isPresent()){

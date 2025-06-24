@@ -23,6 +23,7 @@ import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.primitive.INTEGER;
 import org.twelve.gcp.outline.primitive.LONG;
+import org.twelve.gcp.outline.primitive.NUMBER;
 import org.twelve.gcp.outline.primitive.STRING;
 import org.twelve.gcp.outline.projectable.*;
 
@@ -311,8 +312,8 @@ public class GCPInference {
         ast.asf().infer();
         assertEquals(1, ast.errors().size());
         assertEquals(floatNum, ast.errors().getFirst().node());
-        assertInstanceOf(STRING.class, call1.outline());
         assertEquals(Outline.Integer.toString(), call2.outline().toString());
+        assertInstanceOf(STRING.class, call1.outline());
     }
 
     @Test
@@ -622,7 +623,7 @@ public class GCPInference {
         Function<?,?> f = cast(declarator.assignments().getFirst().lhs().outline());
         Genericable<?,?> argument = cast(f.argument());
         Returnable returns = f.returns();
-        assertInstanceOf(INTEGER.class, argument.definedToBe());
+        assertInstanceOf(NUMBER.class, argument.definedToBe());
         assertInstanceOf(INTEGER.class, returns.supposedToBe());
         assertEquals(1,ast.errors().size());
     }
@@ -650,6 +651,15 @@ public class GCPInference {
         assertEquals(refInt,ast.errors().get(0).node());
         Outline fcallx = ast.program().body().statements().get(3).nodes().get(0).outline();
         assertTrue(true);
+    }
+
+    @Test
+    void test_multi_extend_projection(){
+        AST ast = ASTHelper.mockMultiExtendProjection();
+        assertTrue(ast.asf().infer());
+        Outline outline = ast.program().body().statements().getLast().outline();
+        assertEquals("String",outline.toString());
+        assertTrue(ast.errors().isEmpty());
     }
 
     @Test
@@ -767,6 +777,7 @@ public class GCPInference {
         Entity outline_1 = cast(ast.program().body().statements().get(3).get(0).outline());
         assertEquals("name",outline_1.members().get(0).name());
         assertInstanceOf(STRING.class,outline_1.members().get(0).outline());
+        assertEquals(4,ast.errors().size());
         //f(100) : `any`;
         assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(1).errorCode());
         assertEquals("100",ast.errors().get(1).node().toString());
@@ -777,7 +788,9 @@ public class GCPInference {
         Outline outline_3 = ast.program().body().statements().get(5).get(0).outline();
         assertInstanceOf(STRING.class,outline_3);
         assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(2).errorCode());
-        assertEquals("\"idx\"",ast.errors().get(2).node().toString());
+        assertEquals("[1]",ast.errors().get(2).node().toString());
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(3).errorCode());
+        assertEquals("\"idx\"",ast.errors().get(3).node().toString());
         //r1([1,2]) : Integer;
         Outline outline_4 = ast.program().body().statements().get(8).get(0).outline();
         assertInstanceOf(INTEGER.class,outline_4);

@@ -41,14 +41,14 @@ public class Addable implements Projectable, OperateAble {
         }
         Outline l = left instanceof Projectable ? ((Projectable) left).project(projected, projection, session) : left;
         Outline r = right instanceof Projectable ? ((Projectable) right).project(projected, projection, session) : right;
-        if (l instanceof Projectable || r instanceof Projectable) {
-            return new Addable(node, l, r);
-        }
         if (l instanceof STRING || r instanceof STRING) {
             return String;
         }
         if (l == Outline.Error || r == Outline.Error) {
             return Outline.Error;
+        }
+        if (l instanceof Projectable || r instanceof Projectable) {
+            return new Addable(node, l, r);
         }
         return getExactNumberOutline(l, r);
     }
@@ -80,13 +80,15 @@ public class Addable implements Projectable, OperateAble {
     }
 
     @Override
-    public void addDefinedToBe(Outline outline) {
+    public boolean addDefinedToBe(Outline outline) {
+        boolean result = true;
         if (left instanceof OperateAble) {
-            ((OperateAble) left).addDefinedToBe(outline);
+            result = result || ((OperateAble) left).addDefinedToBe(outline);
         }
         if (right instanceof OperateAble) {
-            ((OperateAble) right).addDefinedToBe(outline);
+            result = result || ((OperateAble) right).addDefinedToBe(outline);
         }
+        return result;
     }
 
     @Override

@@ -3,7 +3,9 @@ package org.twelve.gcp.outline.adt;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
-import org.twelve.gcp.outline.projectable.NumericAble;
+import org.twelve.gcp.outline.builtin.NOTHING;
+import org.twelve.gcp.outline.projectable.ProjectSession;
+import org.twelve.gcp.outline.projectable.Projectable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -64,6 +66,7 @@ public class Option extends SumADT {
     @Override
     public Option copy() {
         Option copies = new Option(this.node());
+        copies.id = this.id;
         copies.options.addAll(this.options);
         return copies;
     }
@@ -175,6 +178,26 @@ public class Option extends SumADT {
 
     @Override
     public String toString() {
-        return this.options.stream().map(o->o.toString()).collect(Collectors.joining("|"));
+        if(this.options.stream().anyMatch(o->o instanceof NOTHING)){
+            return this.options.stream().filter(o-> !(o instanceof NOTHING))
+                    .map(o->o.toString()+"?").collect(Collectors.joining("|"));
+
+        }else {
+            return this.options.stream().map(o -> o.toString()).collect(Collectors.joining("|"));
+        }
+    }
+
+    @Override
+    public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
+        Option copied = this.copy();
+        copied.options = this.projectList(this.options,projected,projection,session);
+        return copied;
+    }
+
+    @Override
+    public Outline guess() {
+        Option copied = this.copy();
+        copied.options = this.guessList(this.options);
+        return copied;
     }
 }

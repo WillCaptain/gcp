@@ -33,12 +33,16 @@ public interface Projectable extends Outline {
             }
         }
     }
-    default boolean is(Outline another) {
-        return this.tryIamYou(another) || another.tryYouAreMe(this);
-    }
+//    default boolean is(Outline another) {
+//        return this.tryIamYou(another) || another.tryYouAreMe(this);
+//    }
 
     Outline guess();
 
     boolean emptyConstraint();
 
+    @Override
+    default boolean equals(Outline another) {
+        return Outline.super.equals(another) && this.id()==another.id();
+    }
 }

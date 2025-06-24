@@ -52,7 +52,9 @@ public class HigherOrderFunction extends Function<Node, Outline> {
 
     @Override
     public HigherOrderFunction copy() {
-        return new HigherOrderFunction(this.node, this.argument, this.returns);
+        HigherOrderFunction func = new HigherOrderFunction(this.node, this.argument, this.returns);
+        func.id = this.id;
+        return func;
     }
 
     @Override

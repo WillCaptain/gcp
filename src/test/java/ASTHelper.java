@@ -1,5 +1,6 @@
-import org.junit.jupiter.api.Test;
+import org.twelve.gcp.builder.ASTBuilder;
 import org.twelve.gcp.ast.*;
+import org.twelve.gcp.builder.VariableDeclaratorBuilder;
 import org.twelve.gcp.common.*;
 import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.LiteralUnionNode;
@@ -27,7 +28,6 @@ import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
-import org.twelve.gcp.outline.projectable.Function;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -1237,5 +1237,57 @@ public class ASTHelper {
                 new Identifier(ast, new Token<>("f")),
                 FunctionNode.from(body, new Argument(new Identifier(ast, new Token<>("n")))))));
         return ast;
+    }
+
+    public static AST mockMultiExtendProjection() {
+        /**
+         * let f = (a,x,y,z)->{
+         *   x = a->{name=a,age=20};
+         *   x = y;
+         *   x = z;
+         *   x(a).name
+         * }
+         * f("Will");
+         */
+
+        ASTBuilder builder = new ASTBuilder();
+        VariableDeclaratorBuilder f = builder.buildVariableDeclarator(VariableKind.LET);
+        FunctionNode func = builder.buildFunc()
+                .buildArg("a")
+                .buildArg("x")
+                .buildArg("y")
+                .buildArg("z")
+                .buildStatement(builder.buildAssignment("x",
+                        builder.buildFunc().buildArg("a").returns(
+                                builder.buildEntity()
+                                        .buildMember("name","a")
+                                        .buildMember("age",new Token<>(20))
+                                        .build())))
+                .buildStatement(builder.buildAssignment("y","x"))
+                .buildStatement(builder.buildAssignment("x","z"))
+                .returns(builder.buildMemberAccessor(
+                        builder.buildCall(builder.buildId("x"), builder.buildId("a")),"name"));
+        f.declare("f",func);
+        VariableDeclaratorBuilder g = builder.buildVariableDeclarator(VariableKind.LET);
+        g.declare("g",builder.buildCall(builder.buildId("f"),builder.buildLiteral("Will")));
+        VariableDeclaratorBuilder h = builder.buildVariableDeclarator(VariableKind.LET);
+        h.declare("h",builder.buildCall(builder.buildId("g"),
+                builder.buildFunc().buildArg("a").returns(
+                        builder.buildEntity()
+                                .buildMember("name","a")
+                                .build())));
+        VariableDeclaratorBuilder i = builder.buildVariableDeclarator(VariableKind.LET);
+        i.declare("i",builder.buildCall(builder.buildId("h"),
+                builder.buildFunc().buildArg("a").returns(
+                        builder.buildEntity()
+                                .buildMember("name","a")
+                                .buildMember("gender",new Token<>("male"))
+                                .build())));
+        builder.buildReturnStatement(builder.buildCall(builder.buildId("i"),
+                builder.buildFunc().buildArg("a").returns(
+                        builder.buildEntity()
+                                .buildMember("name","a")
+                                .build())));
+        return builder.ast();
     }
 }
