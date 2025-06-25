@@ -7,10 +7,12 @@ import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
+import org.twelve.gcp.outline.builtin.ANY;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -115,6 +117,15 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      * @return 虚拟的函数返回
      */
     private Outline project(Genericable<?, ?> generic, Node argument) {
+        if (generic.definedToBe() instanceof HigherOrderFunction) {
+            return ((HigherOrderFunction) generic.definedToBe()).returns();
+        }
+        if(generic.definedToBe() instanceof Poly){
+            Optional<Outline> option = ((Poly) generic.definedToBe()).options().stream().filter(o -> o instanceof HigherOrderFunction).findFirst();
+            if(option.isPresent()){
+                return ((HigherOrderFunction)option.get()).returns();
+            }
+        }
         Returnable returns = Return.from(generic.node());
         HigherOrderFunction defined = new HigherOrderFunction(generic.node(), cast(argument.outline()), returns);
         generic.addDefinedToBe(defined);
@@ -140,10 +151,10 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         //先投影参数
         Outline projectedArg = function.argument().project(function.argument(), argument.outline(), session);
         //change the argument constraints
-        if(projectedArg.node()!=null && projectedArg.id()==projectedArg.node().outline().id()
-                && projectedArg!=projectedArg.node().outline()){
-            Genericable<?,?> origin = cast(projectedArg.node().outline());
-            Genericable<?,?> projected = cast(projectedArg);
+        if (projectedArg.node() != null && projectedArg.id() == projectedArg.node().outline().id()
+                && projectedArg != projectedArg.node().outline()) {
+            Genericable<?, ?> origin = cast(projectedArg.node().outline());
+            Genericable<?, ?> projected = cast(projectedArg);
             origin.addExtendToBe(projected.extendToBe());
             origin.addHasToBe(projected.declaredToBe());
             origin.addHasToBe(projected.hasToBe());

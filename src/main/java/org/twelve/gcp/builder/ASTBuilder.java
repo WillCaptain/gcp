@@ -4,15 +4,14 @@ import org.twelve.gcp.ast.ASF;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.VariableKind;
-import org.twelve.gcp.node.expression.Assignable;
-import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.node.expression.Identifier;
-import org.twelve.gcp.node.expression.LiteralNode;
+import org.twelve.gcp.inference.operator.BinaryOperator;
+import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
+import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.node.statement.*;
 
 import java.util.Arrays;
@@ -89,5 +88,9 @@ public class ASTBuilder {
 
     public LiteralNode<?> buildLiteral(Integer lexeme) {
         return LiteralNode.parse(ast, new Token<>(lexeme));
+    }
+
+    public BinaryExpression buildBinaryOperation(Expression lhs, String operator, Expression rhs) {
+        return new BinaryExpression(lhs,rhs, new OperatorNode<>(ast, BinaryOperator.parse(operator)));
     }
 }

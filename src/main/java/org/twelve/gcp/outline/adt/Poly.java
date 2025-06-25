@@ -29,16 +29,16 @@ public class Poly extends SumADT{
      * 那么该mutable标明了后续sum的option的mutable属性
      * 如果this.node为空，说明该变量声明为隐性动态poly，该mutable属性无效，需要通过重载来确定下一个sum outline的mutable
      */
-    private final Boolean mutable;
+//    private final Boolean mutable;
 
     /**
      * 声明式定义的poly类型这
      * 声明定义意味着该poly不能runtime sum更多类型，所以该poly的所有类型的对应节点和mutable属性是一致的
      *
      */
-    Poly(Node node, Boolean mutable, Outline... outlines) {
+    Poly(Node node, Outline... outlines) {
         super(node, outlines);
-        this.mutable = mutable;
+//        this.mutable = mutable;
     }
 
 
@@ -46,12 +46,11 @@ public class Poly extends SumADT{
      * 变量声明式使用，声明后的poly不能动态sum更多类型
      *
      * @param node     变量节点
-     * @param mutable  是否mutable
      * @param outlines 可以poly的类型列表
      * @return 固定option的poly对象
      */
-    public static Poly from(Node node, Boolean mutable, Outline... outlines) {
-        return new Poly(node, mutable, outlines);
+    public static Poly from(Node node, Outline... outlines) {
+        return new Poly(node, outlines);
     }
 
 
@@ -62,12 +61,12 @@ public class Poly extends SumADT{
      * @return 空的poly
      */
     public static Poly create() {
-        return new Poly(null, false);
+        return new Poly(null);
     }
 
     @Override
     public Poly copy() {
-        Poly copied = Poly.from(this.node(), false);
+        Poly copied = Poly.from(this.node());
         copied.id = this.id;
         copied.declared.addAll(this.declared);
         copied.options.addAll(this.options);
@@ -79,7 +78,7 @@ public class Poly extends SumADT{
     public Poly copy(Map<Long, Outline> cache) {
         Poly copied = cast(cache.get(this.id()));
         if(copied==null){
-            copied = Poly.from(this.node(), false);
+            copied = Poly.from(this.node());
             for (Outline option : this.options) {
                 copied.options.add(option.copy(cache));
             }
@@ -143,6 +142,18 @@ public class Poly extends SumADT{
      */
     private void attachMeta(Long id, boolean mutable) {
         this.meta.put(id, mutable);
+    }
+
+    @Override
+    public Outline interact(Outline another) {
+        if(another instanceof Entity){
+            return another.interact(this);
+        }else {
+            Poly poly = Poly.create();
+            poly.options.addAll(this.options);
+            poly.sum(another,false);
+            return poly;
+        }
     }
 
     /**

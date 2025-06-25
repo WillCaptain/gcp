@@ -660,6 +660,31 @@ public class GCPInference {
         Outline outline = ast.program().body().statements().getLast().outline();
         assertEquals("String",outline.toString());
         assertTrue(ast.errors().isEmpty());
+        assertEquals("""
+                module default
+                
+                let f = (a:`any`)->(x:`any->{name: String|Number,age: String|Number}`)->(y:`any->{name: String|Number,age: String|Number}`)->(z:`any->{name: String|Number,age: String|Number}`)->{
+                  x = (a:`any`)->{
+                    name = a,
+                    age = 20
+                  };
+                  y = x;
+                  x = z;
+                  x(a).name+x(a).age
+                };
+                let g = f("Will") : (String->{name: String|Number,age: String|Number})->(String->{name: String|Number,age: String|Number})->(String->{name: String|Number,age: String|Number})->String|Number;
+                let h = g((a:`any`)->{
+                  name = a,
+                  age = 20
+                }) : (String->{name: String,age: Integer})->(String->{name: String,age: Integer})->String;
+                let i = h((a:`any`)->{
+                  name = a,
+                  gender = "male"
+                }) : (String->{name: String,age: Integer})->String;
+                i((a:`any`)->{
+                  name = a,
+                  age = 20
+                }) : String""",ast.toString());
     }
 
     @Test

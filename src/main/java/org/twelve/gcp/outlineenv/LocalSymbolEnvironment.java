@@ -99,7 +99,7 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
 
         if (symbols.isEmpty()) return null;
         if(symbols.size()==1) return symbols.getFirst();
-        Outline outline = Poly.from(null,false,symbols.stream().map(EnvSymbol::outline).toArray(Outline[]::new));
+        Outline outline = Poly.from(null,symbols.stream().map(EnvSymbol::outline).toArray(Outline[]::new));
         return new EnvSymbol(key, false, outline, this.current.id(), null);//null origin node, means it is merged
     }
 

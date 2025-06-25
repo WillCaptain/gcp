@@ -8,6 +8,7 @@ import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
+import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.ANY;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
@@ -29,21 +30,25 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
         //泛化匹配
         if(outline instanceof Genericable){
             Genericable generic = cast(outline);
-            if(generic.definedToBe() instanceof ANY){
-                if(!generic.addDefinedToBe(Entity.from(node.entity()))){
-                    return Outline.Error;
-                }
+            Outline defined = generic.definedToBe();
+            if(defined instanceof ANY){
+                defined = Entity.from(node.entity());
+                generic.addDefinedToBe(defined);
             }
-            Optional<EntityMember> member = ((Entity) generic.definedToBe()).members().stream().filter(m -> m.name().equals(node.member().name())).findFirst();
-           if(member.isPresent()){
-               return member.get().outline();
-           }else {
-               Entity entity = cast(generic.definedToBe());
-               AccessorGeneric g = new AccessorGeneric(node);
-//               Generic g = new Generic(node);
-               entity.addMember(node.member().name(), g, Modifier.PUBLIC, false, new Variable(node.member(),false,null));
-               return g;
-           }
+            if(defined instanceof Entity){
+                return addMember(node, (Entity) defined, generic);
+            }
+            if(defined instanceof Poly){
+                for (Outline option : ((Poly) defined).options()) {
+                    if(option instanceof Entity){
+                        return addMember(node, (Entity) option, generic);
+                    }
+                }
+                Entity entity = Entity.from(node.entity());
+                Outline member = addMember(node, entity, generic);
+                generic.addDefinedToBe(entity);
+                return member;
+            }
         }
         //实体匹配
         if (!(outline instanceof ProductADT)) {
@@ -58,10 +63,17 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
         } else {
             return found.getFirst().outline();
         }
-//        if(found.size()==1){
-//            return found.get(0).outline();
-//        }else {
-//            return new Overwrite(found.stream().map(m -> (Function)m.outline()).collect(Collectors.toList()));
-//        }
+    }
+
+    private static Outline addMember(MemberAccessor node, Entity defined, Genericable<?,?> generic) {
+        Optional<EntityMember> member = defined.members().stream().filter(m -> m.name().equals(node.member().name())).findFirst();
+        if(member.isPresent()){
+            return member.get().outline();
+        }else {
+            Entity entity = cast(generic.definedToBe());
+            AccessorGeneric g = new AccessorGeneric(node);
+            entity.addMember(node.member().name(), g, Modifier.PUBLIC, false, new Variable(node.member(),false,null));
+            return g;
+        }
     }
 }

@@ -70,12 +70,15 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             return target;
         }
         if(target.equals(constraint)) return target;
-        Poly result = Poly.from(this.node(), false, target, constraint);
-        if(result.options().size()==1){
-            return result.options().getFirst();
-        }else{
-            return result;
-        }
+
+
+        return target.interact(constraint);
+//        Poly result = Poly.from(this.node(), target, constraint);
+//        if(result.options().size()==1){
+//            return result.options().getFirst();
+//        }else{
+//            return result;
+//        }
     }
 
     public void addExtendToBe(Outline outline) {

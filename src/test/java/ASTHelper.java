@@ -1243,9 +1243,9 @@ public class ASTHelper {
         /**
          * let f = (a,x,y,z)->{
          *   x = a->{name=a,age=20};
-         *   x = y;
+         *   y = z;
          *   x = z;
-         *   x(a).name
+         *   x(a).name+x(a).age
          * }
          * f("Will");
          */
@@ -1265,8 +1265,11 @@ public class ASTHelper {
                                         .build())))
                 .buildStatement(builder.buildAssignment("y","x"))
                 .buildStatement(builder.buildAssignment("x","z"))
-                .returns(builder.buildMemberAccessor(
-                        builder.buildCall(builder.buildId("x"), builder.buildId("a")),"name"));
+                .returns(builder.buildBinaryOperation(
+                        builder.buildMemberAccessor(
+                        builder.buildCall(builder.buildId("x"), builder.buildId("a")),"name"),"+",
+                        builder.buildMemberAccessor(
+                                builder.buildCall(builder.buildId("x"), builder.buildId("a")),"age")));
         f.declare("f",func);
         VariableDeclaratorBuilder g = builder.buildVariableDeclarator(VariableKind.LET);
         g.declare("g",builder.buildCall(builder.buildId("f"),builder.buildLiteral("Will")));
@@ -1275,18 +1278,20 @@ public class ASTHelper {
                 builder.buildFunc().buildArg("a").returns(
                         builder.buildEntity()
                                 .buildMember("name","a")
+                                .buildMember("age",new Token<>(20))
                                 .build())));
         VariableDeclaratorBuilder i = builder.buildVariableDeclarator(VariableKind.LET);
         i.declare("i",builder.buildCall(builder.buildId("h"),
                 builder.buildFunc().buildArg("a").returns(
-                        builder.buildEntity()
+                builder.buildEntity()
                                 .buildMember("name","a")
                                 .buildMember("gender",new Token<>("male"))
                                 .build())));
         builder.buildReturnStatement(builder.buildCall(builder.buildId("i"),
                 builder.buildFunc().buildArg("a").returns(
-                        builder.buildEntity()
+                builder.buildEntity()
                                 .buildMember("name","a")
+                                .buildMember("age",new Token<>(20))
                                 .build())));
         return builder.ast();
     }

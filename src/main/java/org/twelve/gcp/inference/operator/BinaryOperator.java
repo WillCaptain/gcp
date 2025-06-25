@@ -64,5 +64,12 @@ public enum BinaryOperator implements Operator {
     public Outline infer(Outline left, Outline right, BinaryExpression node) {
         return this.inference.infer(left, right, node);
     }
+
+    public static BinaryOperator parse(String operator){
+        for (BinaryOperator value : BinaryOperator.values()) {
+            if(value.symbol().equals(operator)) return value;
+        }
+        return ADD;
+    }
 }
 

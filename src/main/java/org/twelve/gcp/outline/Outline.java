@@ -2,6 +2,8 @@ package org.twelve.gcp.outline;
 
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.Pair;
+import org.twelve.gcp.outline.adt.Option;
+import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.primitive.*;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
@@ -149,5 +151,22 @@ public interface Outline extends Serializable {
 
     default boolean containsUnknown() {
         return false;
+    }
+
+    /**
+     * to Poly/interacted entity
+     * outline&outline
+     * @param another
+     * @return
+     */
+    default Outline interact(Outline another){
+        if(another instanceof Poly){
+            return another.interact(this);
+        }else{
+            Poly poly = Poly.create();
+           poly =  cast(poly.interact(this).interact(another));
+           if(poly.options().size()==1)return poly.options().getFirst();
+           else return poly;
+        }
     }
 }

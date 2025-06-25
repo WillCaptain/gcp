@@ -381,6 +381,26 @@ public class InferenceTest {
 
     @Test
     void test_inherited_person_entity_with_override_member() {
+        /**
+         * let person = {
+         *   get_name = ()->this.name,
+         *   get_my_name = ()->name,
+         *   name = "Will"
+         * };
+         * let name_1 = person.name;
+         * let name_2 = person.get_name();
+         * let me = person{
+         *   get_name = last_name->{
+         *     this.get_name()+last_name;
+         *     100
+         *   },
+         *   get_other_name = ()->{
+         *     get_name();
+         *     get_name("other")
+         *   }
+         * };
+         * me.get_name("Zhang");
+         */
         AST ast = ASTHelper.mockInheritedPersonEntityWithOverrideMember();
         ast.asf().infer();
         Entity person = cast(ast.program().body().statements().get(3).nodes().getFirst().nodes().getFirst().outline());

@@ -58,7 +58,6 @@ public class Entity extends ProductADT implements Projectable {
 //        this.references = references;
     }
 
-
     /**
      * union two outlines extensions to one extension
      *
@@ -134,9 +133,30 @@ public class Entity extends ProductADT implements Projectable {
 
     @Override
     public List<EntityMember> members() {
-        List<EntityMember> members = super.members();
-        List<EntityMember> base = this.baseMembers();
-        for (EntityMember member : base) {
+        return this.interact(super.members(),this.baseMembers());
+//        List<EntityMember> members = super.members();
+//        List<EntityMember> base = this.baseMembers();
+//        for (EntityMember member : base) {
+//            Optional<EntityMember> found = members.stream().filter(m -> m.name().equals(member.name())).findFirst();
+//            if (found.isPresent()) {
+//                if (!found.get().outline().equals(member.outline())) {
+//                    members.remove(found.get());
+//                    Poly overwrite = Poly.create();
+//
+//                    overwrite.sum(member.outline(), member.mutable().toBool());
+//                    overwrite.sum(found.get().outline(), found.get().mutable().toBool());
+//                    members.add(EntityMember.from(member.name(), overwrite, member.modifier()));
+//                }
+//            } else {
+//                members.add(member);
+//            }
+//        }
+//        return members;
+    }
+
+    private List<EntityMember> interact(List<EntityMember> one, List<EntityMember> another){
+        List<EntityMember> members = new ArrayList<>(one);
+        for (EntityMember member : another) {
             Optional<EntityMember> found = members.stream().filter(m -> m.name().equals(member.name())).findFirst();
             if (found.isPresent()) {
                 if (!found.get().outline().equals(member.outline())) {
@@ -152,6 +172,21 @@ public class Entity extends ProductADT implements Projectable {
             }
         }
         return members;
+    }
+
+    @Override
+    public Outline interact(Outline another) {
+        if(another instanceof Entity){
+            return Entity.from(this.interact(this.members(),((Entity) another).members()));
+        }
+        if(another instanceof Poly){
+            Outline result = this;
+            for (Outline option : ((Poly) another).options) {
+                result = result.interact(option);
+            }
+            return  result;
+        }
+        return super.interact(another);
     }
 
     private List<EntityMember> baseMembers() {
