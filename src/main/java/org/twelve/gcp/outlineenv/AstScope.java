@@ -80,8 +80,8 @@ public class AstScope implements Scope {
                         return new EnvSymbol(key, m.mutable().toBool(), m.outline(), m.node().scope(), m.node());
                     } else {
                         Poly poly = Poly.create();
-                        poly.sum(symbol.outline(), false);
-                        poly.sum(member.get().outline(), false);
+                        poly.sum(symbol.outline(), symbol.mutable());
+                        poly.sum(member.get().outline(), member.get().mutable().toBool());
                         return new EnvSymbol(key, symbol.mutable(), poly, symbol.node().scope(), symbol.node());
                     }
                 }

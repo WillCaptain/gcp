@@ -59,6 +59,12 @@ public class FixFunction  implements Projectable {
     }
 
     @Override
+    public boolean containsGeneric() {
+        return (this.argument instanceof Projectable && ((Projectable) this.argument).containsGeneric()) ||
+                ((this.returns instanceof Projectable && ((Projectable) this.returns).containsGeneric()));
+    }
+
+    @Override
     public boolean tryIamYou(Outline another) {
         Function you = null;
         if(another instanceof Function){

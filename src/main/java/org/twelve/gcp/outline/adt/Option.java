@@ -30,14 +30,14 @@ public class Option extends SumADT {
         return from(null,outlines);
     }
 
-    Option(Node node, Outline... outlines) {
+    public Option(Node node, Outline... outlines) {
         super(node, outlines);
     }
 
 
     @Override
-    protected boolean sum(Outline outline) {
-        if (!super.sum(outline)) return false;
+    public Outline sum(Outline outline) {
+//        if (!super.sum(outline)) return false;
         //添加新的option
         List<Outline> os = new ArrayList<>();
         if (outline instanceof Option) {
@@ -55,7 +55,7 @@ public class Option extends SumADT {
             }
             this.options.add(o);
         }
-        return true;
+        return this;
     }
 
     @Override
@@ -188,10 +188,13 @@ public class Option extends SumADT {
     }
 
     @Override
-    public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
+    public Outline projectMySelf(Outline projection, ProjectSession session) {
         Option copied = this.copy();
-        copied.options = this.projectList(this.options,projected,projection,session);
-        return copied;
+        copied.options.clear();
+        for (Outline outline : this.projectList(this.options, this, projection, session)) {
+            copied.sum(outline);
+        }
+        return (copied.options.size()==1) ? copied.options.getFirst():copied;
     }
 
     @Override

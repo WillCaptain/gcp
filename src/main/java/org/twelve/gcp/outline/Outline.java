@@ -1,16 +1,14 @@
 package org.twelve.gcp.outline;
 
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.primitive.*;
-import org.twelve.gcp.outline.projectable.FirstOrderFunction;
+import org.twelve.gcp.outline.projectable.Projectable;
 import org.twelve.gcp.outline.projectable.Reference;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -53,7 +51,7 @@ public interface Outline extends Serializable {
 //        return name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase();
 //    }
     default boolean equals(Outline another) {
-        return this.is(another) && another.is(this);
+        return this.is(another) && another.is(this) && !(another instanceof Projectable && ((Projectable) another).containsGeneric());
     }
 
     /**
@@ -159,14 +157,22 @@ public interface Outline extends Serializable {
      * @param another
      * @return
      */
-    default Outline interact(Outline another){
-        if(another instanceof Poly){
-            return another.interact(this);
-        }else{
-            Poly poly = Poly.create();
-           poly =  cast(poly.interact(this).interact(another));
-           if(poly.options().size()==1)return poly.options().getFirst();
-           else return poly;
-        }
-    }
+//    default Outline produce(Outline another){
+//        if(another instanceof Poly){
+//            return another.produce(this);
+//        }else{
+//            Poly poly = Poly.create();
+//           poly =  cast(poly.produce(this).produce(another));
+//           if(poly.options().size()==1)return poly.options().getFirst();
+//           else return poly;
+//        }
+//    }
+//
+//    default Outline sum(Outline another){
+//        if(another instanceof Option){
+//            return another.sum(this);
+//        }else{
+//            return Option.from(this, another);
+//        }
+//    }
 }

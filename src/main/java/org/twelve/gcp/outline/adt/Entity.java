@@ -5,7 +5,6 @@ import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
-import org.twelve.gcp.exception.GCPRuntimeException;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.expression.typeable.WrapperTypeNode;
 import org.twelve.gcp.outline.Outline;
@@ -58,23 +57,12 @@ public class Entity extends ProductADT implements Projectable {
 //        this.references = references;
     }
 
-    /**
-     * union two outlines extensions to one extension
-     *
-     * @return merged product adt
-     */
-    public static Entity produce(Node node, ProductADT you, ProductADT me) {
-        Entity entity;
-        if (you.maybe(me)) {
-            entity = new Entity(node, me.buildIn, new ArrayList<>());
-        } else if (me.maybe(you)) {
-            entity = new Entity(node, you.buildIn, new ArrayList<>());
-        } else {
-            throw new GCPRuntimeException(GCPErrCode.OUTLINE_MISMATCH);
-        }
-        entity.addMembers(you.members());
-        entity.addMembers(me.members());
-        return entity;
+    public Entity produce(Entity another) {
+        return Entity.from(this.interact(this.members(), another.members()));
+    }
+
+    public Poly produce(Poly another) {
+        return  cast(another.sum(this,false));
     }
 
     public static Entity from(Node node, ProductADT base, List<EntityMember> extended) {
@@ -120,20 +108,20 @@ public class Entity extends ProductADT implements Projectable {
     @Override
     public Entity copy(Map<Long, Outline> cache) {
         Entity copied = cast(cache.get(this.id()));
-        if(copied==null){
+        if (copied == null) {
             List<EntityMember> members = new ArrayList<>();
             for (EntityMember m : this.members()) {
-                members.add(EntityMember.from(m.name(), m.outline.copy(cache), m.modifier(), m.mutable()==Mutable.True, m.node()));
+                members.add(EntityMember.from(m.name(), m.outline.copy(cache), m.modifier(), m.mutable() == Mutable.True, m.node()));
             }
-            copied = new Entity(this.node,this.buildIn,members);
-            cache.put(this.id(),copied);
+            copied = new Entity(this.node, this.buildIn, members);
+            cache.put(this.id(), copied);
         }
         return copied;
     }
 
     @Override
     public List<EntityMember> members() {
-        return this.interact(super.members(),this.baseMembers());
+        return this.interact(super.members(), this.baseMembers());
 //        List<EntityMember> members = super.members();
 //        List<EntityMember> base = this.baseMembers();
 //        for (EntityMember member : base) {
@@ -152,41 +140,6 @@ public class Entity extends ProductADT implements Projectable {
 //            }
 //        }
 //        return members;
-    }
-
-    private List<EntityMember> interact(List<EntityMember> one, List<EntityMember> another){
-        List<EntityMember> members = new ArrayList<>(one);
-        for (EntityMember member : another) {
-            Optional<EntityMember> found = members.stream().filter(m -> m.name().equals(member.name())).findFirst();
-            if (found.isPresent()) {
-                if (!found.get().outline().equals(member.outline())) {
-                    members.remove(found.get());
-                    Poly overwrite = Poly.create();
-
-                    overwrite.sum(member.outline(), member.mutable().toBool());
-                    overwrite.sum(found.get().outline(), found.get().mutable().toBool());
-                    members.add(EntityMember.from(member.name(), overwrite, member.modifier()));
-                }
-            } else {
-                members.add(member);
-            }
-        }
-        return members;
-    }
-
-    @Override
-    public Outline interact(Outline another) {
-        if(another instanceof Entity){
-            return Entity.from(this.interact(this.members(),((Entity) another).members()));
-        }
-        if(another instanceof Poly){
-            Outline result = this;
-            for (Outline option : ((Poly) another).options) {
-                result = result.interact(option);
-            }
-            return  result;
-        }
-        return super.interact(another);
     }
 
     private List<EntityMember> baseMembers() {
@@ -231,7 +184,7 @@ public class Entity extends ProductADT implements Projectable {
                         continue;
                     }
                     //if you are genericable and i'm not, add me as your constraint
-                    if(yourMember.outline() instanceof Genericable<?,?>){
+                    if (yourMember.outline() instanceof Genericable<?, ?>) {
                         ((Genericable<?, ?>) yourMember.outline()).addHasToBe(myMember.get().outline());
                     }
                 }
@@ -273,7 +226,12 @@ public class Entity extends ProductADT implements Projectable {
 
     @Override
     public boolean emptyConstraint() {
-        return this.members().stream().map(m->m.outline).anyMatch(o-> o instanceof Projectable && ((Projectable) o).emptyConstraint());
+        return this.members().stream().map(m -> m.outline).anyMatch(o -> o instanceof Projectable && ((Projectable) o).emptyConstraint());
+    }
+
+    @Override
+    public boolean containsGeneric() {
+        return this.members().stream().map(m -> m.outline).anyMatch(o -> o instanceof Projectable && ((Projectable) o).containsGeneric());
     }
 
     @Override

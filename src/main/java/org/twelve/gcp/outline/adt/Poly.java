@@ -7,6 +7,7 @@ import org.twelve.gcp.outline.projectable.Projectable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -16,7 +17,7 @@ import static org.twelve.gcp.common.Tool.cast;
  * poly持有的每个类型都可能有不同的mutable属性
  * poly每个类型都可能对应不同的node，这在函数重复定义重载时可更清晰的表达
  */
-public class Poly extends SumADT{
+public class Poly extends SumADT {
     /**
      * meta中记录了poly对应个类型的节点和mutable信息
      */
@@ -34,7 +35,6 @@ public class Poly extends SumADT{
     /**
      * 声明式定义的poly类型这
      * 声明定义意味着该poly不能runtime sum更多类型，所以该poly的所有类型的对应节点和mutable属性是一致的
-     *
      */
     Poly(Node node, Outline... outlines) {
         super(node, outlines);
@@ -77,7 +77,7 @@ public class Poly extends SumADT{
     @Override
     public Poly copy(Map<Long, Outline> cache) {
         Poly copied = cast(cache.get(this.id()));
-        if(copied==null){
+        if (copied == null) {
             copied = Poly.from(this.node());
             for (Outline option : this.options) {
                 copied.options.add(option.copy(cache));
@@ -86,7 +86,7 @@ public class Poly extends SumADT{
                 copied.declared.add(declared.copy(cache));
             }
             copied.meta.putAll(this.meta);
-            cache.put(this.id(),copied);
+            cache.put(this.id(), copied);
         }
         return copied;
     }
@@ -131,7 +131,7 @@ public class Poly extends SumADT{
      * @return 要寻找的outline option是否mutable
      */
     public Boolean isMutable(Outline outline, boolean mutable) {
-        if(outline.node()==null) return mutable;
+        if (outline.node() == null) return mutable;
         return meta.getOrDefault(outline.node().id(), mutable);
     }
 
@@ -142,18 +142,6 @@ public class Poly extends SumADT{
      */
     private void attachMeta(Long id, boolean mutable) {
         this.meta.put(id, mutable);
-    }
-
-    @Override
-    public Outline interact(Outline another) {
-        if(another instanceof Entity){
-            return another.interact(this);
-        }else {
-            Poly poly = Poly.create();
-            poly.options.addAll(this.options);
-            poly.sum(another,false);
-            return poly;
-        }
     }
 
     /**
@@ -168,7 +156,7 @@ public class Poly extends SumADT{
         if (this.node() != null) return false;//有node，说明肯定不是隐式动态poly，不能通过let a = b新增poly.option
         Node node = outline.node();
         //如果是重复infer，则去掉上一次infer
-        if(node !=null) {
+        if (node != null) {
             for (Long id : this.meta.keySet()) {
                 if (id.equals(node.id())) {
                     this.meta.remove(id);
@@ -177,15 +165,26 @@ public class Poly extends SumADT{
                 }
             }
         }
-        boolean result = super.sum(outline);
-        if (!result) return false;
+        if (outline instanceof Entity) {
+            Optional<Entity> entity = this.options.stream().filter(o -> o instanceof Entity).map(o -> (Entity) o).findFirst();
+            if (entity.isPresent()) {
+                this.options.remove(entity.get());
+                this.options.add(entity.get().produce((Entity)outline));
+            } else {
+                super.sum(outline);
+            }
+        } else {
+            super.sum(outline);
+        }
+//        boolean result = super.sum(outline);
+//        if (!result) return false;
         if (outline instanceof Poly) {
             for (Outline option : ((Poly) outline).options) {
-                if(option.node()==null) continue;
+                if (option.node() == null) continue;
                 this.attachMeta(option.node().id(), ((Poly) outline).meta.get(option.node().id()));
             }
         } else {
-            if(outline.node()!=null) {
+            if (outline.node() != null) {
                 this.attachMeta(outline.node().id(), mutable);
             }
         }
@@ -200,9 +199,9 @@ public class Poly extends SumADT{
      * @return
      */
     @Override
-    protected boolean sum(Outline outline) {
-        if (this.node() == null) return false;//隐式动态poly，退出
-        if (!this.declared.isEmpty()) return false;//显示静态poly，退出
+    public Outline sum(Outline outline) {
+        if (this.node() == null) return this;//隐式动态poly，退出
+        if (!this.declared.isEmpty()) return this;//显示静态poly，退出
 
         if (outline instanceof Poly) {
             Poly poly = cast(outline);
@@ -211,25 +210,26 @@ public class Poly extends SumADT{
                 result = result && this.sum(this.options, option);
             }
             this.meta.putAll(poly.meta);
-            return result;
         } else {
-            return this.sum(this.options, outline);
+            this.sum(this.options, outline);
         }
+        return this;
     }
 
     @Override
     public String toString() {
-        if(options.size()==1){
-            return "Poly("+options.getFirst()+")";
-        }else {
+        if (options.size() == 1) {
+            return "Poly(" + options.getFirst() + ")";
+        } else {
             return options.stream().map(Object::toString).collect(Collectors.joining("&"));
         }
     }
+
     @Override
-    public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
+    public Outline projectMySelf(Outline projection, ProjectSession session) {
         Poly copied = this.copy();
-        copied.options = this.projectList(this.options,projected,projection,session);
-        copied.declared = this.projectList(this.declared,projected,projection,session);
+        copied.options = this.projectList(this.options, this, projection, session);
+        copied.declared = this.projectList(this.declared, this, projection, session);
         return copied;
     }
 

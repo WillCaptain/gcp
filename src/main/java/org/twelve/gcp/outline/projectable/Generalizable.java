@@ -25,4 +25,9 @@ public interface Generalizable extends Projectable,Constrainable {
     default boolean emptyConstraint() {
         return (this.max() instanceof NOTHING) && (this.min() instanceof ANY);
     }
+
+    @Override
+    default boolean containsGeneric(){
+        return true;
+    }
 }

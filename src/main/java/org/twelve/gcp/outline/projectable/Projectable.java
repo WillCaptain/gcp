@@ -41,8 +41,15 @@ public interface Projectable extends Outline {
 
     boolean emptyConstraint();
 
+    /**
+     * usually projectable contains or is generic
+     * sum adt is different, sum adt could possile contain all non generic outline
+     * @return
+     */
+     boolean containsGeneric();
+
     @Override
     default boolean equals(Outline another) {
-        return Outline.super.equals(another) && this.id()==another.id();
+        return Outline.super.equals(another) || this.id()==another.id();
     }
 }

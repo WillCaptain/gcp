@@ -96,6 +96,11 @@ public class Array extends ProductADT implements Projectable {//} implements Gen
     }
 
     @Override
+    public boolean containsGeneric() {
+        return this.itemOutline instanceof Projectable && ((Projectable) this.itemOutline).containsGeneric();
+    }
+
+    @Override
     public Array copy(Map<Long, Outline> cache) {
         Array copied = cast(cache.get(this.id()));
         if(copied==null){

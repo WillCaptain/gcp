@@ -11,10 +11,15 @@ import org.twelve.gcp.outline.builtin.ANY;
 import org.twelve.gcp.outline.builtin.NOTHING;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.twelve.gcp.common.Tool.cast;
+import static org.twelve.gcp.outline.projectable.ConstraintDirection.DOWN;
+import static org.twelve.gcp.outline.projectable.ConstraintDirection.UP;
 
 public abstract class Genericable<G extends Genericable, N extends Node> implements Generalizable, OperateAble<N> {
     protected long id;
@@ -57,28 +62,58 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
     /**
      * add constraint for extend, hasto or defined
+     *
      * @param target
      * @param constraint
      * @return
      */
-    private Outline addConstraint(Outline target, Outline constraint) {
-        if (target instanceof ANY || target instanceof NOTHING) {
+    private Outline addDownConstraint(Outline target, Outline constraint) {
+        //first time
+        if (target instanceof ANY) {
             return constraint;
         }
-        if (target instanceof Poly) {
-            ((Poly) target).sum(constraint, false);
-            return target;
+        //merge entity
+        if (target instanceof Entity && constraint instanceof Entity) {
+            return ((Entity) target).produce((Entity) constraint);
         }
-        if(target.equals(constraint)) return target;
+        //add generic
+        if (constraint instanceof Genericable<?, ?>) {
+            return new Constraints(target, cast(constraint), DOWN);
+        }
+        //return son
+        if (target instanceof Constraints) {
+            ((Constraints) target).merge(constraint);
+        } else {
+            if (constraint.is(target)) {
+                return constraint;
+            }
+            if (target.is(constraint)) {
+                return target;
+            }
+            ErrorReporter.report(this.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, constraint.toString() + " doesn't match constraints");
+        }
+        return target;
+    }
 
-
-        return target.interact(constraint);
-//        Poly result = Poly.from(this.node(), target, constraint);
-//        if(result.options().size()==1){
-//            return result.options().getFirst();
-//        }else{
-//            return result;
-//        }
+    private Outline addUpConstraint(Outline target, Outline constraint) {
+        if (target instanceof NOTHING) {
+            return constraint;
+        }
+        if (constraint instanceof Generalizable) {
+            return new Constraints(target, cast(constraint), UP);
+        }
+        if (target instanceof Constraints) {
+            ((Constraints) target).merge(constraint);
+        } else {
+            if (constraint.is(target)) {
+                return target;
+            }
+            if (target.is(constraint)) {
+                return constraint;
+            }
+            ErrorReporter.report(this.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, constraint.toString() + " doesn't match constraints");
+        }
+        return target;
     }
 
     public void addExtendToBe(Outline outline) {
@@ -95,7 +130,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             return;
         }
 
-        this.extendToBe = this.addConstraint(this.extendToBe,outline);
+        this.extendToBe = this.addUpConstraint(this.extendToBe, outline);
 
         /*
         if (this.extendToBe instanceof Poly) {
@@ -138,7 +173,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             return;
         }
 
-        this.hasToBe = this.addConstraint(this.hasToBe,outline);
+        this.hasToBe = this.addDownConstraint(this.hasToBe, outline);
 
         /*
         if (this.hasToBe instanceof Poly) {
@@ -170,7 +205,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             return false;
         }
 
-        this.definedToBe = this.addConstraint(this.definedToBe,outline);
+        this.definedToBe = this.addDownConstraint(this.definedToBe, outline);
         return true;
 
         /*
@@ -217,7 +252,17 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     public Outline max() {
-        return this.extendToBe;
+        if (this.extendToBe instanceof Option) {
+            final Option origin = cast(this.extendToBe);
+            return new Option(origin.node(), origin.options().toArray(Outline[]::new)) {
+                @Override
+                public boolean tryIamYou(Outline another) {
+                    return this.options.stream().anyMatch(o -> o.is(another));
+                }
+            };
+        } else {
+            return this.extendToBe;
+        }
     }
 
     public Outline min() {
@@ -338,12 +383,11 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (projection instanceof Array) {
             return this.projectArray(cast(projection), session);
         }
-//        if (projection.is(this)) {
-        return this.projectOutline(projection, session);
-//        } else {
-//            ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.node());
-//            return this.guess();
+
+//        if(this.min() instanceof Option || this.max() instanceof Option){
+//            return this.projectOption(projection,session);
 //        }
+        return this.projectOutline(projection, session);
     }
 
     private Outline projectArray(Array projection, ProjectSession session) {
@@ -388,7 +432,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         //return a_ -> b_
         if (b.max().is(d_) && d_.is(b.min())) {
             //b_ = b.project(d_)
-            Returnable b_ = Return.from(d_.node(),b.project(b, d_, session));
+            Returnable b_ = Return.from(d_.node(), b.project(b, d_, session));
             b_.addReturn(d_);
             //project argument again to make sure the cached projection is fetched
             if (a_ instanceof Projectable) {
@@ -405,6 +449,12 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
     }
 
+    private Outline projectOption(Outline projection, ProjectSession session) {
+        //todo
+//        if()
+        return null;
+    }
+
     private Outline projectOutline(Outline projection, ProjectSession session) {
         if (this.definedToBe instanceof Constrainable) {
             ((Constrainable) this.definedToBe).addExtendToBe(projection);
@@ -416,7 +466,11 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             ((Constrainable) this.declaredToBe).addExtendToBe(projection);
         }
         if (this.extendToBe instanceof Constrainable) {
+//            if (this.max() instanceof Option) {
+//                return ((Option) this.max()).project((Projectable) this.max(), projection, session);
+//            } else {
             ((Constrainable) this.extendToBe).addHasToBe(projection);
+//            }
         }
         return projection;
     }
@@ -437,11 +491,23 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         //project declared
         outline = projectFunctionConstraint(this.declaredToBe, outline, session);
         //extend to project
-        if (!(this.extendToBe instanceof NOTHING)) {
-            Function<?,?> extProjected = cast(outline);
+        if (this.extendToBe instanceof FirstOrderFunction) {
+            Function<?, ?> extProjected = cast(outline);
             FirstOrderFunction extProjection = cast(this.extendToBe);
-            session.disable(s-> this.projectLambda(extProjected, extProjection, s));
-//        this.projectLambda(cast(outline), cast(this.extendToBe), session);
+            session.disable(s -> this.projectLambda(extProjected, extProjection, s));
+        }
+        if (this.extendToBe instanceof Constraints) {
+            Function<?, ?> extProjected = cast(outline);
+            Constraints extProjection = cast(this.extendToBe);
+
+            for (Outline constraint : extProjection.constraints()) {
+                if (constraint instanceof Projectable) {
+                    session.disable(s -> ((Projectable) constraint).project(cast(constraint), extProjection, session));
+                }
+                if (constraint instanceof Constrainable) {
+                    ((Constrainable) constraint).addHasToBe(constraint);
+                }
+            }
         }
 
         if (outline.is(this)) {
@@ -455,10 +521,10 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     private Outline projectFunctionConstraint(Outline projected, Outline projection, ProjectSession session) {
         if (!(projected instanceof ANY)) {
             if (projected instanceof Function) {
-                projection = this.projectLambda(cast(projected), cast(projection), session);
+                return this.projectLambda(cast(projected), cast(projection), session);
             }
             if (projected instanceof Projectable) {
-                ((Projectable) projected).project(cast(projected),projection, session);
+                ((Projectable) projected).project(cast(projected), projection, session);
             }
         }
         return projection;
@@ -607,5 +673,185 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             ErrorReporter.report(node, GCPErrCode.PROJECT_FAIL, copied.extendToBe + " doesn't match " + benchMark);
         }
         return copied;
+    }
+}
+
+enum ConstraintDirection {
+    UP, DOWN
+}
+
+class Constraints implements Projectable, Constrainable {
+    private final List<Outline> constraints = new ArrayList<>();
+    private final ConstraintDirection direction;
+
+    public Constraints(Outline c1, Genericable<?, ?> c2, ConstraintDirection direction) {
+        if (c1 instanceof Constraints) {
+            for (Outline constraint : ((Constraints) c1).constraints) {
+                this.addConstraint(constraint);
+            }
+//            this.constraints.addAll(((Constraints) c1).constraints);
+        } else {
+            this.addConstraint(c1);
+//            this.constraints.add(c1);
+        }
+        this.addConstraint(c2);
+//        if (c2 instanceof Constraints) {
+//            this.constraints.addAll(((Constraints) c2).constraints);
+//        } else {
+//            this.constraints.add(c2);
+//        }
+        this.direction = direction;
+    }
+
+    private void addConstraint(Outline another) {
+        if (this.constraints.isEmpty()) {
+            this.constraints.add(another);
+            return;
+        }
+        for (Outline constraint : this.constraints) {
+            if (constraint.is(another) || another.is(constraint)) {
+                if (constraint instanceof Generalizable || another instanceof Generalizable) {
+                    this.constraints.add(another);
+                    return;
+                }
+                //only leave root
+                if (constraint.is(another) && direction == DOWN) {
+                    this.constraints.remove(constraint);
+                    this.constraints.add(another);
+                    return;
+                }
+                //only leave son
+                if (another.is(constraint) && direction == UP) {
+                    this.constraints.remove(constraint);
+                    this.constraints.add(another);
+                    return;
+                }
+            }
+        }
+        ErrorReporter.report(another.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, another + " doesn't match constraints");
+    }
+
+    private Constraints(Constraints another) {
+        this.direction = another.direction;
+        this.constraints.addAll(another.constraints);
+    }
+
+    @Override
+    public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
+        Constraints cs = this.copy();
+        cs.constraints.clear();
+        for (Outline constraint : this.constraints) {
+            Outline p = constraint;
+            if (constraint instanceof Projectable) {
+                p = ((Projectable) constraint).project(projected, projection, session);
+            }
+            if ((direction == UP) && p.is(projection) || (direction == DOWN && projection.is(p))) {
+                cs.addConstraint(p);
+            } else {
+                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL);
+            }
+        }
+        return cs.constraints.size() == 1 ? constraints.getFirst() : cs;
+    }
+
+    @Override
+    public Constraints copy() {
+        return new Constraints(this);
+    }
+
+    @Override
+    public Outline guess() {
+        Constraints cs = this.copy();
+        cs.constraints.clear();
+        for (Outline constraint : this.constraints) {
+            if (constraint instanceof Projectable) {
+                cs.constraints.add(((Projectable) constraint).guess());
+            } else {
+                cs.constraints.add(constraint);
+            }
+        }
+        return cs;
+    }
+
+    @Override
+    public boolean emptyConstraint() {
+        return this.constraints.stream().anyMatch(c -> c instanceof Projectable && ((Projectable) c).emptyConstraint());
+    }
+
+    @Override
+    public boolean containsGeneric() {
+        return true;
+    }
+
+    @Override
+    public Node node() {
+        return null;
+    }
+
+    @Override
+    public long id() {
+        return -1;
+    }
+
+    public void merge(Outline outline) {
+        Optional<Outline> maybe = this.constraints.stream().filter(c -> !(c instanceof Generalizable)).findFirst();
+        if (maybe.isPresent()) {
+            //interact entities
+            if (maybe.get() instanceof Entity && outline instanceof Entity && this.direction == DOWN) {
+                this.constraints.remove(maybe.get());
+                this.constraints.add(((Entity) maybe.get()).produce((Entity) outline));
+                return;
+            }
+            //return son
+            if (maybe.get().is(outline)) {
+                if (this.direction == DOWN) {
+                    return;
+                } else {
+                    this.constraints.remove(maybe.get());
+                    constraints.add(outline);
+                    return;
+                }
+            }
+            if (outline.is(maybe.get())) {
+                if (this.direction == UP) {
+                    return;
+                } else {
+                    this.constraints.remove(maybe.get());
+                    constraints.add(outline);
+                    return;
+                }
+            }
+            ErrorReporter.report(this.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.toString() + " doesn't match constraints");
+        } else {
+            this.constraints.add(outline);
+        }
+    }
+
+    public List<Outline> constraints() {
+        return this.constraints;
+    }
+
+    @Override
+    public boolean addDefinedToBe(Outline defined) {
+        this.constraints.stream().filter(c -> c instanceof Constrainable)
+                .forEach(c -> ((Constrainable) c).addDefinedToBe(defined));
+        return true;
+    }
+
+    @Override
+    public void addExtendToBe(Outline extend) {
+        this.constraints.stream().filter(c -> c instanceof Constrainable)
+                .forEach(c -> ((Constrainable) c).addExtendToBe(extend));
+    }
+
+    @Override
+    public void addHasToBe(Outline hasTo) {
+        this.constraints.stream().filter(c -> c instanceof Constrainable)
+                .forEach(c -> ((Constrainable) c).addHasToBe(hasTo));
+    }
+
+    @Override
+    public String toString() {
+        return "?" + this.constraints.stream().map(Object::toString).collect(Collectors.joining(",")) + "?";
     }
 }

@@ -69,4 +69,10 @@ public class NumericAble implements Projectable {
                 ((this.right instanceof Projectable && ((Projectable) this.right).emptyConstraint()));
     }
 
+    @Override
+    public boolean containsGeneric() {
+        return (this.left instanceof Projectable && ((Projectable) this.left).containsGeneric()) ||
+                ((this.right instanceof Projectable && ((Projectable) this.right).containsGeneric()));
+    }
+
 }

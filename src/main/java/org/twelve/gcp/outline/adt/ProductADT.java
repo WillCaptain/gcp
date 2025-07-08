@@ -9,10 +9,7 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -26,8 +23,7 @@ import static org.twelve.gcp.common.Tool.cast;
  */
 @Serialization
 public abstract class ProductADT extends ADT {
-//    private final ONode node;
-    //    protected long id;
+
     /**
      * Product ADT对应的基础类型
      */
@@ -182,7 +178,7 @@ public abstract class ProductADT extends ADT {
             }
             Poly overwrite = Poly.create();
             overwrite.sum(m.outline(), m.mutable().toBool());
-            overwrite.sum(member.outline(), member.mutable().toBool());
+//            overwrite.sum(member.outline(), member.mutable().toBool());
             if (overwrite.sum(member.outline(), member.mutable().toBool())) {
                 this.members.put(member.name(), EntityMember.from(m.name(), overwrite, m.modifier()));
                 return true;
@@ -209,5 +205,25 @@ public abstract class ProductADT extends ADT {
 
     public Optional<EntityMember> getMember(String name) {
         return this.members().stream().filter(m -> m.name().equals(name)).findFirst();
+    }
+
+    protected List<EntityMember> interact(List<EntityMember> one, List<EntityMember> another){
+        List<EntityMember> members = new ArrayList<>(one);
+        for (EntityMember member : another) {
+            Optional<EntityMember> found = members.stream().filter(m -> m.name().equals(member.name())).findFirst();
+            if (found.isPresent()) {
+                if (!found.get().outline().equals(member.outline())) {
+                    members.remove(found.get());
+                    Poly overwrite = Poly.create();
+
+                    overwrite.sum(member.outline(), member.mutable().toBool());
+                    overwrite.sum(found.get().outline(), found.get().mutable().toBool());
+                    members.add(EntityMember.from(member.name(), overwrite, member.modifier()));
+                }
+            } else {
+                members.add(member);
+            }
+        }
+        return members;
     }
 }

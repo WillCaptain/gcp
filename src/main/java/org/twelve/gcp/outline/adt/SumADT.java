@@ -60,21 +60,20 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
      *
      * @param outline 要添加的option
      */
-    protected boolean sum(Outline outline) {
+    public Outline sum(Outline outline) {
         //declared seals add Option
         if (!this.declared.isEmpty()) {
 //            return this.declared.stream().anyMatch(o -> outline.is(o));
-            return false;
+            return this;
         }
         if (outline instanceof SumADT) {
-            boolean result = true;
             for (Outline option : ((SumADT) outline).options) {
-                result = result && this.sum(this.options, option);
+                this.sum(this.options, option);
             }
-            return result;
         } else {
-            return this.sum(this.options, outline);
+            this.sum(this.options, outline);
         }
+        return this;
     }
 
     protected boolean sum(List<Outline> list, Outline outline) {
@@ -140,7 +139,7 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
         boolean result = true;
         for (Outline option : this.options()) {
             if (option instanceof Generalizable) {
-                result = result||((Generalizable) option).addDefinedToBe(defined);
+                result = result || ((Generalizable) option).addDefinedToBe(defined);
             }
         }
         return result;
@@ -164,12 +163,28 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
         }
     }
 
+    abstract Outline projectMySelf(Outline projection, ProjectSession session);
+    @Override
+    public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
+        if(projected.id()==this.id()){
+            return this.projectMySelf(projection,session);
+        }else{
+            SumADT sum = this.copy();
+            List<Outline> os = new ArrayList<>(sum.options);
+            sum.options.clear();
+            for (Outline option : os) {
+                if(option instanceof Projectable) sum.sum(((Projectable) option).project(projected,projection,session));
+                else sum.sum(option);
+            }
+            return sum;
+        }
+    }
     protected List<Outline> projectList(List<Outline> list, Projectable projected, Outline projection, ProjectSession session) {
         List<Outline> options = new ArrayList<>();
         for (Outline option : list) {
-            if(option instanceof Projectable) {
-                options.add(((Projectable) option).project(projected,projection,session));
-            }else{
+            if (option instanceof Projectable) {
+                options.add(((Projectable) option).project(projected, projection, session));
+            } else {
                 options.add(option);
             }
         }
@@ -177,12 +192,12 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
         return options;
     }
 
-    protected List<Outline> guessList(List<Outline> list){
+    protected List<Outline> guessList(List<Outline> list) {
         List<Outline> options = new ArrayList<>();
         for (Outline option : list) {
-            if(option instanceof Projectable) {
+            if (option instanceof Projectable) {
                 options.add(((Projectable) option).guess());
-            }else{
+            } else {
                 options.add(option);
             }
         }
@@ -191,8 +206,12 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
 
     @Override
     public boolean emptyConstraint() {
-        return this.options.stream().anyMatch(o->(o instanceof Projectable) &&
+        return this.options.stream().anyMatch(o -> (o instanceof Projectable) &&
                 ((Projectable) o).emptyConstraint());
     }
 
+    @Override
+    public boolean containsGeneric() {
+        return this.options.stream().anyMatch(o->o instanceof Projectable && ((Projectable) o).containsGeneric());
+    }
 }

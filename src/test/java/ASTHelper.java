@@ -525,24 +525,24 @@ public class ASTHelper {
         //let g = f({age=10});
         VariableDeclarator gDel = new VariableDeclarator(ast, VariableKind.LET);
         nms = new ArrayList<>();
-        nms.add(new MemberNode(new Identifier(ast,new Token<>("age")),LiteralNode.parse(ast,new Token<>(10)),false));
-        Expression fcall = new FunctionCallNode(new Identifier(ast,new Token<>("f")),new EntityNode(nms));
-        gDel.declare(new Identifier(ast,new Token<>("g")),fcall);
+        nms.add(new MemberNode(new Identifier(ast, new Token<>("age")), LiteralNode.parse(ast, new Token<>(10)), false));
+        Expression fcall = new FunctionCallNode(new Identifier(ast, new Token<>("f")), new EntityNode(nms));
+        gDel.declare(new Identifier(ast, new Token<>("g")), fcall);
         ast.addStatement(gDel);
         //let h = g(20);
         VariableDeclarator hDel = new VariableDeclarator(ast, VariableKind.LET);
-        Expression gcall = new FunctionCallNode(new Identifier(ast,new Token<>("g")),LiteralNode.parse(ast,new Token<>(20)));
-        hDel.declare(new Identifier(ast,new Token<>("h")),gcall);
+        Expression gcall = new FunctionCallNode(new Identifier(ast, new Token<>("g")), LiteralNode.parse(ast, new Token<>(20)));
+        hDel.declare(new Identifier(ast, new Token<>("h")), gcall);
         ast.addStatement(hDel);
         //f({age="10"},20);
         nms = new ArrayList<>();
-        nms.add(new MemberNode(new Identifier(ast,new Token<>("age")),LiteralNode.parse(ast,new Token<>("10")),false));
-        Expression fcall2 = new FunctionCallNode(new Identifier(ast,new Token<>("f")),new EntityNode(nms),LiteralNode.parse(ast,new Token<>(20)));
+        nms.add(new MemberNode(new Identifier(ast, new Token<>("age")), LiteralNode.parse(ast, new Token<>("10")), false));
+        Expression fcall2 = new FunctionCallNode(new Identifier(ast, new Token<>("f")), new EntityNode(nms), LiteralNode.parse(ast, new Token<>(20)));
         ast.addStatement(new ExpressionStatement(fcall2));
         //h{age="10"})
         nms = new ArrayList<>();
-        nms.add(new MemberNode(new Identifier(ast,new Token<>("age")),LiteralNode.parse(ast,new Token<>("100")),false));
-        FunctionCallNode hcall = new FunctionCallNode(new Identifier(ast,new Token<>("h")),new EntityNode(nms));
+        nms.add(new MemberNode(new Identifier(ast, new Token<>("age")), LiteralNode.parse(ast, new Token<>("100")), false));
+        FunctionCallNode hcall = new FunctionCallNode(new Identifier(ast, new Token<>("h")), new EntityNode(nms));
         ast.addStatement(new ReturnStatement(hcall));
         return ast;
     }
@@ -1239,15 +1239,18 @@ public class ASTHelper {
         return ast;
     }
 
-    public static AST mockMultiExtendProjection() {
+    public static AST mockExtendHastoDefinedProjection() {
         /**
-         * let f = (a,x,y,z)->{
-         *   x = a->{name=a,age=20};
-         *   y = z;
+         * let f = a->x->y->z->{
+         *   x = a->{name = a,age = 20};
+         *   y = x;
          *   x = z;
          *   x(a).name+x(a).age
-         * }
-         * f("Will");
+         * };
+         * let g = f("Will");
+         * let h = g(a->{name = a,age = 20});
+         * let i = h(a->{name = a,gender = "male"});
+         * i(a->{name = a,age = 20})
          */
 
         ASTBuilder builder = new ASTBuilder();
@@ -1260,39 +1263,94 @@ public class ASTHelper {
                 .buildStatement(builder.buildAssignment("x",
                         builder.buildFunc().buildArg("a").returns(
                                 builder.buildEntity()
-                                        .buildMember("name","a")
-                                        .buildMember("age",new Token<>(20))
+                                        .buildMember("name", "a")
+                                        .buildMember("age", new Token<>(20))
                                         .build())))
-                .buildStatement(builder.buildAssignment("y","x"))
-                .buildStatement(builder.buildAssignment("x","z"))
+                .buildStatement(builder.buildAssignment("y", "x"))
+                .buildStatement(builder.buildAssignment("x", "z"))
                 .returns(builder.buildBinaryOperation(
                         builder.buildMemberAccessor(
-                        builder.buildCall(builder.buildId("x"), builder.buildId("a")),"name"),"+",
+                                builder.buildCall(builder.buildId("x"), builder.buildId("a")), "name"), "+",
                         builder.buildMemberAccessor(
-                                builder.buildCall(builder.buildId("x"), builder.buildId("a")),"age")));
-        f.declare("f",func);
+                                builder.buildCall(builder.buildId("x"), builder.buildId("a")), "age")));
+        f.declare("f", func);
         VariableDeclaratorBuilder g = builder.buildVariableDeclarator(VariableKind.LET);
-        g.declare("g",builder.buildCall(builder.buildId("f"),builder.buildLiteral("Will")));
+        g.declare("g", builder.buildCall(builder.buildId("f"), builder.buildLiteral("Will")));
         VariableDeclaratorBuilder h = builder.buildVariableDeclarator(VariableKind.LET);
-        h.declare("h",builder.buildCall(builder.buildId("g"),
+        h.declare("h", builder.buildCall(builder.buildId("g"),
                 builder.buildFunc().buildArg("a").returns(
                         builder.buildEntity()
-                                .buildMember("name","a")
-                                .buildMember("age",new Token<>(20))
+                                .buildMember("name", "a")
+                                .buildMember("age", new Token<>(20))
                                 .build())));
         VariableDeclaratorBuilder i = builder.buildVariableDeclarator(VariableKind.LET);
-        i.declare("i",builder.buildCall(builder.buildId("h"),
+        i.declare("i", builder.buildCall(builder.buildId("h"),
                 builder.buildFunc().buildArg("a").returns(
-                builder.buildEntity()
-                                .buildMember("name","a")
-                                .buildMember("gender",new Token<>("male"))
+                        builder.buildEntity()
+                                .buildMember("name", "a")
+                                .buildMember("gender", new Token<>("male"))
                                 .build())));
         builder.buildReturnStatement(builder.buildCall(builder.buildId("i"),
                 builder.buildFunc().buildArg("a").returns(
-                builder.buildEntity()
-                                .buildMember("name","a")
-                                .buildMember("age",new Token<>(20))
+                        builder.buildEntity()
+                                .buildMember("name", "a")
+                                .buildMember("age", new Token<>(20))
                                 .build())));
+        return builder.ast();
+    }
+
+    public static AST mockMultiExtendProjection() {
+        /**
+         * let f = (x,y)->{
+         *   y = "Noble";
+         *   y = x;
+         *   y
+         * }
+         * let g = f("Will");
+         * g("Zhang");
+         * f(20,"Zhang");
+         */
+        ASTBuilder builder = new ASTBuilder();
+        VariableDeclaratorBuilder fBuilder = builder.buildVariableDeclarator(VariableKind.LET);
+        fBuilder.declare("f", builder
+                .buildFunc().buildArg("x").buildArg("y")
+                .buildStatement(builder.buildAssignment("y", builder.buildLiteral("Noble")))
+                .buildStatement(builder.buildAssignment("y", "x"))
+                .returns(builder.buildId("y")));
+        VariableDeclaratorBuilder gBuilder = builder.buildVariableDeclarator(VariableKind.LET);
+        gBuilder.declare("g", builder.buildCall(builder.buildId("f"), builder.buildLiteral("Will")));
+        builder.buildExpressionStatement(builder.buildCall(builder.buildId("g"), builder.buildLiteral("Zhang")));
+        builder.buildReturnStatement(builder.buildCall(builder.buildId("f"), builder.buildLiteral(20), builder.buildLiteral("Zhang")));
+        return builder.ast();
+    }
+
+    public static AST mockMultiDefinedProjection() {
+        /**
+         * let f = x->{
+         *   x.name;
+         *   x.age;
+         *   x
+         * };
+         * f({name:"Will",age:20,gender:"Male"});
+         * f({name:"Will});
+         */
+        ASTBuilder builder = new ASTBuilder();
+        VariableDeclaratorBuilder fBuilder = builder.buildVariableDeclarator(VariableKind.LET);
+        fBuilder.declare("f", builder
+                .buildFunc().buildArg("x")
+                .buildStatement(builder.buildMemberAccessor(builder.buildId("x"), "name"))
+                .buildStatement(builder.buildMemberAccessor(builder.buildId("x"), "age"))
+                .returns(builder.buildId("x")));
+        EntityNode e1 = builder.buildEntity()
+                .buildMember("name", new Token<>("Will"))
+                .buildMember("age", new Token<>(20))
+                .buildMember("gender", new Token<>("Male"))
+                .build();
+        EntityNode e2 = builder.buildEntity()
+                .buildMember("name", new Token<>("Will"))
+                .build();
+        builder.buildExpressionStatement(builder.buildCall(builder.buildId("f"), e1));
+        builder.buildExpressionStatement(builder.buildCall(builder.buildId("f"), e2));
         return builder.ast();
     }
 }

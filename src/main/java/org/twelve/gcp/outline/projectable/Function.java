@@ -89,4 +89,9 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
     public boolean emptyConstraint() {
         return (this.argument() instanceof Projectable && ((Projectable) this.argument()).emptyConstraint()) || this.returns.emptyConstraint();
     }
+
+    @Override
+    public boolean containsGeneric() {
+        return true;
+    }
 }

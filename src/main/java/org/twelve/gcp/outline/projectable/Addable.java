@@ -65,6 +65,12 @@ public class Addable implements Projectable, OperateAble {
     }
 
     @Override
+    public boolean containsGeneric() {
+        return (this.left instanceof Projectable && ((Projectable) this.left).containsGeneric()) ||
+                ((this.right instanceof Projectable && ((Projectable) this.right).containsGeneric()));
+    }
+
+    @Override
     public Addable copy() {
         return new Addable(node,left,right);
     }

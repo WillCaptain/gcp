@@ -17,7 +17,6 @@ import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.node.statement.*;
 import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.adt.Array;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Option;
@@ -27,7 +26,6 @@ import org.twelve.gcp.outline.primitive.NUMBER;
 import org.twelve.gcp.outline.primitive.STRING;
 import org.twelve.gcp.outline.projectable.*;
 
-import javax.print.DocFlavor;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -654,8 +652,8 @@ public class GCPInference {
     }
 
     @Test
-    void test_multi_extend_projection(){
-        AST ast = ASTHelper.mockMultiExtendProjection();
+    void test_extend_hasTo_defined_projection(){
+        AST ast = ASTHelper.mockExtendHastoDefinedProjection();
         assertTrue(ast.asf().infer());
         Outline outline = ast.program().body().statements().getLast().outline();
         assertEquals("String",outline.toString());
@@ -685,6 +683,48 @@ public class GCPInference {
                   name = a,
                   age = 20
                 }) : String""",ast.toString());
+    }
+
+    @Test
+    void test_multi_extend_projection(){
+        /**
+         * let f = x->y->{
+         *   y = "Noble";
+         *   y = x;
+         *   y
+         * };
+         * let g = f("Will");
+         * g("Zhang");
+         * f(20,"Zhang")
+         */
+        AST ast = ASTHelper.mockMultiExtendProjection();
+        assertTrue(ast.asf().infer());
+        Outline g = ast.program().body().statements().get(1).nodes().get(0).nodes().get(0).outline();
+        assertEquals("String->String",g.toString());
+        assertEquals("String",ast.program().body().statements().get(2).nodes().get(0).outline().toString());
+        assertEquals("String",ast.program().body().statements().get(3).nodes().get(0).outline().toString());
+        assertEquals(1,ast.errors().size());
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().getFirst().errorCode());
+    }
+    @Test
+    void test_multi_defined_projection(){
+        /**
+         * let f = x->{
+         *   x.name;
+         *   x.age;
+         *   x
+         * };
+         * f({name:"Will",age:20,gender:"Male"});
+         * f({name:"Will});
+         */
+        AST ast = ASTHelper.mockMultiDefinedProjection();
+        assertTrue(ast.asf().infer());
+        FirstOrderFunction f = cast(ast.program().body().statements().get(0).nodes().getFirst().nodes().getFirst().outline());
+        assertEquals("{name: any,age: any}->{name: any,age: any}",f.toString());
+        assertEquals("{gender: String,name: String,age: Integer}",ast.program().body().statements().get(1).nodes().get(0).outline().toString());
+        assertEquals(1,ast.errors().size());
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().getFirst().errorCode());
+        assertEquals("{\n  name = \"Will\"\n}",ast.errors().getFirst().node().toString());
     }
 
     @Test
