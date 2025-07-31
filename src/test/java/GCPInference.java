@@ -870,6 +870,22 @@ public class GCPInference {
         Outline outline_6 = ast.program().body().statements().get(10).get(0).outline();
         assertInstanceOf(INTEGER.class,outline_6);
     }
+    @Test
+    void test_tuple_projection() {
+        AST ast = ASTHelper.mockTupleProjection();
+        assertTrue(ast.asf().infer());
+        Node g = ast.program().body().statements().get(1).nodes().getFirst().nodes().getFirst();
+        Node h = ast.program().body().statements().get(2).nodes().getFirst().nodes().getFirst();
+        Node will = ast.program().body().statements().get(3).nodes().getFirst().nodes().getFirst();
+        Node age = ast.program().body().statements().get(4).nodes().getFirst().nodes().getFirst();
+
+        assertEquals("{0: {0: Integer,1: String},1: <b>}",g.outline().toString());
+        assertEquals("{0: {0: String,1: String},1: Integer}",h.outline().toString());
+        assertEquals("String",will.outline().toString());
+        assertEquals("Integer",age.outline().toString());
+        assertEquals(1,ast.errors().size());
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().getFirst().errorCode());
+    }
     private static AST mockGCPTestAst() {
         ASF asf = new ASF();
         AST ast = asf.newAST();

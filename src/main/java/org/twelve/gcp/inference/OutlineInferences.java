@@ -146,6 +146,11 @@ public class OutlineInferences implements Inferences {
     }
 
     @Override
+    public Outline visit(TupleNode tuple) {
+        return new TupleInference().infer(tuple,this);
+    }
+
+    @Override
     public Outline visit(MemberAccessor memberAccessor) {
         return new MemberAccessorInference().infer(memberAccessor, this);
     }

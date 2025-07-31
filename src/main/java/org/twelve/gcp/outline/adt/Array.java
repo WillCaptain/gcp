@@ -49,13 +49,6 @@ public class Array extends ProductADT implements Projectable {//} implements Gen
 
     @Override
     public Outline project(Reference reference, OutlineWrapper projection) {
-        /*Outline projection = this.itemOutline;
-        for (Pair<Reference, Outline> p : projections) {
-            if (p.key().id() == this.itemOutline.id()) {
-                projection = p.value();
-                break;
-            }
-        }*/
         if (reference.id() == this.itemOutline.id()) {
             return new Array(this.node, projection.outline());
         } else {
@@ -70,15 +63,23 @@ public class Array extends ProductADT implements Projectable {//} implements Gen
 
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
-        if (!projection.is(this)) {
-            ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL);
-            return this.guess();
+        if(projected.id()==this.id()) {
+            if (!projection.is(this)) {
+                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL);
+                return this.guess();
+            }
+            Array you = cast(projection);
+            if (this.itemOutline instanceof Projectable) {
+                ((Projectable) this.itemOutline).project(cast(this.itemOutline), you.itemOutline, session);
+            }
+            return projection;
+        }else{
+            if(this.itemOutline instanceof Projectable){
+                return new Array(this.node,((Projectable) this.itemOutline).project(projected,projection,session));
+            }else{
+                return this;
+            }
         }
-        Array you = cast(projection);
-        if (this.itemOutline instanceof Projectable) {
-            ((Projectable) this.itemOutline).project(cast(this.itemOutline), you.itemOutline, session);
-        }
-        return projection;
     }
 
     @Override

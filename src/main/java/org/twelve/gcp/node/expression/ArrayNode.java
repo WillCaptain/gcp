@@ -11,10 +11,16 @@ import java.util.stream.Collectors;
 
 public class ArrayNode extends Expression {
     private final Expression[] values;
+    /**
+     * processor convert array data to another value
+     */
     private Expression processor;
     private Expression step = null;
     private Expression end = null;
     private Expression begin = null;
+    /**
+     * processor only process condition satisfied data
+     */
     private Expression condition = null;
 
     public ArrayNode(AST ast, Expression[] values) {

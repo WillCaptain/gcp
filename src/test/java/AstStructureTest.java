@@ -193,6 +193,32 @@ public class AstStructureTest {
     }
 
     @Test
+    void test_tuple(){
+        AST ast =  ASTHelper.mockSimpleTuple();
+        String expected = """
+                module default
+                
+                let person = ("Will",()->this.0);
+                let name_1 = person.0;
+                let name_2 = person.1();""";
+        assertEquals(expected,ast.lexeme());
+    }
+    @Test
+    void test_tuple_type(){
+        AST ast = ASTHelper.mockTupleProjection();
+        String expected = """
+                module default
+                
+                let f = fx<a,b>(x: a)->(y: ((a, String), b))->y;
+                let h = f(100,(("Will","Zhang"),"male"));
+                let g = f("Will",(("Will","Zhang"),30));
+                let will = g.0.0;
+                let age = g.1;""";
+
+        assertEquals(expected,ast.lexeme());
+    }
+
+    @Test
     void test_poly(){
         AST ast = ASTHelper.mockDefinedPoly();
         String expected = "module default\n\nvar poly = 100&\"some\";";

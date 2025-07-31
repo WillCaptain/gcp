@@ -7,10 +7,10 @@ import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
-import org.twelve.gcp.node.expression.body.FunctionBody;
-import org.twelve.gcp.node.function.Argument;
+import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
+import org.twelve.gcp.node.expression.typeable.TupleTypeNode;
+import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.function.FunctionCallNode;
-import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.node.statement.*;
 
@@ -57,6 +57,9 @@ public class ASTBuilder {
     public MemberAccessor buildMemberAccessor(Expression host, String member) {
         return new MemberAccessor(host, buildId(member));
     }
+    public MemberAccessor buildMemberAccessor(Expression host, Integer index) {
+        return new MemberAccessor(host, index);
+    }
 
     public EntityBuilder buildEntity() {
         return new EntityBuilder(ast);
@@ -92,5 +95,22 @@ public class ASTBuilder {
 
     public BinaryExpression buildBinaryOperation(Expression lhs, String operator, Expression rhs) {
         return new BinaryExpression(lhs,rhs, new OperatorNode<>(ast, BinaryOperator.parse(operator)));
+    }
+
+    public TupleBuilder buildTuple() {
+        return new TupleBuilder(ast);
+    }
+
+    public This buildThis() {
+        return new This(ast, new Token<>("this"));
+    }
+
+    public TypeNode buildIdType(String type) {
+        return new IdentifierTypeNode(new Identifier(ast,new Token<>(type)));
+    }
+
+    public TypeNode buildTupleType(TypeNode... types) {
+        return new TupleTypeNode(Arrays.stream(types).toList());
+
     }
 }

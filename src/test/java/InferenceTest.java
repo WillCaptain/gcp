@@ -341,6 +341,24 @@ public class InferenceTest {
     }
 
     @Test
+    void test_tuple(){
+        AST ast = ASTHelper.mockSimpleTuple();
+        ast.asf().infer();
+        assertTrue(ast.asf().inferred());
+        VariableDeclarator var = cast(ast.program().body().statements().getFirst());
+        Tuple person = cast(var.assignments().getFirst().lhs().outline());
+        assertEquals(2, person.members().size());
+        EntityMember name = person.members().get(0);
+        EntityMember getName = person.members().get(1);
+        assertInstanceOf(STRING.class, name.outline());
+        assertInstanceOf(Function.class, getName.outline());
+        VariableDeclarator name1 = cast(ast.program().body().statements().get(1));
+        VariableDeclarator name2 = cast(ast.program().body().statements().get(2));
+        assertInstanceOf(STRING.class, name1.assignments().getFirst().lhs().outline());
+        assertInstanceOf(STRING.class, name2.assignments().getFirst().lhs().outline());
+    }
+
+    @Test
     void test_simple_person_entity_with_override_member() {
         /*
         module test

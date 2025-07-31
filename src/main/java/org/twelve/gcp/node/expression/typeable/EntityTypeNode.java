@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EntityTypeNode  extends TypeNode {
-    private final List<Variable> members = new ArrayList<>();
+    protected final List<Variable> members = new ArrayList<>();
     public EntityTypeNode(List<Variable> members){
         super(members.getFirst().ast());
         for (Variable member : members) {

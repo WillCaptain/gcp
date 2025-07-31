@@ -6,9 +6,7 @@ import org.twelve.gcp.node.expression.ArrayNode;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Array;
-import org.twelve.gcp.outline.builtin.Array_;
 import org.twelve.gcp.outline.projectable.Function;
-import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 

@@ -6,6 +6,7 @@ import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.FunctionBody;
+import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.node.expression.typeable.FunctionTypeNode;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.function.Argument;
@@ -20,43 +21,52 @@ import java.util.List;
 public class FunctionNodeBuilder {
     private final AST ast;
     private List<Argument> arguments = new ArrayList<>();
-    private List<Statement> statements =  new ArrayList<>();
+    private List<Statement> statements = new ArrayList<>();
+    private List<ReferenceNode> references = new ArrayList<>();
 
     public FunctionNodeBuilder(AST ast) {
         this.ast = ast;
     }
-   public FunctionNodeBuilder buildArg(String name, TypeNode declared, Expression expression){
-        this.arguments.add(new Argument(new Identifier(ast,new Token<>(name)), declared,expression));
+
+    public FunctionNodeBuilder buildArg(String name, TypeNode declared, Expression expression) {
+        this.arguments.add(new Argument(new Identifier(ast, new Token<>(name)), declared, expression));
         return this;
-   }
-    public FunctionNodeBuilder buildArg(String name, TypeNode declared){
-        return buildArg(name,declared,null);
     }
 
-    public FunctionNodeBuilder buildArg(String name){
-        return buildArg(name,null);
+    public FunctionNodeBuilder buildArg(String name, TypeNode declared) {
+        return buildArg(name, declared, null);
     }
-  public FunctionNodeBuilder buildStatement(Statement statement){
+
+    public FunctionNodeBuilder buildArg(String name) {
+        return buildArg(name, null);
+    }
+
+    public FunctionNodeBuilder buildStatement(Statement statement) {
         this.statements.add(statement);
         return this;
-  }
+    }
+
     public FunctionNodeBuilder buildStatement(Expression e) {
         this.statements.add(new ExpressionStatement(e));
         return this;
     }
 
- public FunctionNode returns(Expression expression){
-     FunctionBody body = new FunctionBody(ast);
-     Argument[] args = new Argument[arguments.size()];;
-     for(int i=0; i<args.length;i++){
-         args[i] = arguments.get(i);
-     }
-     for (Statement statement : statements) {
-         body.addStatement(statement);
-     }
-     body.addStatement(new ReturnStatement(expression));
-     return FunctionNode.from(body,args);
- }
+    public FunctionNode returns(Expression expression) {
+        FunctionBody body = new FunctionBody(ast);
+        for (Statement statement : statements) {
+            body.addStatement(statement);
+        }
+        body.addStatement(new ReturnStatement(expression));
+        return FunctionNode.from(body, references, arguments);
+    }
 
 
+    public FunctionNodeBuilder buildReference(String ref, TypeNode declared) {
+        references.add(new ReferenceNode(new Identifier(ast, new Token<>(ref)), declared));
+        return this;
+    }
+
+    public FunctionNodeBuilder buildReference(String ref) {
+        return this.buildReference(ref, null);
+    }
 }

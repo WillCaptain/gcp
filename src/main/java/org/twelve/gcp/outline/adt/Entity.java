@@ -39,7 +39,7 @@ public class Entity extends ProductADT implements Projectable {
     /**
      * Entity不是标准类型，所以一定会对应一个节点
      */
-    private final Node node;
+    protected final Node node;
 
     private Entity(Node node, ProductADT base, List<EntityMember> extended) {
         super(base == null ? Outline.Any : base.buildIn, extended);
@@ -49,7 +49,7 @@ public class Entity extends ProductADT implements Projectable {
 //        this.references = references;
     }
 
-    private Entity(Node node, BuildInOutline buildIn, List<EntityMember> members) {
+    protected Entity(Node node, BuildInOutline buildIn, List<EntityMember> members) {
         super(buildIn, members);
         this.node = node;
         this.id = Counter.getAndIncrement();
@@ -119,29 +119,6 @@ public class Entity extends ProductADT implements Projectable {
         return copied;
     }
 
-    @Override
-    public List<EntityMember> members() {
-        return this.interact(super.members(), this.baseMembers());
-//        List<EntityMember> members = super.members();
-//        List<EntityMember> base = this.baseMembers();
-//        for (EntityMember member : base) {
-//            Optional<EntityMember> found = members.stream().filter(m -> m.name().equals(member.name())).findFirst();
-//            if (found.isPresent()) {
-//                if (!found.get().outline().equals(member.outline())) {
-//                    members.remove(found.get());
-//                    Poly overwrite = Poly.create();
-//
-//                    overwrite.sum(member.outline(), member.mutable().toBool());
-//                    overwrite.sum(found.get().outline(), found.get().mutable().toBool());
-//                    members.add(EntityMember.from(member.name(), overwrite, member.modifier()));
-//                }
-//            } else {
-//                members.add(member);
-//            }
-//        }
-//        return members;
-    }
-
     private List<EntityMember> baseMembers() {
         if (this.base == null) {
             return new ArrayList<>();
@@ -155,14 +132,13 @@ public class Entity extends ProductADT implements Projectable {
     }
 
     @Override
+    public List<EntityMember> members() {
+        return this.interact(super.members(), this.baseMembers());
+    }
+
+    @Override
     public boolean inferred() {
         return this.members().stream().allMatch(m -> m.outline().inferred());
-//        for (EntityMember member : this.members()) {
-//            if (!member.outline.inferred()) {
-//                return false;
-//            }
-//        }
-//        return true;
     }
 
     @Override

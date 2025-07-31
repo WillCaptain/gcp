@@ -640,6 +640,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     protected void projectConstraints(Genericable<?, ?> me, Projectable projected, Outline projection, ProjectSession session) {
+        me.declaredToBe = tryProject(me.declaredToBe, projected, projection, session);
         me.extendToBe = tryProject(me.extendToBe, projected, projection, session);
         me.hasToBe = tryProject(me.hasToBe, projected, projection, session);
         me.definedToBe = tryProject(me.definedToBe, projected, projection, session);

@@ -54,6 +54,7 @@ public interface Inferences {
     Outline visit(ReturnStatement body);
     Outline visit(ExpressionStatement body);
     Outline visit(EntityNode entity);
+    Outline visit(TupleNode tupleNode);
     Outline visit(MemberAccessor memberAccessor);
     Outline visit(This me);
     Outline visit(Base base);

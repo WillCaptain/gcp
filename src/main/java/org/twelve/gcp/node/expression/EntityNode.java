@@ -24,7 +24,7 @@ import static org.twelve.gcp.common.Tool.cast;
 public class EntityNode extends ValueNode<EntityNode>{
     //    private final Map<String, MemberNode> members = new HashMap<>();
     private final Node base;
-    private final Long scope;
+    protected final Long scope;
 
     public EntityNode(List<MemberNode> members, Node base, Location loc) {
         super(members.getFirst().ast(), loc);

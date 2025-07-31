@@ -1,11 +1,13 @@
 package org.twelve.gcp.node.expression.accessor;
 
 import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.LiteralNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
@@ -27,6 +29,10 @@ public class MemberAccessor extends Accessor {
         this.addNode(this.entity);
         this.addNode(this.member);
     }
+    public MemberAccessor(Expression entity, Integer index) {
+        this(entity,new Identifier(entity.ast(),new Token<>(index.toString())));
+    }
+
 
     @Override
     public void assign(LocalSymbolEnvironment env, Outline inferred) {

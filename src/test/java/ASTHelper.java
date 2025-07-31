@@ -1,5 +1,6 @@
 import org.twelve.gcp.builder.ASTBuilder;
 import org.twelve.gcp.ast.*;
+import org.twelve.gcp.builder.FunctionNodeBuilder;
 import org.twelve.gcp.builder.VariableDeclaratorBuilder;
 import org.twelve.gcp.common.*;
 import org.twelve.gcp.inference.operator.BinaryOperator;
@@ -546,6 +547,41 @@ public class ASTHelper {
         ast.addStatement(new ReturnStatement(hcall));
         return ast;
     }
+    public static AST mockTupleProjection() {
+        /**
+         * let f = fx<a,b>(x:a, y:((a,String),b))->y
+         * let h = f(100,(("Will","Zhang"),“male"))
+         * let g = f("Will",(("Will","Zhang"),30));
+         * let will = g.0.0;
+         * let age = g.1;
+         */
+        ASTBuilder builder =  new ASTBuilder();
+        FunctionNodeBuilder fb = builder.buildFunc();
+        fb.buildReference("a").buildReference("b");
+        fb.buildArg("x",builder.buildIdType("a"));
+        fb.buildArg("y",builder.buildTupleType(
+                builder.buildTupleType(builder.buildIdType("a"),builder.buildIdType("String")),
+                builder.buildIdType("b")));
+        FunctionNode f = fb.returns(builder.buildId("y"));
+        builder.buildVariableDeclarator(VariableKind.LET).declare("f",f);
+        FunctionCallNode call1 = builder.buildCall(builder.buildId("f"),
+                builder.buildLiteral("Will"),
+                builder.buildTuple().add(
+                        builder.buildTuple().add(new Token<>("Will")).add(new Token<>("Zhang")).build())
+                        .add(new Token<>(30)).build());
+        FunctionCallNode call2 = builder.buildCall(builder.buildId("f"),
+                builder.buildLiteral(100),
+                builder.buildTuple().add(
+                                builder.buildTuple().add(new Token<>("Will")).add(new Token<>("Zhang")).build())
+                        .add(new Token<>("male")).build());
+        builder.buildVariableDeclarator(VariableKind.LET).declare("h",call2);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("g",call1);
+        MemberAccessor call3 = builder.buildMemberAccessor(builder.buildMemberAccessor(builder.buildId("g"), 0), 0);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("will",call3);
+        MemberAccessor call4 = builder.buildMemberAccessor(builder.buildId("g"), 1);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("age",call4);
+        return builder.ast();
+    }
 
     public static AST mockIf(SELECTION_TYPE selectionType) {
         ASF asf = new ASF();
@@ -1081,6 +1117,18 @@ public class ASTHelper {
         return ast;
     }
 
+    public static AST mockArrayAsArgument2() {
+        /*
+         * let f = (x,y:[])->{
+         *
+         * }
+         */
+        ASF asf = new ASF();
+        AST ast = asf.newAST();
+
+        return ast;
+    }
+
     public static AST mockArrayComplicatedAssign() {
         /**
          * let f = (x,y)->{
@@ -1351,6 +1399,20 @@ public class ASTHelper {
                 .build();
         builder.buildExpressionStatement(builder.buildCall(builder.buildId("f"), e1));
         builder.buildExpressionStatement(builder.buildCall(builder.buildId("f"), e2));
+        return builder.ast();
+    }
+
+    public static AST mockSimpleTuple() {
+        ASTBuilder builder = new ASTBuilder();
+        TupleNode tuple = builder.buildTuple()
+                .add(new Token<>("Will"))
+                .add(builder.buildFunc().returns(builder.buildMemberAccessor(builder.buildThis(), 0)))
+                .build();
+        builder.buildVariableDeclarator(VariableKind.LET).declare("person", tuple);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("name_1",builder.buildMemberAccessor(builder.buildId("person"), 0));
+
+        FunctionCallNode call = builder.buildCall(builder.buildMemberAccessor(builder.buildId("person"), 1));
+        builder.buildVariableDeclarator(VariableKind.LET).declare("name_2",call);
         return builder.ast();
     }
 }
