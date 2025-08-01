@@ -202,6 +202,16 @@ public class AstStructureTest {
                 let name_1 = person.0;
                 let name_2 = person.1();""";
         assertEquals(expected,ast.lexeme());
+
+        ast = ASTHelper.mockGenericTupleProjection();
+        expected = """
+                module default
+                
+                let f = (x: (?, ?))->(x.1,x.0);
+                let h = f(("Will",30));
+                let will = h.1;
+                let age = h.0;""";
+        assertEquals(expected,ast.lexeme());
     }
     @Test
     void test_tuple_type(){

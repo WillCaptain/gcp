@@ -885,6 +885,13 @@ public class GCPInference {
         assertEquals("Integer",age.outline().toString());
         assertEquals(1,ast.errors().size());
         assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().getFirst().errorCode());
+
+        ast = ASTHelper.mockGenericTupleProjection();
+        assertTrue(ast.asf().infer());
+        will = ast.program().body().statements().get(2).nodes().getFirst().nodes().getFirst();
+        age = ast.program().body().statements().get(3).nodes().getFirst().nodes().getFirst();
+        assertEquals("String",will.outline().toString());
+        assertEquals("Integer",age.outline().toString());
     }
     private static AST mockGCPTestAst() {
         ASF asf = new ASF();

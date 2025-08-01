@@ -547,6 +547,29 @@ public class ASTHelper {
         ast.addStatement(new ReturnStatement(hcall));
         return ast;
     }
+    public static AST mockGenericTupleProjection(){
+        /**
+         * let f = (x:(?,?))->(x.1,x.0)
+         * let h = f(("will",30));
+         * let will = h.1;
+         * let age = h.0;
+         */
+        ASTBuilder builder =  new ASTBuilder();
+        FunctionNodeBuilder fb = builder.buildFunc();
+        fb.buildArg("x",builder.buildTupleType(builder.buildQuestion(),builder.buildQuestion()));
+        MemberAccessor c1 = builder.buildMemberAccessor(builder.buildId("x"), 1);
+        MemberAccessor c2 = builder.buildMemberAccessor(builder.buildId("x"), 0);
+        FunctionNode f = fb.returns(builder.buildTuple().add(c1).add(c2).build());
+        builder.buildVariableDeclarator(VariableKind.LET).declare("f",f);
+        FunctionCallNode h = builder.buildCall(builder.buildId("f"),
+                builder.buildTuple().add(new Token<>("Will")).add(new Token<>(30)).build());
+        builder.buildVariableDeclarator(VariableKind.LET).declare("h",h);
+        MemberAccessor c3 = builder.buildMemberAccessor(builder.buildId("h"), 1);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("will",c3);
+        MemberAccessor c4 = builder.buildMemberAccessor(builder.buildId("h"), 0);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("age",c4);
+        return builder.ast();
+    }
     public static AST mockTupleProjection() {
         /**
          * let f = fx<a,b>(x:a, y:((a,String),b))->y

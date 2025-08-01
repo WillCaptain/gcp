@@ -8,6 +8,7 @@ import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
+import org.twelve.gcp.node.expression.typeable.Question;
 import org.twelve.gcp.node.expression.typeable.TupleTypeNode;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.function.FunctionCallNode;
@@ -112,5 +113,9 @@ public class ASTBuilder {
     public TypeNode buildTupleType(TypeNode... types) {
         return new TupleTypeNode(Arrays.stream(types).toList());
 
+    }
+
+    public TypeNode buildQuestion() {
+        return new Question(ast);
     }
 }
