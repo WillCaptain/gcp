@@ -53,7 +53,7 @@ public interface Inferences {
     Outline visit(EntityNode entity);
     Outline visit(TupleNode tupleNode);
     Outline visit(MemberAccessor memberAccessor);
-    Outline visit(This me);
+    Outline visit(ThisNode me);
     Outline visit(Base base);
     Outline visit(PolyNode poly);
     Outline visit(LiteralUnionNode union);

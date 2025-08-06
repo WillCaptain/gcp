@@ -36,4 +36,5 @@ public class UNIT implements BuildInOutline {
     public boolean beAssignedAble() {
         return false;
     }
+
 }

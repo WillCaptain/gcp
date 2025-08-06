@@ -6,10 +6,18 @@ import org.twelve.gcp.outline.builtin.Double_;
 
 public class DOUBLE extends NUMBER{
     private final static Double_ double_ = new Double_();
-    public DOUBLE(Node node){
+    public static DOUBLE create(Node node){
+        DOUBLE d = new DOUBLE(node);
+        d.init();
+        return d;
+    }
+    private DOUBLE(Node node){
         this(double_,node);
     }
     protected DOUBLE(BuildInOutline buildInOutline, Node node) {
         super(buildInOutline,node);
+    }
+    public DOUBLE(){
+        this(null);
     }
 }

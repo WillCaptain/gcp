@@ -25,7 +25,7 @@ public class AccessorGeneric extends Genericable<AccessorGeneric, Accessor> {
     }
 
     protected Outline entityOutline() {
-        return projected == null ? ((MemberAccessor) this.node()).entity().outline() : projected;
+        return projected == null ? ((MemberAccessor) this.node()).host().outline() : projected;
     }
 
     private String memberName() {

@@ -111,7 +111,8 @@ public class Entity extends ProductADT implements Projectable {
         if (copied == null) {
             List<EntityMember> members = new ArrayList<>();
             for (EntityMember m : this.members()) {
-                members.add(EntityMember.from(m.name(), m.outline.copy(cache), m.modifier(), m.mutable() == Mutable.True, m.node()));
+                if(m.isDefault()) continue;
+                members.add(EntityMember.from(m.name(), m.outline.copy(cache), m.modifier(), m.mutable() == Mutable.True, m.node(),m.isDefault()));
             }
             copied = new Entity(this.node, this.buildIn, members);
             cache.put(this.id(), copied);
@@ -194,8 +195,9 @@ public class Entity extends ProductADT implements Projectable {
     public Outline guess() {
         List<EntityMember> members = new ArrayList<>();
         for (EntityMember m : this.members()) {
+            if(m.isDefault()) continue;
             Outline guessed = m.outline() instanceof Projectable ? ((Projectable) m.outline()).guess() : m.outline();
-            members.add(EntityMember.from(m.name(), guessed, m.modifier(), m.mutable() == Mutable.True, m.node()));
+            members.add(EntityMember.from(m.name(), guessed, m.modifier(), m.mutable() == Mutable.True, m.node(),m.isDefault()));
         }
         return Entity.from(this.buildIn, members);
     }
@@ -228,7 +230,7 @@ public class Entity extends ProductADT implements Projectable {
 //                }
             }
 
-            ms.add(EntityMember.from(m.name(), mProjected, m.modifier(), m.mutable().toBool(), n));
+            ms.add(EntityMember.from(m.name(), mProjected, m.modifier(), m.mutable().toBool(), n,m.isDefault()));
         }
         if (this.base == null) {
             projected = new Entity(this.node, this.buildIn, ms);

@@ -10,6 +10,7 @@ import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.namespace.NamespaceNode;
 import org.twelve.gcp.node.statement.Statement;
 import org.twelve.gcp.outline.builtin.Module;
+import org.twelve.gcp.outline.primitive.Primitive;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 import java.util.*;
@@ -53,6 +54,7 @@ public class AST {
         this.program = new Program(this);  // Initialize root Program node
         this.symbolEnv = new LocalSymbolEnvironment(this);
         this.asf = asf;
+        Primitive.initialize();
     }
 
     // Core Methods

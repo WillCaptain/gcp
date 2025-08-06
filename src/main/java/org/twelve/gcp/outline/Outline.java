@@ -16,22 +16,21 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public interface Outline extends Serializable {
     AtomicLong Counter = new AtomicLong(100);
-    STRING String = new STRING(null);
-    DECIMAL Decimal = new DECIMAL(null);
-    DOUBLE Double = new DOUBLE(null);
-    FLOAT Float = new FLOAT(null);
-    INTEGER Integer = new INTEGER(null);
-    LONG Long = new LONG(null);
-    BOOL Boolean = new BOOL(null);
     UNIT Unit = UNIT.instance();
-    IGNORE Ignore = IGNORE.instance();
     UNKNOWN Unknown = new UNKNOWN();
+    UNKNOWN Pending = new UNKNOWN();
     NOTHING Nothing = NOTHING.instance();
-    NUMBER Number = NUMBER.instance();
     ANY Any = ANY.instance();
     ERROR Error = ERROR.instance();
-    UNKNOWN Pending = new UNKNOWN();
-//    UNKNOWN UnknownThis = new UNKNOWN();
+    IGNORE Ignore = IGNORE.instance();
+    STRING String = new STRING();
+    DECIMAL Decimal = new DECIMAL();
+    DOUBLE Double = new DOUBLE();
+    FLOAT Float = new FLOAT();
+    INTEGER Integer = new INTEGER();
+    LONG Long = new LONG();
+    BOOL Boolean = new BOOL();
+    NUMBER Number = NUMBER.instance();
 
     Node node();
 

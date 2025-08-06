@@ -24,7 +24,7 @@ import static org.twelve.gcp.common.Tool.cast;
 public class MemberAccessorInference implements Inference<MemberAccessor> {
     @Override
     public Outline infer(MemberAccessor node, Inferences inferences) {
-        Outline outline = node.entity().infer(inferences);
+        Outline outline = node.host().infer(inferences);
         if (outline instanceof UNKNOWN) return outline;//可能需要下一次推导
 
         //泛化匹配
@@ -32,7 +32,7 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
             Genericable generic = cast(outline);
             Outline defined = generic.definedToBe();
             if(defined instanceof ANY){
-                defined = Entity.from(node.entity());
+                defined = Entity.from(node.host());
                 generic.addDefinedToBe(defined);
             }
             if(defined instanceof Entity){
@@ -44,7 +44,7 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
                         return addMember(node, (Entity) option, generic);
                     }
                 }
-                Entity entity = Entity.from(node.entity());
+                Entity entity = Entity.from(node.host());
                 Outline member = addMember(node, entity, generic);
                 generic.addDefinedToBe(entity);
                 return member;
@@ -55,8 +55,8 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
             ErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
             return Outline.Error;
         }
-        ProductADT entity = cast(outline);
-        List<EntityMember> found = entity.members().stream().filter(m -> m.name().equals(node.member().name())).collect(Collectors.toList());
+        ProductADT host = cast(outline);
+        List<EntityMember> found = host.members().stream().filter(m -> m.name().equals(node.member().name())).collect(Collectors.toList());
         if (found.isEmpty()) {
             ErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
             return Outline.Error;

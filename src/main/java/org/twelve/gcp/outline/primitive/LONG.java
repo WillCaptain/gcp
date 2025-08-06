@@ -6,12 +6,19 @@ import org.twelve.gcp.outline.builtin.Long_;
 
 public class LONG extends FLOAT {
     private final static Long_ long_ = new Long_();
-
+    public static LONG create(Node node){
+        LONG l = new LONG(node);
+        l.init();
+        return l;
+    }
     protected LONG(BuildInOutline buildInOutline, Node node) {
         super(buildInOutline, node);
     }
 
-    public LONG(Node node) {
+    private LONG(Node node) {
         this(long_,node);
+    }
+    public LONG(){
+        this(null);
     }
 }

@@ -12,33 +12,35 @@ import static org.twelve.gcp.common.Tool.cast;
 public class EntityMember {
 
     private final Identifier node;
-
-    public static EntityMember from(String name, Outline outline, Modifier modifier, boolean mutable, Identifier node) {
-        return new EntityMember(name, outline, modifier, Mutable.from(mutable), node);
+    public static EntityMember from(String name, Outline outline, Modifier modifier, boolean mutable, Identifier node, Boolean isDefault) {
+        return new EntityMember(name, outline, modifier, Mutable.from(mutable), node,isDefault);
     }
 
     /**
      * no node bind  is for outline declare
      */
     public static EntityMember from(String name, Outline outline, Modifier modifier, boolean mutable) {
-        return from(name, outline, modifier, mutable, null);
+        return from(name, outline, modifier, mutable, null,false);
     }
 
     public static EntityMember from(String name, Poly outline, Modifier modifier) {
-        return new EntityMember(name, outline, modifier, Mutable.Unknown, null);
+        return new EntityMember(name, outline, modifier, Mutable.Unknown, null,false);
     }
+
 
     private final String name;
     protected Outline outline;
     private final Modifier modifier;
     private final Mutable mutable;
+    private final boolean isDefault;
 
-    private EntityMember(String name, Outline outline, Modifier modifier, Mutable mutable, Identifier node) {
+    private EntityMember(String name, Outline outline, Modifier modifier, Mutable mutable, Identifier node,Boolean isDefault) {
         this.name = name;
         this.outline = outline;
         this.modifier = modifier;
         this.mutable = mutable;
         this.node = node;
+        this.isDefault = isDefault;
     }
 
     public String name() {
@@ -64,5 +66,9 @@ public class EntityMember {
     @Override
     public String toString() {
         return this.name+": "+outline.toString();
+    }
+
+    public boolean isDefault(){
+        return this.isDefault;
     }
 }

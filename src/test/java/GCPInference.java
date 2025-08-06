@@ -512,10 +512,11 @@ public class GCPInference {
             Node call = ASTHelper.mockEntityProjection1(i, ASTHelper::mockEntityProjectionNode1);
             call.ast().asf().infer();
             Entity result = cast(call.outline());
-            assertEquals("name", result.members().get(0).name());
-            assertInstanceOf(STRING.class, result.members().get(0).outline());
-            assertEquals("age", result.members().get(1).name());
-            assertInstanceOf(INTEGER.class, result.members().get(1).outline());
+            List<EntityMember> ms =  result.members().stream().filter(m->!m.isDefault()).toList();
+            assertEquals("name", ms.get(0).name());
+            assertInstanceOf(STRING.class, ms.get(0).outline());
+            assertEquals("age", ms.get(1).name());
+            assertInstanceOf(INTEGER.class, ms.get(1).outline());
             assertTrue(call.ast().errors().isEmpty());
             assertTrue(call.ast().inferred());
         }
@@ -562,10 +563,11 @@ public class GCPInference {
             Node call = ASTHelper.mockEntityProjection1(i, ASTHelper::mockEntityProjectionNode4);
             call.ast().asf().infer();
             Entity result = cast(call.outline());
-            assertEquals("name", result.members().get(0).name());
-            assertInstanceOf(STRING.class, result.members().get(0).outline());
-            assertEquals("age", result.members().get(1).name());
-            assertInstanceOf(INTEGER.class, result.members().get(1).outline());
+            List<EntityMember> ms =  result.members().stream().filter(m->!m.isDefault()).toList();
+            assertEquals("name",ms.get(0).name());
+            assertInstanceOf(STRING.class, ms.get(0).outline());
+            assertEquals("age", ms.get(1).name());
+            assertInstanceOf(INTEGER.class, ms.get(1).outline());
         }
 
     }
@@ -584,8 +586,9 @@ public class GCPInference {
             call.ast().asf().infer();
             call.lexeme();
             Entity result = cast(call.outline());
-            assertEquals("name", result.members().getFirst().name());
-            assertInstanceOf(INTEGER.class, result.members().getFirst().outline());
+            List<EntityMember> ms =  result.members().stream().filter(m->!m.isDefault()).toList();
+            assertEquals("name", ms.getFirst().name());
+            assertInstanceOf(INTEGER.class, ms.getFirst().outline());
             assertFalse(call.ast().errors().isEmpty());
         }
 
@@ -840,8 +843,9 @@ public class GCPInference {
         assertTrue(ast.asf().infer());
         //f([{name = "Will"}]) : {name: String};
         Entity outline_1 = cast(ast.program().body().statements().get(3).get(0).outline());
-        assertEquals("name",outline_1.members().get(0).name());
-        assertInstanceOf(STRING.class,outline_1.members().get(0).outline());
+        List<EntityMember> ms =  outline_1.members().stream().filter(m->!m.isDefault()).toList();
+        assertEquals("name",ms.get(0).name());
+        assertInstanceOf(STRING.class,ms.get(0).outline());
         assertEquals(4,ast.errors().size());
         //f(100) : `any`;
         assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(1).errorCode());

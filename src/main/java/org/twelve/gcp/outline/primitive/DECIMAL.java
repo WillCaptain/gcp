@@ -6,13 +6,21 @@ import org.twelve.gcp.outline.builtin.Decimal_;
 
 public class DECIMAL extends DOUBLE {
     private final static Decimal_ decimal = new Decimal_();
-
-    public DECIMAL(Node node){
+    public static DECIMAL create(Node node){
+        DECIMAL decimal = new DECIMAL(node);
+        decimal.init();
+        return decimal;
+    }
+    private DECIMAL(Node node){
         this(decimal,node);
     }
     protected DECIMAL(BuildInOutline buildInOutline, Node node) {
         super(buildInOutline,node);
     }
+    public  DECIMAL(){
+        this(null);
+    }
+
 
 }
 

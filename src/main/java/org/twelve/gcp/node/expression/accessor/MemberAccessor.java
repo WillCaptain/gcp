@@ -1,13 +1,11 @@
 package org.twelve.gcp.node.expression.accessor;
 
-import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
-import org.twelve.gcp.node.expression.LiteralNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
@@ -19,28 +17,28 @@ import static org.twelve.gcp.common.Tool.cast;
  * a.b
  */
 public class MemberAccessor extends Accessor {
-    private final Expression entity;
+    private final Expression productADT;
     private final Identifier member;
 
-    public MemberAccessor(Expression entity, Identifier member) {
-        super(entity.ast());
-        this.entity = entity;
+    public MemberAccessor(Expression host, Identifier member) {
+        super(host.ast());
+        this.productADT = host;
         this.member = member;
-        this.addNode(this.entity);
+        this.addNode(this.productADT);
         this.addNode(this.member);
     }
-    public MemberAccessor(Expression entity, Integer index) {
-        this(entity,new Identifier(entity.ast(),new Token<>(index.toString())));
+    public MemberAccessor(Expression host, Integer index) {
+        this(host,new Identifier(host.ast(),new Token<>(index.toString())));
     }
 
 
     @Override
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
         if (this.outline == Outline.Error) return;
-        ProductADT owner = cast(this.entity.outline());
+        ProductADT owner = cast(this.productADT.outline());
         if (!owner.checkMember(member.name(), inferred)) {
             ErrorReporter.report(this, GCPErrCode.FIELD_NOT_FOUND,
-                    member.name() + " not found in " + this.entity);
+                    member.name() + " not found in " + this.productADT);
         }
     }
 
@@ -49,8 +47,8 @@ public class MemberAccessor extends Accessor {
         return inferences.visit(this);
     }
 
-    public Expression entity() {
-        return this.entity;
+    public Expression host() {
+        return this.productADT;
     }
 
     public Identifier member() {
@@ -59,7 +57,7 @@ public class MemberAccessor extends Accessor {
 
     @Override
     public String lexeme() {
-        return entity.lexeme().split(":")[0].trim() + "." + member.lexeme();
+        return productADT.lexeme().split(":")[0].trim() + "." + member.lexeme();
     }
 
     @Override

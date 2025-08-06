@@ -8,8 +8,8 @@ import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
-public class This extends Identifier{
-    public This(AST ast, Token token) {
+public class ThisNode extends Identifier{
+    public ThisNode(AST ast, Token<String> token) {
         super(ast, token);
     }
 

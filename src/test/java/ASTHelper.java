@@ -195,7 +195,7 @@ public class ASTHelper {
 
 
         FunctionBody body = new FunctionBody(ast);
-        MemberAccessor accessor = new MemberAccessor(new This(ast, new Token<>("this")), new Identifier(ast, new Token<>("name")));
+        MemberAccessor accessor = new MemberAccessor(new ThisNode(ast, new Token<>("this")), new Identifier(ast, new Token<>("name")));
         body.addStatement(new ReturnStatement(accessor));
         members.add(new MemberNode(new Identifier(ast, new Token<>("get_name")),
                 FunctionNode.from(body), false));
@@ -232,7 +232,7 @@ public class ASTHelper {
 //        Pair<Node, Modifier> getName = new Pair<>(FunctionNode.from(body, new Argument(ast, new Token<>("last_name"))), Modifier.PUBLIC);
         body.addStatement(new ReturnStatement(
                 new BinaryExpression(
-                        new MemberAccessor(new This(ast, new Token<>("this")), new Identifier(ast, new Token<>("name"))),
+                        new MemberAccessor(new ThisNode(ast, new Token<>("this")), new Identifier(ast, new Token<>("name"))),
                         new Identifier(ast, new Token<>("last_name")),
                         new OperatorNode<>(ast, BinaryOperator.ADD))));
         VariableDeclarator var = cast(ast.program().body().statements().getFirst());
@@ -279,7 +279,7 @@ public class ASTHelper {
     public static AST mockInheritedPersonEntityWithOverrideMember() {
         AST ast = mockSimplePersonEntity();
 
-        MemberAccessor accessor = new MemberAccessor(new This(ast, new Token<>("this")), new Identifier(ast, new Token<>("get_name")));
+        MemberAccessor accessor = new MemberAccessor(new ThisNode(ast, new Token<>("this")), new Identifier(ast, new Token<>("get_name")));
         FunctionCallNode call = new FunctionCallNode(accessor);
 
         FunctionBody body = new FunctionBody(ast);

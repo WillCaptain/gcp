@@ -4,17 +4,13 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.SCOPE_TYPE;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
-import org.twelve.gcp.node.expression.This;
+import org.twelve.gcp.node.expression.ThisNode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.adt.ProductADT;
-import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outlineenv.AstScope;
 
-import static org.twelve.gcp.common.Tool.cast;
-
-public class ThisInference implements Inference<This> {
+public class ThisInference implements Inference<ThisNode> {
     @Override
-    public Outline infer(This node, Inferences inferences) {
+    public Outline infer(ThisNode node, Inferences inferences) {
         return findEntity(node);
     }
 

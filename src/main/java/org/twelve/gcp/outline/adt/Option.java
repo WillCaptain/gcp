@@ -127,12 +127,14 @@ public class Option extends SumADT {
     private List<EntityMember> interactMembers(List<EntityMember> members1, List<EntityMember> members2) {
         List<EntityMember> interacted = new ArrayList<>();
         for (EntityMember m1 : members1) {
+            if(m1.isDefault()) continue;
             for (EntityMember m2 : members2) {
                 if (!m1.name().equals(m2)) continue;
+                if(m2.isDefault()) continue;;
                 Outline o = interact(m1.outline(), m2.outline());
                 if (o == Nothing) continue;
                 //交集默认mutable为false，并且没有绑定的node
-                interacted.add(EntityMember.from(m1.name(), o, m1.modifier().mostPermissive(m2.modifier()), false, null));
+                interacted.add(EntityMember.from(m1.name(), o, m1.modifier().mostPermissive(m2.modifier()), false, null,false));
             }
         }
 //        members1.forEach((k, v1) -> {

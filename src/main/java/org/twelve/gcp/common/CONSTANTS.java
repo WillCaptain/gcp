@@ -31,4 +31,5 @@ public class CONSTANTS {
     public static final int MAX_INFER_TIMES = 2;
     public static final long OUTLINE_WRAPPER = 51;
     public static final String ANY_STR = "`any`";
+    public static final String TO_STR = "to_str";
 }

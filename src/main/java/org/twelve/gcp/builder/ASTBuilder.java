@@ -1,6 +1,5 @@
 package org.twelve.gcp.builder;
 
-import com.sun.source.tree.ArrayAccessTree;
 import org.twelve.gcp.ast.ASF;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
@@ -105,8 +104,8 @@ public class ASTBuilder {
         return new TupleBuilder(ast);
     }
 
-    public This buildThis() {
-        return new This(ast, new Token<>("this"));
+    public ThisNode buildThis() {
+        return new ThisNode(ast, new Token<>("this"));
     }
 
     public TypeNode buildIdType(String type) {
@@ -140,5 +139,9 @@ public class ASTBuilder {
 
     public Expression buildRefCall(Identifier host, TypeNode... refs) {
         return new ReferenceCallNode(host,refs);
+    }
+
+    public Expression buildBool(String bool) {
+        return new BoolNode(ast,new Token<>(bool));
     }
 }

@@ -3,6 +3,7 @@ import org.twelve.gcp.ast.ASF;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
+import org.twelve.gcp.builder.ASTBuilder;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.operator.BinaryOperator;
@@ -325,10 +326,11 @@ public class InferenceTest {
         assertTrue(ast.asf().inferred());
         VariableDeclarator var = cast(ast.program().body().statements().getFirst());
         Entity person = cast(var.assignments().getFirst().lhs().outline());
-        assertEquals(3, person.members().size());
-        EntityMember name = person.members().get(0);
-        EntityMember getName = person.members().get(1);
-        EntityMember getName2 = person.members().get(2);
+        List<EntityMember> ms = person.members().stream().filter(m->!m.isDefault()).toList();
+        assertEquals(3, ms.size());
+        EntityMember name = ms.get(0);
+        EntityMember getName = ms.get(1);
+        EntityMember getName2 = ms.get(2);
         assertInstanceOf(STRING.class, name.outline());
         assertInstanceOf(Function.class, getName.outline());
         assertInstanceOf(STRING.class, ((Function<?, ?>) getName.outline()).returns().supposedToBe());
@@ -347,9 +349,10 @@ public class InferenceTest {
         assertTrue(ast.asf().inferred());
         VariableDeclarator var = cast(ast.program().body().statements().getFirst());
         Tuple person = cast(var.assignments().getFirst().lhs().outline());
-        assertEquals(2, person.members().size());
-        EntityMember name = person.members().get(0);
-        EntityMember getName = person.members().get(1);
+        List<EntityMember> ms = person.members().stream().filter(m->!m.isDefault()).toList();
+        assertEquals(2, ms.size());
+        EntityMember name = ms.get(0);
+        EntityMember getName = ms.get(1);
         assertInstanceOf(STRING.class, name.outline());
         assertInstanceOf(Function.class, getName.outline());
         VariableDeclarator name1 = cast(ast.program().body().statements().get(1));
@@ -374,8 +377,9 @@ public class InferenceTest {
         ast.asf().infer();
         VariableDeclarator var = cast(ast.program().body().statements().getFirst());
         Entity person = cast(var.assignments().getFirst().lhs().outline());
-        assertEquals(2, person.members().size());
-        EntityMember getName = person.members().get(1);
+        List<EntityMember> ms =  person.members().stream().filter(m->!m.isDefault()).toList();
+        assertEquals(2, ms.size());
+        EntityMember getName = ms.get(1);
         assertInstanceOf(Poly.class, getName.outline());
         Poly outline = cast(getName.outline());
         Function<?, ?> f1 = cast(outline.options().get(0));
@@ -391,8 +395,9 @@ public class InferenceTest {
         AST ast = ASTHelper.mockInheritedPersonEntity();
         ast.asf().infer();
         Entity person = cast(ast.program().body().statements().get(3).nodes().get(0).nodes().get(0).outline());
-        assertEquals(4, person.members().size());
-        EntityMember getFullName = person.members().getFirst();
+        List<EntityMember> ms =  person.members().stream().filter(m->!m.isDefault()).toList();
+        assertEquals(4, ms.size());
+        EntityMember getFullName = ms.getFirst();
         assertInstanceOf(Function.class, getFullName.outline());
         assertInstanceOf(STRING.class, ((Function<?, ?>) getFullName.outline()).returns().supposedToBe());
     }
@@ -422,7 +427,7 @@ public class InferenceTest {
         AST ast = ASTHelper.mockInheritedPersonEntityWithOverrideMember();
         ast.asf().infer();
         Entity person = cast(ast.program().body().statements().get(3).nodes().getFirst().nodes().getFirst().outline());
-        List<EntityMember> members = person.members();
+        List<EntityMember> members = person.members().stream().filter(m->!m.isDefault()).toList();
         assertEquals(4, members.size());
         assertInstanceOf(STRING.class, members.get(1).outline());
         assertInstanceOf(Poly.class, members.get(2).outline());
@@ -447,12 +452,14 @@ public class InferenceTest {
         ast.asf().infer();
         Assignment a = ((VariableDeclarator) ast.program().body().statements().get(0)).assignments().getFirst();
         Entity ea = cast(a.lhs().outline());
-        assertEquals("name", ea.members().get(0).name());
-        assertEquals("String", ea.members().get(0).outline().toString());
+        List<EntityMember> ms = ea.members().stream().filter(m -> !m.isDefault()).toList();
+        assertEquals("name", ms.get(0).name());
+        assertEquals("String", ms.get(0).outline().toString());
         Assignment b = ((VariableDeclarator) ast.program().body().statements().get(1)).assignments().getFirst();
         Entity eb = cast(b.lhs().outline());
-        assertEquals("name", eb.members().get(0).name());
-        assertEquals("Integer", eb.members().get(0).outline().toString());
+        ms = eb.members().stream().filter(m -> !m.isDefault()).toList();
+        assertEquals("name", ms.get(0).name());
+        assertEquals("Integer", ms.get(0).outline().toString());
         assertEquals(1, ast.errors().size());
         assertEquals(b.rhs(), ast.errors().get(0).node());
     }
@@ -564,8 +571,9 @@ public class InferenceTest {
         Function<?, ?> g = cast(((VariableDeclarator) ast.program().body().get(0)).assignments().get(0).rhs().outline());
         Entity entity = cast(g.returns().supposedToBe());
         Reference z = cast(entity.members().getLast().node().outline());
+        List<EntityMember> ms = entity.members().stream().filter(m->!m.isDefault()).toList();
         //(x,y)->y
-        Function<?, Genericable<?, ?>> f = cast(entity.members().getFirst().outline());
+        Function<?, Genericable<?, ?>> f = cast(ms.getFirst().outline());
         assertEquals("a", z.name());
         assertInstanceOf(INTEGER.class, z.extendToBe());
         assertEquals("b", f.argument().name());
@@ -575,8 +583,30 @@ public class InferenceTest {
     }
 
     @Test
-    void test_inference_of_reference_in_inherited_entity() {
-//todo
+    void test_inference_of_basic_adt() {
+        /**
+         * let x = 100;
+         * x.to_str()
+         * let s = "str"
+         * s.to_str()
+         * let b = true;
+         * b.to_str()
+         */
+        ASTBuilder builder = new ASTBuilder();
+        builder.buildVariableDeclarator(VariableKind.LET).declare("x",builder.buildLiteral(100));
+        builder.buildReturnStatement(builder.buildCall(builder.buildMemberAccessor(builder.buildId("x"),"to_str")));
+        builder.buildVariableDeclarator(VariableKind.LET).declare("s",builder.buildLiteral("str"));
+        builder.buildReturnStatement(builder.buildCall(builder.buildMemberAccessor(builder.buildId("s"),"to_str")));
+        builder.buildVariableDeclarator(VariableKind.LET).declare("b",builder.buildBool("true"));
+        builder.buildReturnStatement(builder.buildCall(builder.buildMemberAccessor(builder.buildId("b"),"to_str")));
+        AST ast = builder.ast();
+        assertTrue(ast.asf().infer());
+        assertEquals("Integer",ast.program().body().statements().get(0).get(0).get(0).outline().toString());
+        assertEquals("String",ast.program().body().statements().get(1).outline().toString());
+        assertEquals("String",ast.program().body().statements().get(2).get(0).get(0).outline().toString());
+        assertEquals("String",ast.program().body().statements().get(3).outline().toString());
+        assertEquals("Bool",ast.program().body().statements().get(4).get(0).get(0).outline().toString());
+        assertEquals("String",ast.program().body().statements().get(5).outline().toString());
     }
 
     @Test

@@ -163,7 +163,7 @@ public class OutlineInferences implements Inferences {
     }
 
     @Override
-    public Outline visit(This me) {
+    public Outline visit(ThisNode me) {
         return new ThisInference().infer(me, this);
     }
 

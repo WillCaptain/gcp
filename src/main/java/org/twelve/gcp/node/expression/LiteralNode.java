@@ -2,11 +2,14 @@ package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
+import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.ValueNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.primitive.*;
+import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 import java.math.BigDecimal;
 
@@ -28,25 +31,25 @@ public class LiteralNode<T> extends ValueNode<LiteralNode<?>> {
     }
     private ProductADT createOutline(T value){
         if (value instanceof String) {
-            return new STRING(this);
+            return STRING.create(this);
         }
         if (value instanceof BigDecimal) {
-            return new DECIMAL(this);
+            return DECIMAL.create(this);
         }
         if (value instanceof Double) {
-            return new DOUBLE(this);
+            return DOUBLE.create(this);
         }
         if (value instanceof Float) {
-            return new FLOAT(this);
+            return FLOAT.create(this);
         }
         if (value instanceof Long) {
-            return new LONG(this);
+            return LONG.create(this);
         }
         if (value instanceof Integer) {
-            return new INTEGER(this);
+            return INTEGER.create(this);
         }
         if (value instanceof Boolean) {
-            return new BOOL(this);
+            return new BOOL();
         }
         return Outline.String;
     }

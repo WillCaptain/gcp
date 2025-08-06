@@ -13,24 +13,24 @@ public class BitwiseInference implements OperatorInference {
     public Outline infer(Outline left, Outline right, BinaryExpression node) {
         // Bitwise operators operate on integer types
         if (left instanceof INTEGER && right instanceof INTEGER) {
-            return new INTEGER(node);
+            return INTEGER.create(node);
         }
         if (left instanceof INTEGER && right instanceof Genericable<?,?>) {
-            INTEGER r = new INTEGER(right.node());
+            INTEGER r = INTEGER.create(right.node());
             ((Genericable<?,?>) right).addDefinedToBe(r);
             return r;
         }
         if (right instanceof INTEGER && left instanceof Genericable<?,?>) {
-            INTEGER l = new INTEGER(left.node());
+            INTEGER l = INTEGER.create(left.node());
             ((Genericable<?,?>) left).addDefinedToBe(l);
             return l;
         }
         if (left instanceof Generic && right instanceof Genericable<?,?>) {
-            INTEGER l = new INTEGER(left.node());
-            INTEGER r = new INTEGER(right.node());
+            INTEGER l = INTEGER.create(left.node());
+            INTEGER r = INTEGER.create(right.node());
             ((Genericable<?,?>) left).addDefinedToBe(l);
             ((Genericable<?,?>) right).addDefinedToBe(r);
-            return new INTEGER(node);
+            return INTEGER.create(node);
         }
         ErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);
         return Outline.Error;

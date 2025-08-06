@@ -37,7 +37,7 @@ public abstract class ProductADT extends ADT {
      */
 //    protected final Map<String, EntityField> fields = new HashMap<>();
 
-    protected final Map<String, EntityMember> members = new HashMap<>();
+
 
     protected ProductADT(BuildInOutline buildIn) {
 //        this.node = node;
@@ -113,7 +113,8 @@ public abstract class ProductADT extends ADT {
             copied = cast(super.copy());
             ProductADT finalCopied = copied;
             this.members.forEach((k, v)->{
-                finalCopied.members.put(k,EntityMember.from(v.name(), v.outline.copy(cache), v.modifier(), v.mutable()==Mutable.True, v.node()));
+               if(v.isDefault()) return;
+                finalCopied.members.put(k,EntityMember.from(v.name(), v.outline.copy(cache), v.modifier(), v.mutable()==Mutable.True, v.node(),v.isDefault()));
             });
             cache.put(this.id(),copied);
         }
@@ -123,7 +124,7 @@ public abstract class ProductADT extends ADT {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("{");
-        List<EntityMember> ms = this.members();
+        List<EntityMember> ms = this.members().stream().filter(m->!m.isDefault()).toList();
         for (int i = 0; i < ms.size(); i++) {
             sb.append(ms.get(i).toString() + (i == ms.size() - 1 ? "" : ","));
         }
@@ -132,7 +133,7 @@ public abstract class ProductADT extends ADT {
     }
 
     public List<EntityMember> members() {
-        return members.values().stream().collect(Collectors.toList());
+        return members.values().stream().toList();
     }
 
     /**
@@ -194,7 +195,7 @@ public abstract class ProductADT extends ADT {
     }
 
     public boolean addMember(String name, Outline outline, Modifier modifier, Boolean mutable, Identifier node) {
-        return this.addMember(EntityMember.from(name, outline, modifier, mutable, node));
+        return this.addMember(EntityMember.from(name, outline, modifier, mutable, node,false));
     }
 
     public boolean checkMember(String name, Outline outline) {
