@@ -26,6 +26,7 @@ public class CONSTANTS {
     public static final long PENDING_INDEX = 17;
     public static final long BODY_INDEX = 18;
     public static final long ARRAY_INDEX = 19;
+    public static final long DICT_INDEX = 20;
     public static final String MISMATCH_STR = " mismatch with ";
     public static final int MAX_INFER_TIMES = 2;
     public static final long OUTLINE_WRAPPER = 51;

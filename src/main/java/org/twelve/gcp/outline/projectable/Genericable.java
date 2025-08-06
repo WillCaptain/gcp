@@ -131,23 +131,6 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         }
 
         this.extendToBe = this.addUpConstraint(this.extendToBe, outline);
-
-        /*
-        if (this.extendToBe instanceof Poly) {
-            ((Poly) this.extendToBe).sum(outline, true);
-            return;
-        }
-        //留下基类
-        if (this.extendToBe.is(outline)) {
-            this.extendToBe = outline;
-            return;
-        }
-        if (outline.is(this.extendToBe)) {
-            return;
-        }
-        ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL);
-        */
-
     }
 
     private void addDeclaredToBe(Outline declared) {
@@ -174,22 +157,6 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         }
 
         this.hasToBe = this.addDownConstraint(this.hasToBe, outline);
-
-        /*
-        if (this.hasToBe instanceof Poly) {
-            ((Poly) this.hasToBe).sum(outline, true);
-            return;
-        }
-
-        if (outline.is(this.hasToBe)) {
-            this.hasToBe = outline;
-            return;
-        }
-
-        if (!this.hasToBe.is((outline))) {
-            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + this.hasToBe);
-        }
-         */
     }
 
     @Override
@@ -207,48 +174,6 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
         this.definedToBe = this.addDownConstraint(this.definedToBe, outline);
         return true;
-
-        /*
-        //第一次赋值，直接赋值并退出
-        if (this.definedToBe == Any) {
-            this.definedToBe = outline;
-            return;
-        }
-
-        //得子类
-        if (this.definedToBe.is(outline) || outline.is(this.definedToBe)) {
-//            if (this.definedToBe.is(outline)) this.definedToBe = outline;
-            if (outline.is(this.definedToBe)) this.definedToBe = outline;
-            return;
-        }
-
-        //非第一次赋值，先满足基础类型的相互is关系，否则退出
-        if (!(outline.maybe(this) || this.maybe(outline))) {
-            ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL,
-                    outline.node() + CONSTANTS.MISMATCH_STR + this);
-            return;
-        }
-        //finally, should be entity combine
-        if (definedToBe instanceof ProductADT) {
-            if (outline instanceof ProductADT) {
-                this.definedToBe = Entity.produce(this.node, cast(this.definedToBe), cast(outline));
-            } else {
-                if (this.definedToBe.maybe(outline)) {
-                    List<EntityMember> members = ((ProductADT) this.definedToBe).members();
-                    this.definedToBe = Entity.from(this.node, cast(outline));
-                    ((Entity) this.definedToBe).addMembers(members);
-                }
-            }
-        } else {
-            if (outline instanceof ProductADT && outline.maybe(this.definedToBe)) {
-                List<EntityMember> members = ((ProductADT) outline).members();
-                this.definedToBe = Entity.from(this.node, cast(this.definedToBe));
-                ((Entity) this.definedToBe).addMembers(members);
-            } else {
-                ErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL);
-            }
-        }
-         */
     }
 
     public Outline max() {
@@ -314,11 +239,6 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         return this.definedToBe;
     }
 
-//    @Override
-//    public boolean isEmpty() {
-//        return (this.max() instanceof NOTHING) && (this.min() instanceof ANY);
-//    }
-
     @Override
     public boolean tryIamYou(Outline another) {
         if (this.emptyConstraint()) return true;
@@ -380,17 +300,13 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (projection instanceof Entity) {
             return this.projectEntity(cast(projection), session);
         }
-        if (projection instanceof Array) {
+        if (projection instanceof DictOrArray<?>) {
             return this.projectArray(cast(projection), session);
         }
-
-//        if(this.min() instanceof Option || this.max() instanceof Option){
-//            return this.projectOption(projection,session);
-//        }
         return this.projectOutline(projection, session);
     }
 
-    private Outline projectArray(Array projection, ProjectSession session) {
+    private Outline projectArray(DictOrArray<?> projection, ProjectSession session) {
         if (this.extendToBe() instanceof Projectable) {
             ((Projectable) this.extendToBe()).project(cast(this.extendToBe()), projection, session);
         }
@@ -447,12 +363,6 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         }
 
 
-    }
-
-    private Outline projectOption(Outline projection, ProjectSession session) {
-        //todo
-//        if()
-        return null;
     }
 
     private Outline projectOutline(Outline projection, ProjectSession session) {

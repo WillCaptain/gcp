@@ -547,29 +547,31 @@ public class ASTHelper {
         ast.addStatement(new ReturnStatement(hcall));
         return ast;
     }
-    public static AST mockGenericTupleProjection(){
+
+    public static AST mockGenericTupleProjection() {
         /**
          * let f = (x:(?,?))->(x.1,x.0)
          * let h = f(("will",30));
          * let will = h.1;
          * let age = h.0;
          */
-        ASTBuilder builder =  new ASTBuilder();
+        ASTBuilder builder = new ASTBuilder();
         FunctionNodeBuilder fb = builder.buildFunc();
-        fb.buildArg("x",builder.buildTupleType(builder.buildQuestion(),builder.buildQuestion()));
+        fb.buildArg("x", builder.buildTupleType(builder.buildQuestion(), builder.buildQuestion()));
         MemberAccessor c1 = builder.buildMemberAccessor(builder.buildId("x"), 1);
         MemberAccessor c2 = builder.buildMemberAccessor(builder.buildId("x"), 0);
         FunctionNode f = fb.returns(builder.buildTuple().add(c1).add(c2).build());
-        builder.buildVariableDeclarator(VariableKind.LET).declare("f",f);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("f", f);
         FunctionCallNode h = builder.buildCall(builder.buildId("f"),
                 builder.buildTuple().add(new Token<>("Will")).add(new Token<>(30)).build());
-        builder.buildVariableDeclarator(VariableKind.LET).declare("h",h);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("h", h);
         MemberAccessor c3 = builder.buildMemberAccessor(builder.buildId("h"), 1);
-        builder.buildVariableDeclarator(VariableKind.LET).declare("will",c3);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("will", c3);
         MemberAccessor c4 = builder.buildMemberAccessor(builder.buildId("h"), 0);
-        builder.buildVariableDeclarator(VariableKind.LET).declare("age",c4);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("age", c4);
         return builder.ast();
     }
+
     public static AST mockTupleProjection() {
         /**
          * let f = fx<a,b>(x:a, y:((a,String),b))->y
@@ -578,31 +580,31 @@ public class ASTHelper {
          * let will = g.0.0;
          * let age = g.1;
          */
-        ASTBuilder builder =  new ASTBuilder();
+        ASTBuilder builder = new ASTBuilder();
         FunctionNodeBuilder fb = builder.buildFunc();
         fb.buildReference("a").buildReference("b");
-        fb.buildArg("x",builder.buildIdType("a"));
-        fb.buildArg("y",builder.buildTupleType(
-                builder.buildTupleType(builder.buildIdType("a"),builder.buildIdType("String")),
+        fb.buildArg("x", builder.buildIdType("a"));
+        fb.buildArg("y", builder.buildTupleType(
+                builder.buildTupleType(builder.buildIdType("a"), builder.buildIdType("String")),
                 builder.buildIdType("b")));
         FunctionNode f = fb.returns(builder.buildId("y"));
-        builder.buildVariableDeclarator(VariableKind.LET).declare("f",f);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("f", f);
         FunctionCallNode call1 = builder.buildCall(builder.buildId("f"),
                 builder.buildLiteral("Will"),
                 builder.buildTuple().add(
-                        builder.buildTuple().add(new Token<>("Will")).add(new Token<>("Zhang")).build())
+                                builder.buildTuple().add(new Token<>("Will")).add(new Token<>("Zhang")).build())
                         .add(new Token<>(30)).build());
         FunctionCallNode call2 = builder.buildCall(builder.buildId("f"),
                 builder.buildLiteral(100),
                 builder.buildTuple().add(
                                 builder.buildTuple().add(new Token<>("Will")).add(new Token<>("Zhang")).build())
                         .add(new Token<>("male")).build());
-        builder.buildVariableDeclarator(VariableKind.LET).declare("h",call2);
-        builder.buildVariableDeclarator(VariableKind.LET).declare("g",call1);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("h", call2);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("g", call1);
         MemberAccessor call3 = builder.buildMemberAccessor(builder.buildMemberAccessor(builder.buildId("g"), 0), 0);
-        builder.buildVariableDeclarator(VariableKind.LET).declare("will",call3);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("will", call3);
         MemberAccessor call4 = builder.buildMemberAccessor(builder.buildId("g"), 1);
-        builder.buildVariableDeclarator(VariableKind.LET).declare("age",call4);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("age", call4);
         return builder.ast();
     }
 
@@ -914,12 +916,23 @@ public class ASTHelper {
         return ast;
     }
 
+    public static AST mockMapDefinition() {
+        /*
+         * let a = ["will":30,"evan":20];
+         * let b:[String:Integer]= [:];
+         */
+        ASTBuilder builder = new ASTBuilder();
+
+        return builder.ast();
+    }
+
     public static AST mockArrayDefinition() {
         /*
          * let a = [1,2,3,4];
          * let b:[String]= [];
          * let c = [...5];//[0,1,2,3,4]
          * let d = [1...6,2,x->x*2];//1 to 6, step 2 *2, [2,6,10]
+         * let e = [];
          */
         ASF asf = new ASF();
         AST ast = asf.newAST();
@@ -966,6 +979,10 @@ public class ASTHelper {
         VariableDeclarator ddeclare = new VariableDeclarator(ast, VariableKind.LET);
         ddeclare.declare(new Identifier(ast, new Token<>("d")), array_d);
         ast.addStatement(ddeclare);
+
+        VariableDeclarator edeclare = new VariableDeclarator(ast, VariableKind.LET);
+        edeclare.declare(new Identifier(ast, new Token<>("e")), new ArrayNode(ast));
+        ast.addStatement(edeclare);
         return ast;
     }
 
@@ -1137,30 +1154,6 @@ public class ASTHelper {
         values[1] = LiteralNode.parse(ast, new Token<>(2));
         Expression rcall = new FunctionCallNode(new Identifier(ast, new Token<>("r")), new ArrayNode(ast, values));
         ast.addStatement(new ExpressionStatement(rcall));
-        return ast;
-    }
-
-    public static AST mockArrayAsArgument2() {
-        /*
-         * let f = (x,y:[])->{
-         *
-         * }
-         */
-        ASF asf = new ASF();
-        AST ast = asf.newAST();
-
-        return ast;
-    }
-
-    public static AST mockArrayComplicatedAssign() {
-        /**
-         * let f = (x,y)->{
-         *   ....todo
-         * }
-         */
-        ASF asf = new ASF();
-        AST ast = asf.newAST();
-
         return ast;
     }
 
@@ -1432,10 +1425,107 @@ public class ASTHelper {
                 .add(builder.buildFunc().returns(builder.buildMemberAccessor(builder.buildThis(), 0)))
                 .build();
         builder.buildVariableDeclarator(VariableKind.LET).declare("person", tuple);
-        builder.buildVariableDeclarator(VariableKind.LET).declare("name_1",builder.buildMemberAccessor(builder.buildId("person"), 0));
+        builder.buildVariableDeclarator(VariableKind.LET).declare("name_1", builder.buildMemberAccessor(builder.buildId("person"), 0));
 
         FunctionCallNode call = builder.buildCall(builder.buildMemberAccessor(builder.buildId("person"), 1));
-        builder.buildVariableDeclarator(VariableKind.LET).declare("name_2",call);
+        builder.buildVariableDeclarator(VariableKind.LET).declare("name_2", call);
+        return builder.ast();
+    }
+
+    public static AST mockDictDefinition() {
+        /**
+         * let a = [{name="Will"}:"Male",{name="Ivy",age=20}:"Female"];
+         * let b: [Integer:String] = [:];
+         * let c = [:];
+         * let d: [String:?] = [”Will":30,30:30];
+         * let e:[:] = ["Male":0];
+         */
+        ASTBuilder builder = new ASTBuilder();
+        VariableDeclaratorBuilder a = builder.buildVariableDeclarator(VariableKind.LET);
+        EntityNode will = builder.buildEntity().buildMember("name", builder.buildLiteral("Will"), false).build();
+        EntityNode ivy = builder.buildEntity().buildMember("name", builder.buildLiteral("Ivy"), false)
+                .buildMember("age", builder.buildLiteral(20), false).build();
+        a.declare("a", builder.buildDict()
+                .add(will, builder.buildLiteral("Male"))
+                .add(ivy, builder.buildLiteral("Female"))
+                .build());
+        VariableDeclaratorBuilder b = builder.buildVariableDeclarator(VariableKind.LET);
+        b.declare("b", builder.buildDictType(builder.buildIdType("Integer"), builder.buildIdType("String")), builder.buildDict().build());
+        VariableDeclaratorBuilder c = builder.buildVariableDeclarator(VariableKind.LET);
+        c.declare("c", builder.buildDict().build());
+        VariableDeclaratorBuilder d = builder.buildVariableDeclarator(VariableKind.LET);
+        d.declare("d", builder.buildDictType(builder.buildIdType("String"), builder.buildQuestion()),
+                builder.buildDict()
+                        .add(builder.buildLiteral("Will"), builder.buildLiteral(30))
+                        .add(builder.buildLiteral(30), builder.buildLiteral(30))
+                        .build());
+        VariableDeclaratorBuilder e = builder.buildVariableDeclarator(VariableKind.LET);
+        e.declare("e", builder.buildDictType(null, null),
+                builder.buildDict().add(builder.buildLiteral("Male"), builder.buildLiteral(0)).build());
+        return builder.ast();
+    }
+
+    public static AST mockDictAsArgument() {
+        /*
+         * let f = (x,y)->x[y];
+         * let g = (x:[:],i)->{
+         *     y = x[i];
+         *     x = ["will":"zhang"];
+         *     y
+         * };
+         * let r = <a>(x:[String:a])->{
+         *     let b = ["Will":30];
+         *     b = x;
+         *     let c:a = x["Will"];
+         *     c
+         * }
+         * f(["Will":"Zhang"],"Will");//correct call
+         * f(["Will"],0);//correct call
+         * f(["Will":"Zhang"],0);//incorrect call
+         * g(["a":"b"],“a”);//correct
+         * g(["Will":"Zhang"],0);//wrong
+         * let r1 = r<Integer>;
+         * r1(["will":30]);//correct
+         * let r2 = r<String>;//wrong reference
+         * r([1:2]);//wrong
+         */
+        ASTBuilder builder = new ASTBuilder();
+        VariableDeclaratorBuilder f = builder.buildVariableDeclarator(VariableKind.LET);
+        FunctionNode fd = builder.buildFunc().buildArg("x").buildArg("y")
+                .returns(builder.buildArrayAccessor(builder.buildId("x"), builder.buildId("y")));
+        f.declare("f", fd);
+        VariableDeclaratorBuilder g = builder.buildVariableDeclarator(VariableKind.LET);
+        FunctionNode gd = builder.buildFunc().buildArg("x", builder.buildDictType(null, null)).buildArg("i")
+                .buildStatement(builder.buildVariableDeclarator(VariableKind.LET,false).declare("y", builder.buildArrayAccessor(builder.buildId("x"), builder.buildId("i"))).get())
+                .buildStatement(builder.buildAssignment("x", builder.buildDict().add(builder.buildLiteral("Will"), builder.buildLiteral("Zhang")).build()))
+                .returns(builder.buildId("y"));
+        g.declare("g", gd);
+        VariableDeclaratorBuilder r = builder.buildVariableDeclarator(VariableKind.LET);
+        FunctionNode rd = builder.buildFunc().buildReference("a")
+                .buildArg("x", builder.buildDictType(builder.buildIdType("String"), builder.buildIdType("a")))
+                .buildStatement(builder.buildVariableDeclarator(VariableKind.LET,false).declare("b",builder.buildDict().add(builder.buildLiteral("Will"),builder.buildLiteral(30)).build()).get())
+                .buildStatement(builder.buildAssignment("b","x"))
+                .buildStatement(builder.buildVariableDeclarator(VariableKind.LET,false).declare("c",builder.buildIdType("a"),builder.buildArrayAccessor(builder.buildId("x"),builder.buildLiteral("Will") )).get())
+                .returns(builder.buildId("c"));
+        r.declare("r", rd);
+       builder.buildExpressionStatement(builder.buildCall(builder.buildId("f"),
+               builder.buildDict().add(builder.buildLiteral("Will"),builder.buildLiteral("Zhang")).build(),
+               builder.buildLiteral("Will")));
+        builder.buildExpressionStatement(builder.buildCall(builder.buildId("f"),
+                builder.buildArray().add(builder.buildLiteral("Will")).build(),
+                builder.buildLiteral(0)));
+        builder.buildExpressionStatement(builder.buildCall(builder.buildId("f"),
+                builder.buildDict().add(builder.buildLiteral("Will"),builder.buildLiteral("Zhang")).build(),
+                builder.buildLiteral(0)));
+        builder.buildExpressionStatement(builder.buildCall(builder.buildId("g"),
+                builder.buildDict().add(builder.buildLiteral("Will"),builder.buildLiteral("Zhang")).build(),
+                builder.buildLiteral(0)));
+        builder.buildVariableDeclarator(VariableKind.LET).declare("r1",builder.buildRefCall(builder.buildId("r"),builder.buildIdType("Integer")));
+        builder.buildExpressionStatement(builder.buildCall(builder.buildId("r1"),
+                builder.buildDict().add(builder.buildLiteral("Will"),builder.buildLiteral(30)).build()));
+        builder.buildVariableDeclarator(VariableKind.LET).declare("r2",builder.buildRefCall(builder.buildId("r"),builder.buildIdType("String")));
+        builder.buildExpressionStatement(builder.buildCall(builder.buildId("r"),
+                builder.buildDict().add(builder.buildLiteral(1),builder.buildLiteral(2)).build()));
         return builder.ast();
     }
 }

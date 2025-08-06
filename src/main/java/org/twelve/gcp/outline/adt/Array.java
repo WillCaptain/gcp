@@ -5,7 +5,10 @@ import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
+import org.twelve.gcp.outline.builtin.ANY;
 import org.twelve.gcp.outline.builtin.Array_;
+import org.twelve.gcp.outline.builtin.NOTHING;
+import org.twelve.gcp.outline.primitive.INTEGER;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 import org.twelve.gcp.outline.projectable.Projectable;
 import org.twelve.gcp.outline.projectable.Reference;
@@ -14,18 +17,14 @@ import java.util.Map;
 
 import static org.twelve.gcp.common.Tool.cast;
 
-public class Array extends ProductADT implements Projectable {//} implements GenericContainer {
-    private final Node node;
-    private final Outline itemOutline;
+public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer {
 
     public Array(Node node, Outline itemOutline) {
-        super(Array_.instance());
-        this.node = node;
-        this.itemOutline = itemOutline;
+        super(node,Array_.instance(),Outline.Integer,itemOutline);
     }
 
     public Outline itemOutline() {
-        return this.itemOutline;
+        return this.value;
     }
 
     @Override
@@ -35,30 +34,16 @@ public class Array extends ProductADT implements Projectable {//} implements Gen
 
     @Override
     public String toString() {
-        return "[" + itemOutline + "]";
-    }
-
-    @Override
-    public boolean tryIamYou(Outline another) {
-        if (another instanceof Array) {
-            return this.itemOutline.is(((Array) another).itemOutline);
-        } else {
-            return false;
-        }
+        return "[" + value + "]";
     }
 
     @Override
     public Outline project(Reference reference, OutlineWrapper projection) {
-        if (reference.id() == this.itemOutline.id()) {
+        if (reference.id() == this.value.id()) {
             return new Array(this.node, projection.outline());
         } else {
             return this;
         }
-    }
-
-    @Override
-    public boolean containsUnknown() {
-        return this.itemOutline.containsUnknown();
     }
 
     @Override
@@ -69,13 +54,13 @@ public class Array extends ProductADT implements Projectable {//} implements Gen
                 return this.guess();
             }
             Array you = cast(projection);
-            if (this.itemOutline instanceof Projectable) {
-                ((Projectable) this.itemOutline).project(cast(this.itemOutline), you.itemOutline, session);
+            if (this.value instanceof Projectable) {
+                ((Projectable) this.value).project(cast(this.value), you.value, session);
             }
             return projection;
         }else{
-            if(this.itemOutline instanceof Projectable){
-                return new Array(this.node,((Projectable) this.itemOutline).project(projected,projection,session));
+            if(this.value instanceof Projectable){
+                return new Array(this.node,((Projectable) this.value).project(projected,projection,session));
             }else{
                 return this;
             }
@@ -84,38 +69,33 @@ public class Array extends ProductADT implements Projectable {//} implements Gen
 
     @Override
     public Outline guess() {
-        if (this.itemOutline instanceof Projectable) {
-            return new Array(this.node, ((Projectable) this.itemOutline).guess());
+        if (this.value instanceof Projectable) {
+            return new Array(this.node, ((Projectable) this.value).guess());
         } else {
             return this;
         }
     }
 
     @Override
-    public boolean emptyConstraint() {
-        return this.itemOutline instanceof Projectable && ((Projectable) this.itemOutline).emptyConstraint();
-    }
-
-    @Override
-    public boolean containsGeneric() {
-        return this.itemOutline instanceof Projectable && ((Projectable) this.itemOutline).containsGeneric();
-    }
-
-    @Override
     public Array copy(Map<Long, Outline> cache) {
         Array copied = cast(cache.get(this.id()));
         if(copied==null){
-            copied = new Array(this.node,this.itemOutline.copy(cache));
+            copied = new Array(this.node,this.value.copy(cache));
             cache.put(this.id(),copied);
         }
         return copied;
     }
 
-    //    @Override
-//    public void addHasToBe(Outline hasToBe) {
-//        if(!(hasToBe instanceof Array)) return;
-//        if(this.itemOutline instanceof Genericable<?,?>){
-//            ((Genericable<?, ?>) this.itemOutline).addHasToBe(((Array) hasToBe).itemOutline);
-//        }
-//    }
+    @Override
+    public boolean beAssignable() {
+        return this.value.beAssignable();
+    }
+    @Override
+    public Array alternative(){
+        if(this.value instanceof NOTHING){
+            return new Array(this.node, Any);
+        }else{
+            return this;
+        }
+    }
 }

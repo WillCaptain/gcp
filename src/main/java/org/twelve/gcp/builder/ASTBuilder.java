@@ -1,16 +1,16 @@
 package org.twelve.gcp.builder;
 
+import com.sun.source.tree.ArrayAccessTree;
 import org.twelve.gcp.ast.ASF;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.expression.*;
+import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
-import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
-import org.twelve.gcp.node.expression.typeable.Question;
-import org.twelve.gcp.node.expression.typeable.TupleTypeNode;
-import org.twelve.gcp.node.expression.typeable.TypeNode;
+import org.twelve.gcp.node.expression.referable.ReferenceCallNode;
+import org.twelve.gcp.node.expression.typeable.*;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.node.statement.*;
@@ -41,10 +41,13 @@ public class ASTBuilder {
         ast.addStatement(new ExpressionStatement(expression));
     }
 
-    public VariableDeclaratorBuilder buildVariableDeclarator(VariableKind kind) {
+    public VariableDeclaratorBuilder buildVariableDeclarator(VariableKind kind,boolean addByDefault) {
         VariableDeclarator var = new VariableDeclarator(ast, kind);
-        ast.addStatement(var);
+        if(addByDefault) ast.addStatement(var);
         return new VariableDeclaratorBuilder(var);
+    }
+    public VariableDeclaratorBuilder buildVariableDeclarator(VariableKind kind) {
+        return buildVariableDeclarator(kind,true);
     }
 
     public Identifier buildId(String id) {
@@ -117,5 +120,25 @@ public class ASTBuilder {
 
     public TypeNode buildQuestion() {
         return new Question(ast);
+    }
+
+    public DictNodeBuilder buildDict() {
+        return new DictNodeBuilder(ast);
+    }
+
+    public DictTypeNode buildDictType(TypeNode key, TypeNode value) {
+        return new DictTypeNode(ast,key,value);
+    }
+
+    public ArrayAccessor buildArrayAccessor(Expression host, Expression index) {
+        return new ArrayAccessor(ast,host,index);
+    }
+
+    public ArrayNodeBuilder buildArray() {
+        return new ArrayNodeBuilder(ast);
+    }
+
+    public Expression buildRefCall(Identifier host, TypeNode... refs) {
+        return new ReferenceCallNode(host,refs);
     }
 }

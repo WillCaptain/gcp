@@ -26,10 +26,10 @@ public class NOTHING implements BuildInOutline {
         return true;
     }
 
-//    @Override
-//    public boolean tryYouAreMe(Outline another) {
-//        return true;
-//    }
+    @Override
+    public boolean beAssignable() {
+        return false;
+    }
 
     @Override
     public String toString() {

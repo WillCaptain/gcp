@@ -871,6 +871,61 @@ public class GCPInference {
         assertInstanceOf(INTEGER.class,outline_6);
     }
     @Test
+    void test_dict_projection(){
+        /*
+         * let f = (x,y)->x[y];
+         * let g = (x:[:],i)->{
+         *     y = x[i];
+         *     x = ["will":"zhang"];
+         *     y
+         * };
+         * let r = <a>(x:[String:a])->{
+         *     let b = ["Will":30];
+         *     b = x;
+         *     let c:a = x["Will"];
+         *     c
+         * }
+         */
+        AST ast = ASTHelper.mockDictAsArgument();
+//       ast.infer();
+        assertTrue(ast.asf().infer());
+        //f(["Will":"Zhang"],"Will") : String  x as map/dict
+        Outline o1 = ast.program().body().statements().get(3).get(0).outline();
+        assertEquals("String",o1.toString());
+        //f(["Will"],0) : String   x as array
+        Outline o2 = ast.program().body().statements().get(4).get(0).outline();
+        assertEquals("String",o2.toString());
+        //f(["Will":"Zhang"],0) : String 0 is wrong, should be String
+        Node fcall3 = ast.program().body().statements().get(5).get(0);
+        Outline o3 = fcall3.outline();
+        assertEquals("String",o3.toString());
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(0).errorCode());
+        assertEquals(fcall3,ast.errors().get(0).node().parent());
+        //g(["Will":"Zhang"],0) : String
+        Node fcall4 = ast.program().body().statements().get(6).get(0);
+        Outline o4 = fcall4.outline();
+        assertEquals("String",o4.toString());
+        assertEquals(fcall4,ast.errors().get(1).node().parent());
+        //let r1 = r<Integer>;
+        Node fcall5 = ast.program().body().statements().get(7).get(0).get(0);
+        Outline o5 = fcall5.outline();
+        assertEquals("[String : Integer]->Integer",o5.toString());
+        //r1(["Will":30]) : Integer
+        Outline o6 = ast.program().body().statements().get(8).get(0).outline();
+        assertEquals("Integer",o6.toString());
+        //r2 = r<String>  constraint will cause project fail
+        Node fcall7 = ast.program().body().statements().get(9).get(0);
+        Outline o7 = fcall7.get(0).outline();
+        assertEquals("[String : String]->String",o7.toString());
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(2).errorCode());
+        assertEquals(fcall7,ast.errors().get(2).node().parent());
+        Node fcall8 = ast.program().body().statements().get(10).get(0);
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(3).errorCode());
+        assertEquals(fcall8,ast.errors().get(3).node().parent());
+        assertEquals(4,ast.errors().size());
+
+    }
+    @Test
     void test_tuple_projection() {
         AST ast = ASTHelper.mockTupleProjection();
         assertTrue(ast.asf().infer());

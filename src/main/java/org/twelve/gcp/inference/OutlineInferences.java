@@ -10,9 +10,7 @@ import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.node.expression.IsAs;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
-import org.twelve.gcp.node.expression.typeable.ArrayTypeNode;
-import org.twelve.gcp.node.expression.typeable.EntityTypeNode;
-import org.twelve.gcp.node.expression.typeable.FunctionTypeNode;
+import org.twelve.gcp.node.expression.typeable.*;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
@@ -25,7 +23,6 @@ import org.twelve.gcp.node.statement.Assignment;
 import org.twelve.gcp.node.statement.ExpressionStatement;
 import org.twelve.gcp.node.statement.ReturnStatement;
 import org.twelve.gcp.node.statement.VariableDeclarator;
-import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
 import org.twelve.gcp.outline.Outline;
 
 
@@ -93,6 +90,16 @@ public class OutlineInferences implements Inferences {
     @Override
     public Outline visit(ArrayAccessor arrayAccessor) {
         return new ArrayAccessorInference().infer(arrayAccessor,this);
+    }
+
+    @Override
+    public Outline visit(DictNode dictNode) {
+        return new DictNodeInference().infer(dictNode,this);
+    }
+
+    @Override
+    public Outline visit(DictTypeNode dictTypeNode) {
+        return new DictTypeNodeInference().infer(dictTypeNode,this);
     }
 
     @Override

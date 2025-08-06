@@ -315,7 +315,27 @@ public class AstStructureTest {
                 let a = [1,2,3,4];
                 let b: [String] = [];
                 let c: [] = [...5];
-                let d = [1...6,2,x->x+"2",x->x%2==0];""";
+                let d = [1...6,2,x->x+"2",x->x%2==0];
+                let e = [];""";
+        assertEquals(expected,ast.lexeme());
+    }
+
+    @Test
+    void test_dict_definition(){
+        AST ast = ASTHelper.mockDictDefinition();
+        String expected = """
+                module default
+                
+                let a = [{
+                  name = "Will"
+                }:"Male", {
+                  name = "Ivy",
+                  age = 20
+                }:"Female"];
+                let b: [Integer : String] = [:];
+                let c = [:];
+                let d: [String : ?] = ["Will":30, 30:30];
+                let e: [:] = ["Male":0];""";
         assertEquals(expected,ast.lexeme());
     }
 

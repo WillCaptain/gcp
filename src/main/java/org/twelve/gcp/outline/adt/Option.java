@@ -5,7 +5,6 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
 import org.twelve.gcp.outline.builtin.NOTHING;
 import org.twelve.gcp.outline.projectable.ProjectSession;
-import org.twelve.gcp.outline.projectable.Projectable;
 
 import java.util.*;
 import java.util.stream.Collectors;

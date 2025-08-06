@@ -44,4 +44,9 @@ public class UNKNOWN implements BuildInOutline {
     public boolean containsUnknown() {
         return true;
     }
+
+    @Override
+    public boolean beAssignable() {
+        return false;
+    }
 }

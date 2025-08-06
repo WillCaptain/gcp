@@ -1,5 +1,6 @@
 package org.twelve.gcp.outlineenv;
 
+import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
@@ -61,7 +62,9 @@ public class EnvSymbol {
      * @return 是否定义成功
      */
     public boolean update(Outline outline) {
-        if (outline == null || (outline instanceof UNKNOWN)) return false;
+        if (outline == null || (outline instanceof UNKNOWN) || !outline.beAssignable()) {
+            return false;
+        }
         if(this.declared.containsUnknown()){
             this.declared = outline;
         }

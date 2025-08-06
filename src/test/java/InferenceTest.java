@@ -341,7 +341,7 @@ public class InferenceTest {
     }
 
     @Test
-    void test_tuple(){
+    void test_tuple() {
         AST ast = ASTHelper.mockSimpleTuple();
         ast.asf().infer();
         assertTrue(ast.asf().inferred());
@@ -394,7 +394,7 @@ public class InferenceTest {
         assertEquals(4, person.members().size());
         EntityMember getFullName = person.members().getFirst();
         assertInstanceOf(Function.class, getFullName.outline());
-        assertInstanceOf(STRING.class,((Function<?,?>) getFullName.outline()).returns().supposedToBe());
+        assertInstanceOf(STRING.class, ((Function<?, ?>) getFullName.outline()).returns().supposedToBe());
     }
 
     @Test
@@ -427,9 +427,9 @@ public class InferenceTest {
         assertInstanceOf(STRING.class, members.get(1).outline());
         assertInstanceOf(Poly.class, members.get(2).outline());
         Poly getName = cast(members.get(2).outline());
-        assertSame(Outline.Unit, ((Genericable<?,?>) ((Function<?, ?>) getName.options().get(0)).argument()).declaredToBe());
+        assertSame(Outline.Unit, ((Genericable<?, ?>) ((Function<?, ?>) getName.options().get(0)).argument()).declaredToBe());
         Function<?, ?> overrides = cast(getName.options().get(1));
-        assertInstanceOf(Option.class, ((Genericable<?,?>) overrides.argument()).definedToBe());
+        assertInstanceOf(Option.class, ((Genericable<?, ?>) overrides.argument()).definedToBe());
         assertInstanceOf(INTEGER.class, overrides.returns().supposedToBe());
         assertTrue(ast.errors().isEmpty());
     }
@@ -453,8 +453,8 @@ public class InferenceTest {
         Entity eb = cast(b.lhs().outline());
         assertEquals("name", eb.members().get(0).name());
         assertEquals("Integer", eb.members().get(0).outline().toString());
-        assertEquals(1,ast.errors().size());
-        assertEquals(b.rhs(),ast.errors().get(0).node());
+        assertEquals(1, ast.errors().size());
+        assertEquals(b.rhs(), ast.errors().get(0).node());
     }
 
     @Test
@@ -565,7 +565,7 @@ public class InferenceTest {
         Entity entity = cast(g.returns().supposedToBe());
         Reference z = cast(entity.members().getLast().node().outline());
         //(x,y)->y
-        Function<?, Genericable<?,?>> f = cast(entity.members().getFirst().outline());
+        Function<?, Genericable<?, ?>> f = cast(entity.members().getFirst().outline());
         assertEquals("a", z.name());
         assertInstanceOf(INTEGER.class, z.extendToBe());
         assertEquals("b", f.argument().name());
@@ -580,22 +580,45 @@ public class InferenceTest {
     }
 
     @Test
-    void test_inference_of_array_definition(){
+    void test_inference_of_array_definition() {
         AST ast = ASTHelper.mockArrayDefinition();
         assertTrue(ast.asf().infer());
-        assertTrue(ast.errors().isEmpty());
+        assertEquals(0, ast.errors().size());
+//        assertEquals(GCPErrCode.AMBIGUOUS_DECLARATION,ast.errors().getFirst().errorCode());
         //let a = [1,2,3,4];
-        Variable a = cast(((VariableDeclarator)ast.program().body().statements().get(0)).assignments().getFirst().lhs());
-        assertEquals("[Integer]",a.outline().toString());
+        Variable a = cast(((VariableDeclarator) ast.program().body().statements().get(0)).assignments().getFirst().lhs());
+        assertEquals("[Integer]", a.outline().toString());
         //let b: [String] = [];
-        Variable b = cast(((VariableDeclarator)ast.program().body().statements().get(1)).assignments().getFirst().lhs());
-        assertEquals("[String]",b.outline().toString());
+        Variable b = cast(((VariableDeclarator) ast.program().body().statements().get(1)).assignments().getFirst().lhs());
+        assertEquals("[String]", b.outline().toString());
         //let c: [] = [...5];
-        Variable c = cast(((VariableDeclarator)ast.program().body().statements().get(2)).assignments().getFirst().lhs());
-        assertEquals("[Integer]",c.outline().toString());
+        Variable c = cast(((VariableDeclarator) ast.program().body().statements().get(2)).assignments().getFirst().lhs());
+        assertEquals("[any]", c.outline().toString());
         //let d = [1...6,2,x->x+"2",x->x%2==0];""";
-        Variable d = cast(((VariableDeclarator)ast.program().body().statements().get(3)).assignments().getFirst().lhs());
-        assertEquals("[String]",d.outline().toString());
+        Variable d = cast(((VariableDeclarator) ast.program().body().statements().get(3)).assignments().getFirst().lhs());
+        assertEquals("[String]", d.outline().toString());
+        //let e = [];
+        Variable e = cast(((VariableDeclarator) ast.program().body().statements().get(4)).assignments().getFirst().lhs());
+        assertEquals("[any]",e.outline().toString());
+    }
+
+    @Test
+    void test_inference_of_dict_definition(){
+        AST ast =  ASTHelper.mockDictDefinition();
+        assertTrue(ast.asf().infer());
+
+        //let a = [{name = "Will"}:"Male", {name = "Ivy",age = 20}:"Female"];
+        Variable a = cast(((VariableDeclarator) ast.program().body().statements().get(0)).assignments().getFirst().lhs());
+        assertEquals("[{name: String} : String]", a.outline().toString());
+        //let b: [Integer:String] = [:];
+        Variable b = cast(((VariableDeclarator) ast.program().body().statements().get(1)).assignments().getFirst().lhs());
+        assertEquals("[Integer : String]", b.outline().toString());
+        //let c = [:];
+        Variable c = cast(((VariableDeclarator) ast.program().body().statements().get(2)).assignments().getFirst().lhs());
+        assertEquals("[any : any]", c.outline().toString());
+        //let d: [String:?] = [”Will":30,30:30];
+        Variable d = cast(((VariableDeclarator) ast.program().body().statements().get(3)).assignments().getFirst().lhs());
+        assertEquals("[String : any]", d.outline().toString());
     }
 
     private static AST mockGCPTestAst() {

@@ -151,6 +151,10 @@ public interface Outline extends Serializable {
         return false;
     }
 
+    default boolean beAssignable(){return true;}
+
+    default Outline alternative(){return this;}
+
     /**
      * to Poly/interacted entity
      * outline&outline

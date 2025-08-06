@@ -63,14 +63,24 @@ public class Identifier extends Assignable {
                 ErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
                 return;
             }
-            symbol.update(inferred);
+            if(!symbol.update(inferred)){
+                inferred = inferred.alternative();
+               if(!symbol.update(inferred)) {
+                   ErrorReporter.report(this, GCPErrCode.NOT_BE_ASSIGNEDABLE);
+               }
+            }
             this.outline = inferred;
             return;
 
         }
         //handle half declared type like [],[,],entity
         if(symbol.declared().containsUnknown() && inferred.is(this.outline)){
-            symbol.update(inferred);
+           if(!symbol.update(inferred)){
+               inferred = inferred.alternative();
+               if(!symbol.update(inferred)) {
+                   ErrorReporter.report(this, GCPErrCode.NOT_BE_ASSIGNEDABLE);
+               }
+           }
             this.outline = inferred;
             return;
         }
