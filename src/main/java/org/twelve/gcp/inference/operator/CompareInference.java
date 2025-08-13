@@ -14,9 +14,9 @@ public class CompareInference implements OperatorInference {
             ((Genericable<?,?>) left).addDefinedToBe(right);
         }
         if (left.is(right) || right.is(left)) {
-            return Outline.Boolean;
+            return node.ast().Boolean;
         }
         ErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);
-        return Outline.Error;
+        return node.ast().Error;
     }
 }

@@ -1,5 +1,6 @@
 package org.twelve.gcp.inference;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -21,12 +22,12 @@ import static org.twelve.gcp.common.Tool.cast;
 public class ArgumentInference implements Inference<Argument> {
     @Override
     public Outline infer(Argument node, Inferences inferences) {
-        if (node.token() == Token.unit()) return Generic.from(node, Outline.Unit);
+        if (node.token() == Token.unit()) return Generic.from(node, node.ast().Unit);
         LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
         EnvSymbol symbol = oEnv.lookupAll(node.name());
         if (symbol == null || !symbol.scope().equals(node.scope())) {
             Expression defaultValue = node.defaultValue();
-            Outline outline = inferDeclared(node.declared(), inferences);
+            Outline outline = inferDeclared(node.declared(), inferences, node.ast());
             Genericable<?, ?> generic = Generic.from(node, outline);
             if (defaultValue != null) {
                 generic.addExtendToBe(defaultValue.infer(inferences));
@@ -42,8 +43,8 @@ public class ArgumentInference implements Inference<Argument> {
         }
     }
 
-    private Outline inferDeclared(TypeNode declared, Inferences inferences) {
-        if (declared == null) return Outline.Unknown;
+    private Outline inferDeclared(TypeNode declared, Inferences inferences, AST ast) {
+        if (declared == null) return ast.Unknown;
         return declared.infer(inferences);
     }
 }

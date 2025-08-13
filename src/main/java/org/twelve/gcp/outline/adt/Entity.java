@@ -1,5 +1,6 @@
 package org.twelve.gcp.outline.adt;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.common.Mutable;
@@ -35,34 +36,39 @@ public class Entity extends ProductADT implements Projectable {
      * entity2 = entity1{name="Will“}
      * 此时entity1就是entity2的基entity
      */
-    private final ProductADT base;
+    private final Outline base;
     /**
      * Entity不是标准类型，所以一定会对应一个节点
      */
     protected final Node node;
 
-    private Entity(Node node, ProductADT base, List<EntityMember> extended) {
-        super(base == null ? Outline.Any : base.buildIn, extended);
+    protected Entity(Node node, AST ast, Outline base, List<EntityMember> extended) {
+        super(ast, ast.Any.buildIn(), extended);
         this.node = node;
-        this.id = Counter.getAndIncrement();
+        this.id = ast.Counter.getAndIncrement();
         this.base = base;
-//        this.references = references;
     }
 
-    protected Entity(Node node, BuildInOutline buildIn, List<EntityMember> members) {
-        super(buildIn, members);
-        this.node = node;
-        this.id = Counter.getAndIncrement();
-        this.base = null;
-//        this.references = references;
-    }
+//    protected Entity(Node node, Outline base, List<EntityMember> extended) {
+//        this(node, node.ast(), base, extended);
+//    }
+//    private Entity(AST ast, Outline base, List<EntityMember> extended) {
+//        this(null, ast, base, extended);
+//    }
+
+//   protected Entity(Node node, BuildInOutline buildIn, List<EntityMember> members) {
+//        super(node.ast(),buildIn, members);
+//        this.node = node;
+//        this.id = ast().Counter.getAndIncrement();
+//        this.base = null;
+//    }
 
     public Entity produce(Entity another) {
-        return Entity.from(this.interact(this.members(), another.members()));
+        return Entity.from(this.node(), this.interact(this.members(), another.members()));
     }
 
     public Poly produce(Poly another) {
-        return  cast(another.sum(this,false));
+        return cast(another.sum(this, false));
     }
 
     public static Entity from(Node node, ProductADT base, List<EntityMember> extended) {
@@ -70,15 +76,15 @@ public class Entity extends ProductADT implements Projectable {
     }
 
     public static Entity from(Node node, ProductADT base, List<EntityMember> extended, List<Reference> references) {
-        return new Entity(node, base, extended);
+        return new Entity(node, node.ast(), base, extended);
     }
 
     public static Entity from(Node node) {
-        return new Entity(node, Outline.Any, new ArrayList<>());
+        return new Entity(node, node.ast(), node.ast().Any, new ArrayList<>());
     }
 
-    public static Entity from(Node node, BuildInOutline buildIn) {
-        return new Entity(node, buildIn, new ArrayList<>());
+    public static Entity from(Node node, List<EntityMember> members) {
+        return new Entity(node, node.ast(), node.ast().Any, members);
     }
 
     /**
@@ -87,13 +93,16 @@ public class Entity extends ProductADT implements Projectable {
      * @param members
      * @return
      */
-    public static Entity from(BuildInOutline buildIn, List<EntityMember> members) {
-        return new Entity(null, buildIn, members);
+    public static Entity from(AST ast, List<EntityMember> members) {
+        return new Entity(null, ast, ast.Any, members);
     }
+//    public static Entity from(AST ast) {
+//        return from(ast, new ArrayList<>());
+//    }
 
-    public static Entity from(List<EntityMember> members) {
-        return from(Outline.Any, members);
-    }
+//    public static Entity from(AST ast,List<EntityMember> members) {
+//        return from(ast,ast.Any.buildIn(), members);
+//    }
 
     @Override
     public long id() {
@@ -102,7 +111,7 @@ public class Entity extends ProductADT implements Projectable {
 
     @Override
     public Entity copy() {
-        return new Entity(this.node, this.buildIn, this.members());
+        return new Entity(this.node, this.ast(), this.base, this.members());
     }
 
     @Override
@@ -111,24 +120,24 @@ public class Entity extends ProductADT implements Projectable {
         if (copied == null) {
             List<EntityMember> members = new ArrayList<>();
             for (EntityMember m : this.members()) {
-                if(m.isDefault()) continue;
-                members.add(EntityMember.from(m.name(), m.outline.copy(cache), m.modifier(), m.mutable() == Mutable.True, m.node(),m.isDefault()));
+                if (m.isDefault()) continue;
+                members.add(EntityMember.from(m.name(), m.outline.copy(cache), m.modifier(), m.mutable() == Mutable.True, m.node(), m.isDefault()));
             }
-            copied = new Entity(this.node, this.buildIn, members);
+            copied = new Entity(this.node, this.ast(), this.base, members);
             cache.put(this.id(), copied);
         }
         return copied;
     }
 
     private List<EntityMember> baseMembers() {
-        if (this.base == null) {
+        if (this.base == null || !(this.base instanceof ProductADT)) {
             return new ArrayList<>();
         } else {
-            return new ArrayList<>(this.base.members());
+            return new ArrayList<>(((ProductADT) this.base).members());
         }
     }
 
-    public ProductADT base() {
+    public Outline base() {
         return this.base;
     }
 
@@ -150,8 +159,8 @@ public class Entity extends ProductADT implements Projectable {
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
         if (this.id() == projected.id()) {//project myself:{a} project{a,b}
-            Entity outline = Entity.from(projection.node());
-            for (EntityMember yourMember : ((Entity) projection).members()) {//match projection members
+            Entity outline = Entity.from(this.node());
+            for (EntityMember yourMember : ((ADT) projection).members()) {//match projection members
                 Optional<EntityMember> myMember = this.getMember(yourMember.name());//find matched member in projected
                 if (myMember.isPresent()) {//project a
                     if (myMember.get().outline() instanceof Projectable) {//project member if me is projectable
@@ -171,11 +180,12 @@ public class Entity extends ProductADT implements Projectable {
 //                session.addProjection(projected, outline);
                 return outline;
             } else {
-                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL,
+                ErrorReporter.report(projection.ast(),projection.node(), GCPErrCode.PROJECT_FAIL,
                         projection.node() + CONSTANTS.MISMATCH_STR + this);
                 return this.guess();
             }
         } else {//project possible members
+//            Entity outline = this.node()==null?Entity.from(this.ast()):Entity.from(this.node());
             Entity outline = Entity.from(this.node());
             for (EntityMember m : this.members()) {
                 if (m.outline() instanceof Projectable) {
@@ -195,11 +205,11 @@ public class Entity extends ProductADT implements Projectable {
     public Outline guess() {
         List<EntityMember> members = new ArrayList<>();
         for (EntityMember m : this.members()) {
-            if(m.isDefault()) continue;
+            if (m.isDefault()) continue;
             Outline guessed = m.outline() instanceof Projectable ? ((Projectable) m.outline()).guess() : m.outline();
-            members.add(EntityMember.from(m.name(), guessed, m.modifier(), m.mutable() == Mutable.True, m.node(),m.isDefault()));
+            members.add(EntityMember.from(m.name(), guessed, m.modifier(), m.mutable() == Mutable.True, m.node(), m.isDefault()));
         }
-        return Entity.from(this.buildIn, members);
+        return Entity.from(this.node(), members);
     }
 
     @Override
@@ -230,13 +240,13 @@ public class Entity extends ProductADT implements Projectable {
 //                }
             }
 
-            ms.add(EntityMember.from(m.name(), mProjected, m.modifier(), m.mutable().toBool(), n,m.isDefault()));
+            ms.add(EntityMember.from(m.name(), mProjected, m.modifier(), m.mutable().toBool(), n, m.isDefault()));
         }
-        if (this.base == null) {
-            projected = new Entity(this.node, this.buildIn, ms);
+        /*if (this.base == null) {
+            projected = new Entity(this.node, this.base, ms);
         } else {
             projected = new Entity(this.node, (ProductADT) this.base.project(reference, projection), ms);
-        }
-        return projected;
+        }*/
+        return new Entity(this.node, this.ast(), null, ms);
     }
 }

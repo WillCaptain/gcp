@@ -1,19 +1,16 @@
 package org.twelve.gcp.outline.primitive;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.builtin.String_;
 
 public class STRING extends Primitive{
-    private final static String_ string = new String_();
-    public static STRING create(Node node){
-        STRING str = new STRING(node);
-        str.init();
-        return str;
+    private final static String_ string_ = new String_();
+    public STRING(Node node){
+        super(string_,node,node.ast());
+        this.loadMethods();
     }
-    private STRING(Node node){
-        super(string,node);
-    }
-    public STRING(){
-        this(null);
+    public STRING(AST ast){
+        super(string_,null,ast);
     }
 }

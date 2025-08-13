@@ -1,24 +1,19 @@
-package org.twelve.gcp.outline.builtin;
+package org.twelve.gcp.outline.primitive;
 
+import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.BuildInOutline;
+import org.twelve.gcp.outline.builtin.Nothing_;
 
 /**
  * represent null
  */
-public class NOTHING implements BuildInOutline {
-    private static NOTHING _instance = new NOTHING();
-    public static NOTHING instance(){
-        return _instance;
-    }
-
-    private NOTHING(){
-        super();
-    }
-
-    @Override
-    public long id() {
-        return CONSTANTS.NOTHING_INDEX;
+public class NOTHING extends Primitive {
+    private static Nothing_ nothing_ = new Nothing_();
+    public NOTHING(AST ast){
+        super(nothing_,null, ast);
     }
 
     @Override

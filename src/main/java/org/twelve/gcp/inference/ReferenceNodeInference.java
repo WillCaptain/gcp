@@ -20,7 +20,7 @@ public class ReferenceNodeInference implements Inference<ReferenceNode> {
         } else {
             if (symbol.node() != node) {
                 ErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
-                return Outline.Error;
+                return node.ast().Error;
             }
             outline = symbol.outline();
         }

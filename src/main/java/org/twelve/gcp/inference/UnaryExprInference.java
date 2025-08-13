@@ -9,8 +9,6 @@ import org.twelve.gcp.outline.primitive.BOOL;
 import org.twelve.gcp.outline.primitive.LONG;
 import org.twelve.gcp.outline.primitive.NUMBER;
 
-import static org.twelve.gcp.outline.Outline.Error;
-
 public class UnaryExprInference implements Inference<UnaryExpression> {
     @Override
     public Outline infer(UnaryExpression node, Inferences inferences) {
@@ -48,7 +46,7 @@ public class UnaryExprInference implements Inference<UnaryExpression> {
 
         // Throw an exception for outline type mismatches or invalid positions
         ErrorReporter.report(node.operatorNode(), GCPErrCode.OUTLINE_MISMATCH);
-        return Error;
+        return node.ast().Error;
     }
 
 }

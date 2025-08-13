@@ -13,6 +13,6 @@ public class ExportInference implements Inference<Export> {
             node.ast().symbolEnv().exportSymbol(export.exported().name(), local);
             export.infer(inferences);
         }
-        return ProductADT.Ignore;
+        return node.ast().Ignore;
     }
 }

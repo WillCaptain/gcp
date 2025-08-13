@@ -7,6 +7,6 @@ import org.twelve.gcp.outline.Outline;
 public class ExprStatementInference  implements Inference<ExpressionStatement> {
     @Override
     public Outline infer(ExpressionStatement node, Inferences inferences) {
-        return ProductADT.Ignore;
+        return node.ast().Ignore;
     }
 }

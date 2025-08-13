@@ -9,7 +9,7 @@ import org.twelve.gcp.outline.Outline;
 public class TernaryExprInference implements Inference<TernaryExpression>{
     @Override
     public Outline infer(TernaryExpression node, Inferences inferences) {
-        if(node.condition().infer(inferences)!= ProductADT.Boolean){
+        if(node.condition().infer(inferences)!= node.ast().Boolean){
             ErrorReporter.report(node.condition(), GCPErrCode.CONDITION_IS_NOT_BOOL);
         }
         Outline a = node.trueBranch().infer(inferences);
@@ -17,6 +17,6 @@ public class TernaryExprInference implements Inference<TernaryExpression>{
         if(a.is(b)) return a;
         if(b.is(a)) return b;
         ErrorReporter.report(node.falseBranch(), GCPErrCode.OUTLINE_MISMATCH);
-        return ProductADT.Error;
+        return node.ast().Error;
     }
 }

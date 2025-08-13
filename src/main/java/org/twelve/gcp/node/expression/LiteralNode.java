@@ -31,27 +31,27 @@ public class LiteralNode<T> extends ValueNode<LiteralNode<?>> {
     }
     private ProductADT createOutline(T value){
         if (value instanceof String) {
-            return STRING.create(this);
+            return new STRING(this);
         }
         if (value instanceof BigDecimal) {
-            return DECIMAL.create(this);
+            return new DECIMAL(this);
         }
         if (value instanceof Double) {
-            return DOUBLE.create(this);
+            return new DOUBLE(this);
         }
         if (value instanceof Float) {
-            return FLOAT.create(this);
+            return new FLOAT(this);
         }
         if (value instanceof Long) {
-            return LONG.create(this);
+            return new LONG(this);
         }
         if (value instanceof Integer) {
-            return INTEGER.create(this);
+            return new INTEGER(this);
         }
         if (value instanceof Boolean) {
-            return new BOOL();
+            return new BOOL(this);
         }
-        return Outline.String;
+        return this.ast().String;
     }
 
     @Override

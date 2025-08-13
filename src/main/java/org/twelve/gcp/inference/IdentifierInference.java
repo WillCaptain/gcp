@@ -29,11 +29,11 @@ public class IdentifierInference implements Inference<Identifier> {
         }
         if (supposed == null) {
             ErrorReporter.report(node, GCPErrCode.VARIABLE_NOT_DEFINED);
-            return Outline.Unknown;
+            return node.ast().Unknown;
         }
         if(supposed.outline() instanceof UNKNOWN){
             if(this.confirmRecursive(node,supposed.node())){
-                return Outline.Pending;
+                return node.ast().Pending;
             }
         }
         return supposed.outline();

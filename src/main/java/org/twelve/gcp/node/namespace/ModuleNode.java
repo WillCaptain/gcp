@@ -1,6 +1,5 @@
 package org.twelve.gcp.node.namespace;
 
-import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.builtin.Module;
@@ -13,7 +12,7 @@ public class ModuleNode extends Node {
     private NamespaceNode namespace = null;
 
     public ModuleNode(List<Identifier> source) {
-        super(source.getFirst().ast(),null, new Module());
+        super(source.getFirst().ast(),null, new Module(source.getFirst().ast()));
         Identifier module = source.removeLast();
         if(!source.isEmpty()) {
             this.namespace = this.addNode(new NamespaceNode(module.ast(), source));

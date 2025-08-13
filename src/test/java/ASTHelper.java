@@ -469,12 +469,12 @@ public class ASTHelper {
     static void mockEntityProjectionNode5(FunctionBody body) {
         AST ast = body.ast();
         List<EntityMember> members = new ArrayList<>();
-        members.add(EntityMember.from("name", Outline.Integer, Modifier.PUBLIC, true));
-        Entity p = Entity.from(members);
-        FirstOrderFunction combine = FirstOrderFunction.from(p, Outline.Integer, p);
+        members.add(EntityMember.from("name", ast.Integer, Modifier.PUBLIC, true));
+        Entity p = Entity.from(body,members);
+        FirstOrderFunction combine = FirstOrderFunction.from(ast,p, ast.Integer, p);
         members = new ArrayList<>();
         members.add(EntityMember.from("combine", combine, Modifier.PUBLIC, true));
-        Entity w = Entity.from(members);
+        Entity w = Entity.from(body,members);
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.VAR);
         declarator.declare(new Identifier(ast, new Token<>("w")), new WrapperTypeNode(ast, w), new Identifier(ast, new Token<>("z")));
         body.addStatement(declarator);
@@ -689,7 +689,7 @@ public class ASTHelper {
         Token<String> some = new Token<>("some");
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.VAR);
 
-        declarator.declare(new Identifier(ast, some), new WrapperTypeNode(ast, Option.from(Outline.String, Outline.Integer)), LiteralNode.parse(ast, new Token<>("string")));
+        declarator.declare(new Identifier(ast, some), new WrapperTypeNode(ast, Option.from(ast,ast.String, ast.Integer)), LiteralNode.parse(ast, new Token<>("string")));
         block.addStatement(declarator);
         mockIsAs(ast, some, block);
         //let result = {...}
@@ -706,12 +706,12 @@ public class ASTHelper {
         //}else if(some is String as str){
         //    str
         //}else{100}
-        IsAs isInt = new IsAs(new Identifier(ast, some), Outline.Integer);
+        IsAs isInt = new IsAs(new Identifier(ast, some), ast.Integer);
         Consequence consequence = new Consequence(ast);
         consequence.addStatement(new ReturnStatement(new Identifier(ast, some)));
         Arm arm1 = new Arm(isInt, consequence);
         Token<String> str = new Token<>("str");
-        IsAs isStr = new IsAs(new Identifier(ast, some), Outline.String, new Identifier(ast, str));
+        IsAs isStr = new IsAs(new Identifier(ast, some), ast.String, new Identifier(ast, str));
         consequence = new Consequence(ast);
         consequence.addStatement(new ReturnStatement(new Identifier(ast, str)));
         Arm arm2 = new Arm(isStr, consequence);
@@ -853,13 +853,13 @@ public class ASTHelper {
 
         //String->Integer->{name:String,age:Integer}
         FunctionTypeNode functionTypeNode = new FunctionTypeNode(ast, entityTypeNode,
-                new WrapperTypeNode(ast, Outline.String), new WrapperTypeNode(ast, Outline.Integer));
+                new WrapperTypeNode(ast, ast.String), new WrapperTypeNode(ast, ast.Integer));
         //x:...
         Argument x = new Argument(new Identifier(ast, new Token<>("x")), functionTypeNode);
         //y:String
-        Argument y = new Argument(new Identifier(ast, new Token<>("y")), new WrapperTypeNode(ast, Outline.String));
+        Argument y = new Argument(new Identifier(ast, new Token<>("y")), new WrapperTypeNode(ast, ast.String));
         //z:Integer
-        Argument z = new Argument(new Identifier(ast, new Token<>("z")), new WrapperTypeNode(ast, Outline.Integer));
+        Argument z = new Argument(new Identifier(ast, new Token<>("z")), new WrapperTypeNode(ast, ast.Integer));
         //x(y,z)
         FunctionBody body = new FunctionBody(ast);
         FunctionCallNode call = new FunctionCallNode(new Identifier(ast, new Token<>("x")),

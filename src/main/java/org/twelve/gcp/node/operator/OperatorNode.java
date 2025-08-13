@@ -8,7 +8,7 @@ public class OperatorNode<O extends Operator> extends Node {
     private final O operator;
 
     public OperatorNode(AST ast, O operator) {
-        super(ast,null,Outline.Ignore);
+        super(ast,null,ast.Ignore);
         this.operator = operator;
     }
 

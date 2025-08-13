@@ -1,47 +1,28 @@
 package org.twelve.gcp.outline.primitive;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.*;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 public abstract class Primitive extends ProductADT {
 
-    private boolean created = false;
+//    private boolean created = false;
     private Node node;
 
-    protected Primitive(BuildInOutline buildIn) {
-        this(buildIn,null);
-    }
-
-    protected Primitive(BuildInOutline buildIn, Node node) {
-        super(buildIn);
+    protected Primitive(BuildInOutline buildIn, Node node, AST ast) {
+        super(ast, buildIn);
         this.node = node;
-        this.created = true;
+//        this.created = true;
     }
 
-    /**
-     * post bind primitive methods
-     */
-    public static void initialize() {
-        Outline.String.init();
-        Outline.Decimal.init();
-        Outline.Double.init();
-        Outline.Float.init();
-        Outline.Integer.init();
-        Outline.Long.init();
-        Outline.Boolean.init();
-        Outline.Number.init();
-    }
-
-    @Override
-    protected final void init() {
-       if(this.created) {
-           super.init();
-       }
-    }
+//    @Override
+//    public final bo loadMethods() {
+//        if (this.created) {
+//            super.loadMethods();
+//        }
+//    }
 
     @Override
     public long id() {

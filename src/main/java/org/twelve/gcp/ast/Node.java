@@ -8,6 +8,7 @@ import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.interpreter.Interpreter;
 import org.twelve.gcp.interpreter.Result;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.ERROR;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 import java.io.Serializable;
@@ -17,7 +18,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.twelve.gcp.common.Tool.cast;
-import static org.twelve.gcp.outline.Outline.Unknown;
 
 /**
  * Abstract base class for all AST nodes in the compiler/interpreter pipeline.
@@ -52,7 +52,7 @@ public abstract class Node implements Serializable {
     }
 
     public Node(AST ast, Location loc) {
-        this(ast, loc, Unknown);
+        this(ast, loc, ast.Unknown);
     }
 
     public Node(AST ast) {
@@ -135,23 +135,26 @@ public abstract class Node implements Serializable {
                 try {
                     this.clearError();
                     this.outline = this.accept(inferences);
-                }catch (Exception ex){
-                    if(this.ast().asf().isLastInfer()){
+                } catch (Exception ex) {
+                    if (this.ast().asf().isLastInfer()) {
                         throw ex;
-                    }else {
-                        this.outline = Unknown;
+                    } else {
+                        this.outline = this.ast().Unknown;
                     }
                 }
                 this.ast().symbolEnv().exit();
             }
         } catch (GCPRuntimeException e) {
-            ErrorReporter.report(this, e.errCode(),"unexpected exception occurs in outline inference");
+            ErrorReporter.report(this, e.errCode(), "unexpected exception occurs in outline inference");
+        }
+        if (outline instanceof ERROR && !this.ast().asf().isLastInfer()) {
+            this.outline = this.ast().Unknown;
         }
         return outline;
     }
 
     public void clearError() {
-        this.ast().errors().removeIf(e->e.node()==this);
+        this.ast().errors().removeIf(e -> e.node() == this);
 //        for (Node node : this.nodes()) {
 //            node.clearError();
 //        }
@@ -159,10 +162,10 @@ public abstract class Node implements Serializable {
 
     public Long parentScope() {
         Node parent = this;
-        Long scope=this.scope();
-        while(scope.equals(this.scope())){
+        Long scope = this.scope();
+        while (scope.equals(this.scope())) {
             parent = parent.parent();
-            if(parent==null) break;
+            if (parent == null) break;
             scope = parent.scope();
         }
         return scope;
@@ -176,6 +179,7 @@ public abstract class Node implements Serializable {
     }
 
     // --- Validation ---
+
     /**
      * Recursively checks if node and all children are fully inferred.
      */
@@ -190,7 +194,7 @@ public abstract class Node implements Serializable {
      * Marks unresolved nodes with inference errors.
      */
     public void markUnknowns() {
-        if (this.outline()  instanceof UNKNOWN) {
+        if (this.outline() instanceof UNKNOWN) {
             ErrorReporter.report(this, GCPErrCode.INFER_ERROR);
         }
         this.nodes.forEach(Node::markUnknowns);
@@ -208,17 +212,31 @@ public abstract class Node implements Serializable {
     }
 
     // --- Getters ---
-    public Long id() { return id; }
-    public AST ast() { return ast; }
-    public Node parent() { return parent; }
-    public Outline outline() { return outline; }
+    public Long id() {
+        return id;
+    }
+
+    public AST ast() {
+        return ast;
+    }
+
+    public Node parent() {
+        return parent;
+    }
+
+    public Outline outline() {
+        return outline;
+    }
+
     public List<Node> nodes() {
 //        return new ArrayList<>(nodes);
         return nodes;
     }
+
     public Long scope() {
         return this.parent().scope();
     }
+
     public String type() {
         return this.getClass().getSimpleName();
     }
@@ -237,18 +255,20 @@ public abstract class Node implements Serializable {
     }
 
     // --- Interpreter ---
+
     /**
      * runtime interpreter for the node
+     *
      * @param interpreter the interpreter for the node
+     * @param <T>         result data type
      * @return result of the interpretation
-     * @param <T> result data type
      */
     public <T> Result<T> interpret(Interpreter interpreter) {
         return interpreter.visit(this);
     }
 
     public Node invalidate() {
-        this.outline =Unknown;//ensure it is going to infer again
+        this.outline = this.ast().Unknown;//ensure it is going to infer again
         return this;
     }
 }

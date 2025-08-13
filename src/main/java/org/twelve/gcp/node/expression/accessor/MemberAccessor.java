@@ -34,7 +34,7 @@ public class MemberAccessor extends Accessor {
 
     @Override
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
-        if (this.outline == Outline.Error) return;
+        if (this.outline == this.ast().Error) return;
         ProductADT owner = cast(this.productADT.outline());
         if (!owner.checkMember(member.name(), inferred)) {
             ErrorReporter.report(this, GCPErrCode.FIELD_NOT_FOUND,

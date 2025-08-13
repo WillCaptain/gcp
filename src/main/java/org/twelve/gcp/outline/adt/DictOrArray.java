@@ -1,13 +1,11 @@
 package org.twelve.gcp.outline.adt;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.builtin.ANY;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
-import org.twelve.gcp.outline.builtin.UNKNOWN;
-import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 import org.twelve.gcp.outline.projectable.Projectable;
 
@@ -18,8 +16,8 @@ public class DictOrArray<K extends Outline> extends ProductADT implements Projec
     protected final K key;
     protected final Outline value;
 
-    public DictOrArray(Node node, BuildInOutline base, K key, Outline value) {
-        super(base);
+    public DictOrArray(Node node, AST ast, BuildInOutline base, K key, Outline value) {
+        super(ast,base);
         this.node = node;
         this.key = key;
         this.value = value;

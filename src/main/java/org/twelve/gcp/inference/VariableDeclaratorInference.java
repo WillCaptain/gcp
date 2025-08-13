@@ -42,7 +42,7 @@ public class VariableDeclaratorInference implements Inference<VariableDeclarator
 //            }
 //            assignment.infer(inferences);
 //        }
-        return Ignore;
+        return node.ast().Ignore;
     }
 
 //    private static void inferAssignment(Inferences inferences, Assignment assignment, EnvSymbol symbol) {

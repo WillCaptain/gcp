@@ -1,20 +1,12 @@
 package org.twelve.gcp.outline.builtin;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.outline.Outline;
 
-public class IGNORE implements BuildInOutline {
-    private static IGNORE _instance = new IGNORE();
-    public static IGNORE instance(){
-        return _instance;
-    }
-
-    private IGNORE(){
-        super();
-    }
-    @Override
-    public boolean is(Outline another) {
-        return false;
+public class IGNORE extends BuildInOutline {
+    public IGNORE(AST ast) {
+        super(ast);
     }
 
     @Override
@@ -23,9 +15,15 @@ public class IGNORE implements BuildInOutline {
     }
 
     @Override
+    public boolean is(Outline another) {
+        return false;
+    }
+
+    @Override
     public boolean equals(Outline another) {
         return another instanceof IGNORE;
     }
+
     @Override
     public boolean beAssignedAble() {
         return false;

@@ -17,12 +17,12 @@ public class ArrayAccessorInference implements Inference<ArrayAccessor> {
     public Outline infer(ArrayAccessor node, Inferences inferences) {
         Outline array = node.array().infer(inferences);
         Outline index = node.index().infer(inferences);
-        Outline inferred = this.inferArray(node,array,index);
-        if(inferred==null){
-            inferred = this.inferDict(node,array,index);
+        Outline inferred = this.inferArray(node, array, index);
+        if (inferred == null) {
+            inferred = this.inferDict(node, array, index);
         }
-        if(inferred==null){
-            inferred = this.inferArrayOrDict(node,array,index);
+        if (inferred == null) {
+            inferred = this.inferArrayOrDict(node, array, index);
         }
         return inferred;
         /*if (array instanceof Array) {
@@ -60,25 +60,27 @@ public class ArrayAccessorInference implements Inference<ArrayAccessor> {
     }
 
     private Outline inferArrayOrDict(ArrayAccessor node, Outline host, Outline index) {
-        if (!(host instanceof Genericable<?, ?>)) return null;
+        if (!(host instanceof Genericable<?, ?>)) {
+            return node.ast().Error;
+        }
         Genericable<?, ?> gen = cast(host);
         if (gen.emptyConstraint()) {
             Outline key = index;//Generic.from(node, null);
             Genericable<?, ?> value = Generic.from(node, null);
-            gen.addDefinedToBe(new DictOrArray<>(node, Outline.Nothing, key, value));
+            gen.addDefinedToBe(new DictOrArray<>(node, node.ast(), node.ast().Nothing.buildIn(), key, value));
             return value;
         } else {
             ErrorReporter.report(node, GCPErrCode.NOT_AN_ARRAY_OR_DICT);
-            return Outline.Unknown;
+            return node.ast().Unknown;
         }
     }
 
     private Outline inferArray(ArrayAccessor node, Outline host, Outline index) {
         if (host instanceof Array) {
             if (index instanceof Genericable<?, ?>) {
-                ((Genericable<?, ?>) index).addDefinedToBe(Outline.Long);
+                ((Genericable<?, ?>) index).addDefinedToBe(node.ast().Long);
             }
-            if (!(index.is(Outline.Long))) {
+            if (!(index.is(node.ast().Long))) {
                 ErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH, index + " doesn't match integer or long");
             }
             return ((Array) host).itemOutline();
@@ -87,10 +89,10 @@ public class ArrayAccessorInference implements Inference<ArrayAccessor> {
             Genericable<?, ?> gen = cast(host);
             if (gen.max() instanceof Array || gen.min() instanceof Array) {
                 if (index instanceof Genericable<?, ?>) {
-                    ((Genericable<?, ?>) index).addDefinedToBe(Outline.Long);
+                    ((Genericable<?, ?>) index).addDefinedToBe(node.ast().Long);
                 }
                 Genericable<?, ?> itemOutline = Generic.from(node, null);
-                gen.addDefinedToBe(new Array(node, itemOutline));
+                gen.addDefinedToBe(Array.from(node, itemOutline));
                 return itemOutline;
             }
         }

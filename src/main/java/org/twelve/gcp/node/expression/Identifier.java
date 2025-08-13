@@ -13,7 +13,6 @@ import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 import static org.twelve.gcp.common.Tool.cast;
-import static org.twelve.gcp.outline.adt.ProductADT.Error;
 
 public class Identifier extends Assignable {
     private final Token<String> token;
@@ -54,7 +53,7 @@ public class Identifier extends Assignable {
     }
     @Override
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
-        if (this.outline == Error) return;
+        if (this.outline == env.ast().Error) return;
 //        EnvSymbol symbol = env.current().lookupSymbol(this.name());
         EnvSymbol symbol = lookupSymbol(env,this.name());
         if (symbol == null) return;
@@ -91,7 +90,7 @@ public class Identifier extends Assignable {
             //找到poly里匹配的outline
             Outline matched = poly.match(inferred);
             if (matched != null) {
-                if (matched == Error) {//找到多过一个匹配
+                if (matched == this.ast().Error) {//找到多过一个匹配
                     ErrorReporter.report(this, GCPErrCode.AMBIGUOUS_VARIABLE_REFERENCE);
                     return;
                 }

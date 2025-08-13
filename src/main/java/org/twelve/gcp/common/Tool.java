@@ -223,7 +223,7 @@ public final class Tool {
      * Gets the more specific numeric type outline between two outlines.
      */
     public static Outline getExactNumberOutline(Outline left, Outline right) {
-        return left.is(right) ? right : right.is(left) ? left : Outline.Error;
+        return left.is(right) ? right : right.is(left) ? left : left.ast().Error;
     }
 
     // --- Design Considerations ---

@@ -11,6 +11,6 @@ public abstract class Predicate extends Expression {
 
     @Override
     public ProductADT outline() {
-        return ProductADT.Boolean;
+        return ast().Boolean;
     }
 }

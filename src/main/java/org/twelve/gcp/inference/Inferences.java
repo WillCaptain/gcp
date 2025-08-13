@@ -31,7 +31,7 @@ public interface Inferences {
         for (Node child : node.nodes()) {
             child.infer(this);
         }
-        return Outline.Ignore;
+        return node.ast().Ignore;
     }
     Outline visit(BinaryExpression binaryExpression);
     Outline visit(UnaryExpression ue);

@@ -1,33 +1,33 @@
 package org.twelve.gcp.inference.operator;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.node.expression.BinaryExpression;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.primitive.STRING;
 import org.twelve.gcp.outline.primitive.NUMBER;
 import org.twelve.gcp.outline.projectable.Addable;
-import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outline.projectable.Genericable;
 
 public class AddInference implements OperatorInference {
 
     @Override
     public Outline infer(Outline left, Outline right, BinaryExpression node) {
+        AST ast = node.ast();
         if (left instanceof Genericable<?,?>) {
-            ((Genericable<?,?>) left).addDefinedToBe(Option.StringOrNumber);
+            ((Genericable<?,?>) left).addDefinedToBe(ast.StringOrNumber);
         }
         if (right instanceof Genericable<?,?>) {
-            ((Genericable<?,?>) right).addDefinedToBe(Option.StringOrNumber);
+            ((Genericable<?,?>) right).addDefinedToBe(ast.StringOrNumber);
         }
-        if ((!(left instanceof UNKNOWN) && !left.is(Option.StringOrNumber)) || (!(right instanceof UNKNOWN) && !right.is(Option.StringOrNumber))) {
-            return Outline.Error;
+        if ((!(left instanceof UNKNOWN) && !left.is(ast.StringOrNumber)) || (!(right instanceof UNKNOWN) && !right.is(ast.StringOrNumber))) {
+            return ast.Error;
         }
         if ((left instanceof UNKNOWN) || (right instanceof UNKNOWN)) {
             return new Addable(node, left, right);
         }
 
-        if (left instanceof STRING || right instanceof STRING) return Outline.String;
+        if (left instanceof STRING || right instanceof STRING) return ast.String;
 
         if (left instanceof NUMBER && right instanceof NUMBER) {
             return left.is(right) ? right : left;

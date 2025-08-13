@@ -24,6 +24,6 @@ public class IsAsInference implements Inference<IsAs> {
             node.ast().symbolEnv().defineSymbol(node.c().name(),node.b(),false,node.c());
             node.ast().symbolEnv().exit();;
         }
-        return Outline.Boolean;
+        return node.ast().Boolean;
     }
 }

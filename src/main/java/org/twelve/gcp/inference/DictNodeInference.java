@@ -12,7 +12,7 @@ public class DictNodeInference implements Inference<DictNode> {
     @Override
     public Outline infer(DictNode node, Inferences inferences) {
         if(node.isEmpty()){
-            return new Dict(node,Outline.Nothing,Outline.Nothing);
+            return new Dict(node,node.ast().Nothing,node.ast().Nothing);
         }
         AtomicReference<Outline> key = new AtomicReference<>();
         AtomicReference<Outline> value = new AtomicReference<>();

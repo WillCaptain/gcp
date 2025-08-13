@@ -12,7 +12,7 @@ public enum BinaryOperator implements Operator {
     DIVIDE("/", Precedence.MUL_DIV, new NumOperaInference()),
     MODULUS("%", Precedence.MUL_DIV, new NumOperaInference()),
 
-    ASSIGN_RETURN(":=", Precedence.COMPARISON, (left, right, node) -> Outline.Error),//forget what to do
+    ASSIGN_RETURN(":=", Precedence.COMPARISON, (left, right, node) -> node.ast().Error),//forget what to do
     // Comparison Operators
     EQUALS("==", Precedence.COMPARISON, new CompareInference()),
     NOT_EQUALS("!=", Precedence.COMPARISON, new CompareInference()),

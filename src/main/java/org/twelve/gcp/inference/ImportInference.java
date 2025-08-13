@@ -8,8 +8,6 @@ import org.twelve.gcp.node.namespace.NamespaceNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.Module;
 
-import static org.twelve.gcp.outline.Outline.Ignore;
-
 /**
  * add imported symbol into local symbol environment from global environment
  */
@@ -32,6 +30,6 @@ public class ImportInference implements Inference<Import> {
             }
             _import.infer(inferences);
         }
-        return Ignore;
+        return node.ast().Ignore;
     }
 }

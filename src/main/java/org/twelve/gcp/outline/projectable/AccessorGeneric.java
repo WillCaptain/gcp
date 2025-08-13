@@ -51,7 +51,7 @@ public class AccessorGeneric extends Genericable<AccessorGeneric, Accessor> {
                 } else {
                     ErrorReporter.report(this.node(), GCPErrCode.PROJECT_FAIL,
                             " member "+this.memberName()+" not found in "+entity.node());
-                    return Error;
+                    return this.ast().Error;
                 }
 
             }

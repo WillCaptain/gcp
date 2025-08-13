@@ -1,5 +1,6 @@
 package org.twelve.gcp.outline.builtin;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.exception.ErrorReporter;
@@ -16,6 +17,11 @@ public class Module implements Outline {
 
     private Map<String, Outline> symbols = new HashMap<>();
     private Map<String, List<FirstOrderFunction>> functions = new HashMap<>();
+    private final AST ast;
+
+    public Module(AST ast) {
+        this.ast = ast;
+    }
 
     @Override
     public boolean is(Outline another) {
@@ -25,6 +31,11 @@ public class Module implements Outline {
     @Override
     public long id() {
         return CONSTANTS.MODULE_INDEX;
+    }
+
+    @Override
+    public AST ast() {
+        return this.ast;
     }
 
     @Override

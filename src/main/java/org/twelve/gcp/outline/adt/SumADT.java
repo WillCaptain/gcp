@@ -1,5 +1,6 @@
 package org.twelve.gcp.outline.adt;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.projectable.*;
@@ -38,7 +39,8 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
      * @param node     对应节点
      * @param outlines 可能的options
      */
-    SumADT(Node node, Outline... outlines) {
+    SumADT(Node node, AST ast, Outline... outlines) {
+        super(ast);
         this.node = node;
 
         for (Outline outline : outlines) {
@@ -124,7 +126,7 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
             if (equals.isPresent()) {
                 return equals.get();
             } else {
-                return Outline.Error;//模棱两可的匹配
+                return this.ast().Error;//模棱两可的匹配
             }
         }
     }

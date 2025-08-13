@@ -24,7 +24,7 @@ public class ExpressionStatement extends Statement{
     @Override
     protected Outline accept(Inferences inferences) {
         this.expression.infer(inferences);
-        return ProductADT.Ignore;
+        return this.ast().Ignore;
     }
 
     @Override

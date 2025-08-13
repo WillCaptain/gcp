@@ -1,8 +1,6 @@
 package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.exception.ErrorReporter;
-import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.body.Body;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.ProductADT;
@@ -26,7 +24,7 @@ public abstract class BodyInference<T extends Body> implements Inference<T> {
             Node child = node.nodes().get(i);
             Outline outline = child.infer(inferences);
             //ignore IGNORE
-            if (outline == ProductADT.Ignore) {
+            if (outline == node.ast().Ignore) {
                 continue;
             }
             //first return
@@ -49,7 +47,7 @@ public abstract class BodyInference<T extends Body> implements Inference<T> {
 
         //didn't meet and return statement, then return Ignore
         if (returns == null) {
-            returns = ProductADT.Ignore;
+            returns = node.ast().Ignore;
         }
         return returns;
     }

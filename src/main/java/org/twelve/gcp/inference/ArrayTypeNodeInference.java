@@ -12,10 +12,10 @@ public class ArrayTypeNodeInference implements Inference<ArrayTypeNode> {
     @Override
     public Outline infer(ArrayTypeNode node, Inferences inferences) {
 
-        Outline itemOutline = node.itemNode() == null ? Outline.Any : node.itemNode().infer(inferences);
-        if (itemOutline == Outline.Any && node.parent() instanceof Argument) {
+        Outline itemOutline = node.itemNode() == null ? node.ast().Any : node.itemNode().infer(inferences);
+        if (itemOutline == node.ast().Any && node.parent() instanceof Argument) {
             itemOutline = Generic.from(node, null);
         }
-        return new Array(node, itemOutline);
+        return Array.from(node, itemOutline);
     }
 }

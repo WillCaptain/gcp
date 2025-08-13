@@ -1,6 +1,7 @@
 package org.twelve.gcp.outline.adt;
 
 import com.sun.xml.ws.developer.Serialization;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -39,13 +40,14 @@ public abstract class ProductADT extends ADT {
 
 
 
-    protected ProductADT(BuildInOutline buildIn) {
+    protected ProductADT(AST ast,BuildInOutline buildIn) {
+        super(ast);
 //        this.node = node;
         this.buildIn = buildIn;
     }
 
-    protected ProductADT(BuildInOutline buildIn, List<EntityMember> members) {
-        this(buildIn);
+    protected ProductADT(AST ast, BuildInOutline buildIn, List<EntityMember> members) {
+        this(ast,buildIn);
         this.addMembers(members);
     }
 
@@ -76,19 +78,19 @@ public abstract class ProductADT extends ADT {
         return this.maybe(another) && super.canBe(another);
     }
 
-    @Override
-    public boolean tryIamYou(Outline another) {
-        if (!(another instanceof ProductADT)) return false;//若对方不是product adt，交由对方的tryYouAreMe去判定
-
-        //another的每一个成员，this都应有一个member对应，方可满足is关系
-        ProductADT extended = cast(another);
-        for (EntityMember member : extended.members()) {
-            if (!this.members().stream().anyMatch(m -> m.name().equals(member.name()) && m.outline().is(member.outline()))) {
-                return false;
-            }
-        }
-        return true;
-    }
+//    @Override
+//    public boolean tryIamYou(Outline another) {
+//        if (!(another instanceof ProductADT)) return false;//若对方不是product adt，交由对方的tryYouAreMe去判定
+//
+//        //another的每一个成员，this都应有一个member对应，方可满足is关系
+//        ProductADT extended = cast(another);
+//        for (EntityMember member : extended.members()) {
+//            if (!this.members().stream().anyMatch(m -> m.name().equals(member.name()) && m.outline().is(member.outline()))) {
+//                return false;
+//            }
+//        }
+//        return true;
+//    }
 
     /**
      * 浅拷贝
@@ -132,9 +134,9 @@ public abstract class ProductADT extends ADT {
         return sb.toString();
     }
 
-    public List<EntityMember> members() {
-        return members.values().stream().toList();
-    }
+//    public List<EntityMember> members() {
+//        return members.values().stream().toList();
+//    }
 
     /**
      * 添加member列表
@@ -177,7 +179,7 @@ public abstract class ProductADT extends ADT {
                 this.members.put(member.name(), member);
                 return true;
             }
-            Poly overwrite = Poly.create();
+            Poly overwrite = Poly.create(this.ast());
             overwrite.sum(m.outline(), m.mutable().toBool());
 //            overwrite.sum(member.outline(), member.mutable().toBool());
             if (overwrite.sum(member.outline(), member.mutable().toBool())) {
@@ -215,7 +217,7 @@ public abstract class ProductADT extends ADT {
             if (found.isPresent()) {
                 if (!found.get().outline().equals(member.outline())) {
                     members.remove(found.get());
-                    Poly overwrite = Poly.create();
+                    Poly overwrite = Poly.create(this.ast());
 
                     overwrite.sum(member.outline(), member.mutable().toBool());
                     overwrite.sum(found.get().outline(), found.get().mutable().toBool());
@@ -226,5 +228,9 @@ public abstract class ProductADT extends ADT {
             }
         }
         return members;
+    }
+
+    public BuildInOutline buildIn() {
+        return this.buildIn;
     }
 }

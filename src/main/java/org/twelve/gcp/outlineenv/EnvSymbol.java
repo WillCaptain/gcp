@@ -1,10 +1,8 @@
 package org.twelve.gcp.outlineenv;
 
-import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
-import org.twelve.gcp.outline.adt.SumADT;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 import java.util.concurrent.atomic.AtomicLong;

@@ -10,7 +10,6 @@ import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
-import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outline.projectable.Genericable;
 
 import static org.twelve.gcp.common.Tool.cast;

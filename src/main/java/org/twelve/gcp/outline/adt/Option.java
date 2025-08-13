@@ -1,9 +1,10 @@
 package org.twelve.gcp.outline.adt;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
-import org.twelve.gcp.outline.builtin.NOTHING;
+import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 
 import java.util.*;
@@ -15,22 +16,23 @@ import static org.twelve.gcp.common.Tool.cast;
  * sum adt
  */
 public class Option extends SumADT {
-    public static Option StringOrNumber = new Option(null, Outline.String, Outline.Number);
-
+    public static Outline from(Node node, AST ast, Outline... outlines) {
+        Outline[] os =
+                Arrays.stream(outlines).filter(o -> !(o == ast.Pending)).toArray(Outline[]::new);
+        if (os.length == 1) return os[0];
+        return new Option(node, ast, os);
+    }
 
     public static Outline from(Node node, Outline... outlines) {
-        Outline[] os =
-                Arrays.stream(outlines).filter(o -> !(o == Outline.Pending)).toArray(Outline[]::new);
-        if(os.length==1) return os[0];
-        return new Option(node, os);
+        return from(node, node.ast(), outlines);
     }
 
-    public static Outline from(Outline... outlines){
-        return from(null,outlines);
+    public static Outline from(AST ast, Outline... outlines) {
+        return from(null, ast, outlines);
     }
 
-    public Option(Node node, Outline... outlines) {
-        super(node, outlines);
+    public Option(Node node, AST ast, Outline... outlines) {
+        super(node, ast, outlines);
     }
 
 
@@ -64,7 +66,7 @@ public class Option extends SumADT {
 
     @Override
     public Option copy() {
-        Option copies = new Option(this.node());
+        Option copies = new Option(this.node(),this.ast());
         copies.id = this.id;
         copies.options.addAll(this.options);
         return copies;
@@ -73,12 +75,12 @@ public class Option extends SumADT {
     @Override
     public Option copy(Map<Long, Outline> cache) {
         Option copied = cast(cache.get(this.id()));
-        if(copied==null){
-            copied = new Option(this.node());
+        if (copied == null) {
+            copied = new Option(this.node(),this.ast());
             for (Outline option : this.options) {
                 copied.options.add(option.copy(cache));
             }
-            cache.put(this.id(),copied);
+            cache.put(this.id(), copied);
         }
         return copied;
     }
@@ -127,14 +129,15 @@ public class Option extends SumADT {
     private List<EntityMember> interactMembers(List<EntityMember> members1, List<EntityMember> members2) {
         List<EntityMember> interacted = new ArrayList<>();
         for (EntityMember m1 : members1) {
-            if(m1.isDefault()) continue;
+            if (m1.isDefault()) continue;
             for (EntityMember m2 : members2) {
                 if (!m1.name().equals(m2)) continue;
-                if(m2.isDefault()) continue;;
+                if (m2.isDefault()) continue;
+                ;
                 Outline o = interact(m1.outline(), m2.outline());
-                if (o == Nothing) continue;
+                if (o == this.ast().Nothing) continue;
                 //交集默认mutable为false，并且没有绑定的node
-                interacted.add(EntityMember.from(m1.name(), o, m1.modifier().mostPermissive(m2.modifier()), false, null,false));
+                interacted.add(EntityMember.from(m1.name(), o, m1.modifier().mostPermissive(m2.modifier()), false, null, false));
             }
         }
 //        members1.forEach((k, v1) -> {
@@ -159,31 +162,35 @@ public class Option extends SumADT {
         if (outline2.is(outline1)) return outline1;
 
         if (outline1 instanceof ProductADT && outline2 instanceof ProductADT) {
-            BuildInOutline buildIn;
+            /*BuildInOutline buildIn;
             if (outline1.maybe(outline2)) {
-                buildIn = ((ProductADT) outline2).buildIn;
+                buildIn = ((ProductADT) outline2).buildIn();
             } else if (outline2.maybe(outline1)) {
-                buildIn = ((ProductADT) outline1).buildIn;
+                buildIn = ((ProductADT) outline1).buildIn();
             } else {
-                buildIn = Any;
-            }
-            Entity entity = Entity.from(this.node(), buildIn);
+                buildIn = this.ast().Any.buildIn();
+            }*/
+            //Entity entity = Entity.from(this.node(), buildIn);
             List<EntityMember> members = interactMembers(
                     ((ProductADT) outline1).members(), ((ProductADT) outline2).members());
-            entity.addMembers(members);
-            return entity;
+            //entity.addMembers(members);
+            if(this.node()==null){
+                return Entity.from(this.ast(),members);
+            }else {
+                return Entity.from(this.node(), members);
+            }
         }
 
-        return Nothing;
+        return this.ast().Nothing;
     }
 
     @Override
     public String toString() {
-        if(this.options.stream().anyMatch(o->o instanceof NOTHING)){
-            return this.options.stream().filter(o-> !(o instanceof NOTHING))
-                    .map(o->o.toString()+"?").collect(Collectors.joining("|"));
+        if (this.options.stream().anyMatch(o -> o instanceof NOTHING)) {
+            return this.options.stream().filter(o -> !(o instanceof NOTHING))
+                    .map(o -> o.toString() + "?").collect(Collectors.joining("|"));
 
-        }else {
+        } else {
             return this.options.stream().map(o -> o.toString()).collect(Collectors.joining("|"));
         }
     }
@@ -195,7 +202,7 @@ public class Option extends SumADT {
         for (Outline outline : this.projectList(this.options, this, projection, session)) {
             copied.sum(outline);
         }
-        return (copied.options.size()==1) ? copied.options.getFirst():copied;
+        return (copied.options.size() == 1) ? copied.options.getFirst() : copied;
     }
 
     @Override

@@ -18,8 +18,8 @@ public class SelectionsInference implements Inference<Selections>{
         for (Arm arm : node.arms()) {
             inferred.add(arm.infer(inferences));
         }
-        if(!node.containsElse() && !inferred.contains(Outline.Ignore)){
-            inferred.add(Outline.Ignore);
+        if(!node.containsElse() && !inferred.contains(node.ast().Ignore)){
+            inferred.add(node.ast().Ignore);
         }
         //calculate return outline
 //        if(inferred.stream().allMatch(o->o instanceof UNIT)) return Outline.Ignore;//can't be assigned and will not be return statement

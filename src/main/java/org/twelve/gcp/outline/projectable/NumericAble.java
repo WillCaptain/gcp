@@ -1,5 +1,6 @@
 package org.twelve.gcp.outline.projectable;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.expression.BinaryExpression;
 import org.twelve.gcp.outline.Outline;
@@ -14,13 +15,20 @@ public class NumericAble implements Projectable {
     protected final BinaryExpression node;
     private final Outline left;
     private final Outline right;
+    private AST ast;
 
     public NumericAble(Outline left, Outline right, BinaryExpression node) {
         this.node = node;
-        this.id = Counter.getAndIncrement();
+        this.ast = node.ast();
+        this.id = node.ast().Counter.getAndIncrement();
 
         this.left = left;
         this.right = right;
+    }
+
+    @Override
+    public AST ast() {
+        return this.ast;
     }
 
     @Override
@@ -60,7 +68,7 @@ public class NumericAble implements Projectable {
 
     @Override
     public Outline guess() {
-        return Number;
+        return this.ast().Number;
     }
 
     @Override

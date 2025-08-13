@@ -11,9 +11,9 @@ public class BinaryExprInference implements Inference<BinaryExpression> {
         Outline left = node.left().infer(inferences);
         Outline right = node.right().infer(inferences);
         Outline inferred = node.operator().infer(left, right, node);
-        if (inferred == Outline.Error) {
+        if (inferred == node.ast().Error) {
             ErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);
-            return Outline.Error;
+            return node.ast().Error;
         } else {
             return inferred;
         }

@@ -17,7 +17,7 @@ public class FunctionTypeNodeInference implements Inference<FunctionTypeNode> {
         if(inferred instanceof Reference){
             ret = cast(inferred);
         }else {
-            ret = Return.from(node.returns().infer(inferences));
+            ret = Return.from(node.ast(),node.returns().infer(inferences));
             ret.addReturn(ret.declaredToBe());
         }
         return HigherOrderFunction.from(node, ret, node.arguments().stream().map(a -> a.infer(inferences)).toArray(Outline[]::new));

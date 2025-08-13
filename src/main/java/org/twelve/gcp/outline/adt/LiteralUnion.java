@@ -20,6 +20,7 @@ public class LiteralUnion extends ADT {
     private final Node node;
 
     private LiteralUnion(Node node, ValueNode... values) {
+        super(node.ast());
         for (ValueNode value : values) {
             this.values.add(value);
         }

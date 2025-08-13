@@ -1,5 +1,6 @@
 package org.twelve.gcp.outline.adt;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.projectable.ProjectSession;
@@ -36,8 +37,8 @@ public class Poly extends SumADT {
      * 声明式定义的poly类型这
      * 声明定义意味着该poly不能runtime sum更多类型，所以该poly的所有类型的对应节点和mutable属性是一致的
      */
-    Poly(Node node, Outline... outlines) {
-        super(node, outlines);
+    private Poly(Node node, AST ast, Outline... outlines) {
+        super(node,ast, outlines);
 //        this.mutable = mutable;
     }
 
@@ -50,7 +51,7 @@ public class Poly extends SumADT {
      * @return 固定option的poly对象
      */
     public static Poly from(Node node, Outline... outlines) {
-        return new Poly(node, outlines);
+        return new Poly(node, node.ast(),outlines);
     }
 
 
@@ -60,8 +61,8 @@ public class Poly extends SumADT {
      *
      * @return 空的poly
      */
-    public static Poly create() {
-        return new Poly(null);
+    public static Poly create(AST ast) {
+        return new Poly(null,ast);
     }
 
     @Override

@@ -1,24 +1,21 @@
 package org.twelve.gcp.outline.primitive;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
 import org.twelve.gcp.outline.builtin.Float_;
 
 public class FLOAT extends DECIMAL{
     private final static Float_ float_ = new Float_();
-    public static FLOAT create(Node node){
-        FLOAT f = new FLOAT(node);
-        f.init();
-        return f;
-    }
-    protected FLOAT(BuildInOutline buildInOutline, Node node) {
-        super(buildInOutline,node);
+    protected FLOAT(BuildInOutline buildInOutline, Node node, AST ast) {
+        super(buildInOutline,node,ast);
     }
 
-    private FLOAT(Node node){
-        this(float_,node);
+    public FLOAT(Node node){
+        super(float_,node,node.ast());
+        this.loadMethods();
     }
-    public FLOAT(){
-        this(null);
+    public FLOAT(AST ast){
+        super(float_,null,ast);
     }
 }

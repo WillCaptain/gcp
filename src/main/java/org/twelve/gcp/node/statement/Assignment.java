@@ -19,7 +19,7 @@ public class Assignment extends Statement {
 
     @Override
     public Outline outline() {
-        return Outline.Ignore;
+        return this.ast().Ignore;
     }
 
     public Assignable lhs() {
@@ -49,6 +49,6 @@ public class Assignment extends Statement {
         return inferences.visit(this);
     }
     public void setInferred() {
-        this.outline = Outline.Ignore;
+        this.outline = this.ast().Ignore;
     }
 }

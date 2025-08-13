@@ -10,7 +10,7 @@ import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.adt.ProductADT;
-import org.twelve.gcp.outline.builtin.ANY;
+import org.twelve.gcp.outline.primitive.ANY;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.AccessorGeneric;
 import org.twelve.gcp.outline.projectable.Genericable;
@@ -53,13 +53,14 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
         //实体匹配
         if (!(outline instanceof ProductADT)) {
             ErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
-            return Outline.Error;
+            return node.ast().Error;
         }
         ProductADT host = cast(outline);
+        host.loadMethods();
         List<EntityMember> found = host.members().stream().filter(m -> m.name().equals(node.member().name())).collect(Collectors.toList());
         if (found.isEmpty()) {
             ErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
-            return Outline.Error;
+            return node.ast().Error;
         } else {
             return found.getFirst().outline();
         }

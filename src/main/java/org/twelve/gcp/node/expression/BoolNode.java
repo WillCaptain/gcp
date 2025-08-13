@@ -11,7 +11,7 @@ import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 public class BoolNode  extends Identifier {
     public BoolNode(AST ast, Token<String> token) {
         super(ast, token);
-        this.outline = BOOL.create(this);
+        this.outline = new BOOL(this);
     }
 
     @Override

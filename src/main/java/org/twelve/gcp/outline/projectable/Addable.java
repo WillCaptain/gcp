@@ -1,5 +1,6 @@
 package org.twelve.gcp.outline.projectable;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Option;
@@ -22,7 +23,7 @@ public class Addable implements Projectable, OperateAble {
 
     public Addable(Node node, Outline left, Outline right) {
         this.node = node;
-        this.id = Counter.getAndIncrement();
+        this.id = node.ast().Counter.getAndIncrement();
 
         this.left = left;
         this.right = right;
@@ -37,15 +38,15 @@ public class Addable implements Projectable, OperateAble {
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
         if (this.definedToBe != null && !projection.is(this.definedToBe)) {
 //            ErrorReporter.report(projectionNode, GCPErrCode.OUTLINE_MISMATCH);
-            return Outline.Error;
+            return this.node().ast().Error;
         }
         Outline l = left instanceof Projectable ? ((Projectable) left).project(projected, projection, session) : left;
         Outline r = right instanceof Projectable ? ((Projectable) right).project(projected, projection, session) : right;
         if (l instanceof STRING || r instanceof STRING) {
-            return String;
+            return this.node().ast().String;
         }
-        if (l == Outline.Error || r == Outline.Error) {
-            return Outline.Error;
+        if (l == this.node().ast().Error || r == this.node().ast().Error) {
+            return this.node().ast().Error;
         }
         if (l instanceof Projectable || r instanceof Projectable) {
             return new Addable(node, l, r);
@@ -55,7 +56,7 @@ public class Addable implements Projectable, OperateAble {
 
     @Override
     public Outline guess() {
-        return Option.StringOrNumber;
+        return this.node().ast().StringOrNumber;
     }
 
     @Override
@@ -98,6 +99,11 @@ public class Addable implements Projectable, OperateAble {
     }
 
     @Override
+    public AST ast() {
+        return this.node.ast();
+    }
+
+    @Override
     public Node node() {
         return this.node;
     }
@@ -116,7 +122,7 @@ public class Addable implements Projectable, OperateAble {
     public boolean tryIamYou(Outline another) {
 //        return another instanceof Addable;
         if (another instanceof Addable) return true;
-        return Outline.String.is(another) && Outline.Number.is(another);
+        return this.node().ast().String.is(another) && this.node().ast().Number.is(another);
     }
 
     @Override

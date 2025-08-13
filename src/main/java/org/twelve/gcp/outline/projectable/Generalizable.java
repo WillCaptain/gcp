@@ -1,8 +1,8 @@
 package org.twelve.gcp.outline.projectable;
 
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.builtin.ANY;
-import org.twelve.gcp.outline.builtin.NOTHING;
+import org.twelve.gcp.outline.primitive.ANY;
+import org.twelve.gcp.outline.primitive.NOTHING;
 
 /**
  * an outline can be generalized, including

@@ -1,12 +1,13 @@
 package org.twelve.gcp.outline.adt;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.builtin.Dict_;
-import org.twelve.gcp.outline.builtin.NOTHING;
+import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 import org.twelve.gcp.outline.projectable.Projectable;
 import org.twelve.gcp.outline.projectable.Reference;
@@ -17,7 +18,10 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class Dict extends DictOrArray<Outline> {
     public Dict(Node node, Outline key, Outline value) {
-        super(node, Dict_.instance(), key, value);
+        super(node,node.ast(), Dict_.instance(), key, value);
+    }
+    public Dict(AST ast, Outline key, Outline value) {
+        super(null,ast, Dict_.instance(), key, value);
     }
 
     public Outline key(){
@@ -106,7 +110,7 @@ public class Dict extends DictOrArray<Outline> {
     @Override
     public Dict alternative() {
         if (this.key instanceof NOTHING) {
-            return new Dict(this.node, Any,Any);
+            return new Dict(this.node, this.node.ast().Any,this.node.ast().Any);
         } else {
             return this;
         }

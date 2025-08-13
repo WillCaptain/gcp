@@ -13,7 +13,7 @@ public class Tuple  extends Entity {
 
 
     public Tuple(Entity entity) {
-       super(entity.node(),Outline.Any,entity.members());
+       super(entity.node(),entity.ast(),entity.ast().Any,entity.members());
     }
 
     @Override

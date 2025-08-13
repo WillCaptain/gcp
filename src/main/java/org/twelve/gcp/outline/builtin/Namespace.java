@@ -1,5 +1,6 @@
 package org.twelve.gcp.outline.builtin;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
@@ -21,7 +22,12 @@ public class Namespace implements Outline {
         }
         this.namespace = namespace.name();
         this.node = namespace;
-        this.id = Counter.getAndIncrement();
+        this.id = this.node.ast().Counter.getAndIncrement();
+    }
+
+    @Override
+    public AST ast() {
+        return this.node.ast();
     }
 
     @Override

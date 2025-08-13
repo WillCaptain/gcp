@@ -25,7 +25,7 @@ public class EntityInference implements Inference<EntityNode> {
                 base = node.base().infer(inferences);
                 if (!(base instanceof ProductADT)) {
                     ErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);
-                    return Outline.Error;
+                    return node.ast().Error;
                 }
                 node.ast().symbolEnv().defineSymbol("base", base, false, null);
             }

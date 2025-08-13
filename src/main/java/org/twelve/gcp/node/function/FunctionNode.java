@@ -9,7 +9,6 @@ import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.statement.ReturnStatement;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.builtin.UNIT;
 
 import java.util.ArrayList;
 import java.util.Arrays;

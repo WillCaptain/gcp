@@ -17,6 +17,6 @@ public class EntityTypeNodeInference implements Inference<EntityTypeNode>{
             EntityMember member = EntityMember.from(m.name(),m.declared().infer(inferences),m.modifier(),m.mutable());
             members.add(member);
         }
-        return Entity.from(members);
+        return Entity.from(node,members);
     }
 }

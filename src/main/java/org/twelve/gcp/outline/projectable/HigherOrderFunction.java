@@ -1,5 +1,6 @@
 package org.twelve.gcp.outline.projectable;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.expression.typeable.FunctionTypeNode;
 import org.twelve.gcp.outline.Outline;
@@ -21,9 +22,9 @@ public class HigherOrderFunction extends Function<Node, Outline> {
             for (int i = 0; i < rests.length; i++) {
                 rests[i] = args[i + 1];
             }
-            Returnable r = Return.from(from(null, returns, rests));
+            Returnable r = Return.from(node.ast(),from(node, returns, rests));
 //            r.addNothing();
-            return new HigherOrderFunction(null, arg, r);
+            return new HigherOrderFunction(node.ast(), arg, r);
         } else {
 //            Return r = Return.from(returns);
 //            r.addNothing();
@@ -31,16 +32,24 @@ public class HigherOrderFunction extends Function<Node, Outline> {
         }
     }
 
-    public HigherOrderFunction(Node node, Outline argument, Returnable returns) {
-        super(node, argument, returns);
+    private HigherOrderFunction(Node node, AST ast, Outline argument, Returnable returns) {
+        super(node, ast, argument, returns);
 //        this.argument = Nothing;
-        returns.addReturn(Nothing);//.setInferred();
+        returns.addReturn(ast.Nothing);//.setInferred();
+    }
+
+    public HigherOrderFunction(Node node, Outline argument, Returnable returns) {
+        this(node, node.ast(), argument, returns);
+    }
+
+    public HigherOrderFunction(AST ast, Outline argument, Returnable returns) {
+        this(null, ast, argument, returns);
     }
 
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
-        Outline argument = this.argument instanceof Genericable<?,?> ?
-                ((Genericable<?,?>) this.argument).project(projected, projection, session) : this.argument;
+        Outline argument = this.argument instanceof Genericable<?, ?> ?
+                ((Genericable<?, ?>) this.argument).project(projected, projection, session) : this.argument;
         Returnable returns = this.returns();
         if (this.returns().definedToBe() instanceof HigherOrderFunction) {
             returns = Return.from(returns.node(), returns.declaredToBe());
@@ -69,7 +78,7 @@ public class HigherOrderFunction extends Function<Node, Outline> {
         Outline arg = this.argument();
         Returnable ret = this.returns();
         arg = cast(arg.project(reference, projection));
-        ret = Return.from(ret.project(reference, projection));
+        ret = Return.from(this.ast(),ret.project(reference, projection));
         return new HigherOrderFunction(this.node, arg, ret);
     }
 }

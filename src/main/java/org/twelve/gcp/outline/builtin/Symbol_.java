@@ -3,10 +3,11 @@ package org.twelve.gcp.outline.builtin;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.outline.Outline;
 
-public class Symbol_ implements BuildInOutline {
+public class Symbol_ extends BuildInOutline {
     private final String name;
 
     public Symbol_(String name) {
+        super(null);
         this.name = name;
     }
 

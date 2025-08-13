@@ -7,7 +7,7 @@ public class ReturnInference implements Inference<ReturnStatement> {
     @Override
     public Outline infer(ReturnStatement node, Inferences inferences) {
         if (node.expression() == null) {
-            return Outline.Unit;// return;
+            return node.ast().Unit;// return;
         } else {
             return node.expression().infer(inferences);// return ***
         }

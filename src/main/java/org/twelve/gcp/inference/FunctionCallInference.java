@@ -1,5 +1,6 @@
 package org.twelve.gcp.inference;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -7,8 +8,6 @@ import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
-import org.twelve.gcp.outline.builtin.ANY;
-import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.*;
 
 import java.util.List;
@@ -20,17 +19,18 @@ import static org.twelve.gcp.common.Tool.cast;
 public class FunctionCallInference implements Inference<FunctionCallNode> {
     @Override
     public Outline infer(FunctionCallNode node, Inferences inferences) {
+        AST ast = node.ast();
         Outline func = node.function().invalidate().infer(inferences);
 //        func.toString();
         if (func == null) {
             ErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_DEFINED);
-            return Outline.Error;
+            return ast.Error;
         }
-        if (func == Outline.Pending) {//recursive
+        if (func == ast.Pending) {//recursive
             return func;
         }
 
-        Outline result = Outline.Unknown;
+        Outline result = ast.Unknown;
         //如果有重载方法
         if (func instanceof Poly) {
             result = targetOverride(cast(func), node.arguments(), inferences, node);
@@ -43,13 +43,14 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
 
         }
 //        if (result == Outline.Unknown && !node.ast().asf().isLastInfer()) {
-        if (result == Outline.Unknown) {
+        if (result == ast.Unknown) {
             ErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_FOUND);
             return result;
         }
 
         if (node.arguments().isEmpty()) {
-            result = ((Function<?, ?>) result).returns().supposedToBe();
+            //result = ((Function<?, ?>) result).returns().supposedToBe();
+            result = project(result);
         } else {
             //按顺序投影参数
             for (Expression argument : node.arguments()) {
@@ -67,7 +68,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
                 return f;
             }
         }
-        return Outline.Unknown;
+        return node.ast().Unknown;
     }
 
     private boolean matchFunction(Function<?, ?> function, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {
@@ -92,6 +93,20 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         return true;
     }
 
+    private Outline project(Outline target) {
+        if (target instanceof Genericable) {
+//            Returnable returns = Return.from(target.ast());
+//            HigherOrderFunction defined = new HigherOrderFunction(target.ast(), target.ast().Unit, returns);
+//            ((Genericable<?, ?>) target).addDefinedToBe(defined);
+//            return returns;
+            return this.project((Genericable<?, ?>) target,null);
+        }
+        if(target instanceof Function<?,?>){
+            return ((Function<?, ?>) target).returns().supposedToBe();
+        }
+
+        return target.ast().Error;
+    }
     private Outline project(Outline target, Node argument) {
 //        ProjectSession session = new ProjectSession();
         //hlf function call
@@ -104,7 +119,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
 
         }
         ErrorReporter.report(argument, GCPErrCode.NOT_A_FUNCTION);
-        return Outline.Error;
+        return argument.ast().Error;
     }
 
     /**
@@ -127,7 +142,8 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             }
         }
         Returnable returns = Return.from(generic.node());
-        HigherOrderFunction defined = new HigherOrderFunction(generic.node(), cast(argument.outline()), returns);
+        Outline argOutline = argument==null?generic.node().ast().Unit:argument.outline();
+        HigherOrderFunction defined = new HigherOrderFunction(generic.node(), argOutline, returns);
         generic.addDefinedToBe(defined);
         return returns;
     }

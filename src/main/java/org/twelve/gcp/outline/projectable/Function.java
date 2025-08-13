@@ -1,5 +1,7 @@
 package org.twelve.gcp.outline.projectable;
 
+import lombok.NonNull;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 
@@ -12,14 +14,27 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
 
     protected A argument;
     protected Returnable returns;
+    private AST ast;
 
-    public Function(T node, A argument, Returnable returns) {
+    public Function(@NonNull T node, A argument, Returnable returns) {
+        this(node,node.ast(),argument,returns);
+    }
+    public Function(AST ast, A argument, Returnable returns) {
+        this(null,ast,argument,returns);
+    }
+    protected Function(T node, AST ast, A argument, Returnable returns) {
         this.node = node;
-        this.id = Counter.getAndIncrement();
+        this.ast = ast;
+        this.id = ast.Counter.getAndIncrement();
 
         this.argument = argument;
         this.returns = returns;
         this.returns.setArgument(this.argument);
+    }
+
+    @Override
+    public AST ast() {
+        return this.ast;
     }
 
     @Override
@@ -75,7 +90,7 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
 
     @Override
     public Outline guess() {
-        return new FixFunction(this.node(),
+        return new FixFunction(this.node(),this.ast(),
                 this.argument instanceof Projectable?((Projectable) this.argument).guess():this.argument,
                 this.returns.guess());
     }

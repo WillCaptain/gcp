@@ -13,27 +13,34 @@ import java.util.*;
 public class LocalSymbolEnvironment implements SymbolEnvironment {
     private final AstScope root;
     private final Map<Long, AstScope> scopes = new HashMap<>();
+    private final AST ast;
     private AstScope current;
-    private Module module = new Module();
+    private final Module module;
     private Stack<AstScope> scopeStack = new Stack<>();
 
     public LocalSymbolEnvironment(AST ast) {
+        this.ast = ast;
+        this.module = new Module(ast);
         this.root = new AstScope(ast.program().scope(), null,ast.program());
         setCurrent(this.root);
         initOutlines(this.root);
     }
 
+    public AST ast(){
+        return this.ast;
+    }
+
     private void initOutlines(AstScope root) {
-        defineOutline(root,Outline.String);
-        defineOutline(root,Outline.Integer);
-        defineOutline(root,Outline.Boolean);
-        defineOutline(root,Outline.Decimal);
-        defineOutline(root,Outline.Double);
-        defineOutline(root,Outline.Float);
-        defineOutline(root,Outline.Long);
-        defineOutline(root,Outline.Unit);
-        defineOutline(root,Outline.Number);
-        defineOutline(root,Outline.Unknown);
+        defineOutline(root,this.ast().String);
+        defineOutline(root,this.ast().Integer);
+        defineOutline(root,this.ast().Boolean);
+        defineOutline(root,this.ast().Decimal);
+        defineOutline(root,this.ast().Double);
+        defineOutline(root,this.ast().Float);
+        defineOutline(root,this.ast().Long);
+        defineOutline(root,this.ast().Unit);
+        defineOutline(root,this.ast().Number);
+        defineOutline(root,this.ast().Unknown);
     }
     private void defineOutline(AstScope root, Outline outline){
         root.defineOutline(outline.name(),outline,null);

@@ -1,5 +1,6 @@
 package org.twelve.gcp.exception;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 
 import java.util.ArrayList;
@@ -23,12 +24,15 @@ public class ErrorReporter {
      * @param node    The AST node where the error occurred (non-null)
      * @param errCode The error code (non-null)
      */
-    public static void report(Node node, GCPErrCode errCode,String message) {
+    public static void report(AST ast, Node node, GCPErrCode errCode, String message) {
 //        if(!node.inferred()) return;
-        GCPError err = node.ast().addError(new GCPError(node, errCode, message));
+        GCPError err = ast.addError(new GCPError(node, errCode, message));
         if(err!=null){
             System.out.println(err);
         }
+    }
+    public static void report(Node node, GCPErrCode errCode, String message) {
+        report(node.ast(),node,errCode,message);
     }
     public static void report(Node node, GCPErrCode errCode) {
         report(node,errCode,"");

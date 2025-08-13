@@ -62,7 +62,7 @@ public class GCPInference {
         //f.argument is a Generic outline
         assertInstanceOf(Genericable.class, f.argument().outline());
         //f.argument.declared_to_be = Integer
-        assertEquals(Outline.Integer, f.argument().outline().declaredToBe());
+        assertEquals(ast.Integer, f.argument().outline().declaredToBe());
         //f.return is a Return outline
         assertInstanceOf(Return.class, f.body().outline());
         //f.return = f.argument  (return x;)
@@ -72,7 +72,7 @@ public class GCPInference {
         assertEquals(some, ast.errors().getFirst().node());
         assertEquals(GCPErrCode.PROJECT_FAIL, ast.errors().getFirst().errorCode());
         //call2: Integer
-        assertEquals(Outline.Integer.toString(), call2.outline().toString());
+        assertEquals(ast.Integer.toString(), call2.outline().toString());
 
     }
 
@@ -109,14 +109,14 @@ public class GCPInference {
         ast.asf().infer();
 
         Return returns = cast(((FirstOrderFunction) f.outline()).returns());
-        assertEquals(Outline.Integer.toString(), ((Genericable<?,?>) returns.supposedToBe()).extendToBe().toString());
+        assertEquals(ast.Integer.toString(), ((Genericable<?,?>) returns.supposedToBe()).extendToBe().toString());
 
         //f("some") project fail
         assertInstanceOf(INTEGER.class, call1.outline());
         assertEquals(GCPErrCode.PROJECT_FAIL, ast.errors().getFirst().errorCode());
 
         //f(10)
-        assertEquals(Outline.Integer.toString(), call2.outline().toString());
+        assertEquals(ast.Integer.toString(), call2.outline().toString());
 
     }
 
@@ -204,12 +204,12 @@ public class GCPInference {
         //f.return is a Return outline
         assertInstanceOf(Addable.class, ((Return) f.body().outline()).supposedToBe());
         //f.return.suppose_to_be = f.argument  (return x;)
-        assertTrue(f.argument().outline().definedToBe().is(Option.StringOrNumber));
+        assertTrue(f.argument().outline().definedToBe().is(ast.StringOrNumber));
         //call1: gcp error
         assertEquals(0, ast.errors().size());
         //call2: Integer
         assertInstanceOf(STRING.class, call1.outline());
-        assertEquals(Outline.Integer.toString(), call2.outline().toString());
+        assertEquals(ast.Integer.toString(), call2.outline().toString());
 
     }
 
@@ -256,12 +256,12 @@ public class GCPInference {
         //f.return is a Return outline
         assertInstanceOf(Return.class, f.body().outline());
         //f.return.suppose_to_be = f.argument  (return x;)
-        assertTrue(f.argument().outline().definedToBe().is(Option.StringOrNumber));
+        assertTrue(f.argument().outline().definedToBe().is(ast.StringOrNumber));
         //call1: gcp error
         assertEquals(0, ast.errors().size());
         //call2: Integer
         assertInstanceOf(STRING.class, call1.outline());
-        assertEquals(Outline.Float.toString(), call2.outline().toString());
+        assertEquals(ast.Float.toString(), call2.outline().toString());
         assertInstanceOf(STRING.class, call3.outline());
     }
 
@@ -310,7 +310,7 @@ public class GCPInference {
         ast.asf().infer();
         assertEquals(1, ast.errors().size());
         assertEquals(floatNum, ast.errors().getFirst().node());
-        assertEquals(Outline.Integer.toString(), call2.outline().toString());
+        assertEquals(ast.Integer.toString(), call2.outline().toString());
         assertInstanceOf(STRING.class, call1.outline());
     }
 
@@ -344,7 +344,7 @@ public class GCPInference {
 
         ast.asf().infer();
         assertTrue(ast.errors().isEmpty());
-        assertEquals(Outline.Integer.toString(), call2.outline().toString());
+        assertEquals(ast.Integer.toString(), call2.outline().toString());
         assertTrue(ast.inferred());
     }
 

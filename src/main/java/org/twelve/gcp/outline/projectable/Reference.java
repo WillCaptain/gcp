@@ -1,12 +1,13 @@
 package org.twelve.gcp.outline.projectable;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
-import org.twelve.gcp.outline.builtin.NOTHING;
+import org.twelve.gcp.outline.primitive.NOTHING;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -23,14 +24,24 @@ public class Reference extends Genericable<Reference, ReferenceNode> implements 
     private Reference(ReferenceNode node, Outline declared) {
         super(node, declared);
     }
+    private Reference(AST ast, Outline declared) {
+        super(ast, declared);
+    }
 
     public static Reference from(ReferenceNode node, Outline declared){
         return new Reference(node,declared);
     }
+    public static Reference from(AST ast, Outline declared){
+        return new Reference(ast,declared);
+    }
 
     @Override
     protected Reference createNew() {
-        return new Reference(cast(this.node), this.declaredToBe);
+        if(this.node==null){
+            return new Reference(this.ast(),this.declaredToBe);
+        }else {
+            return new Reference(this.node, this.declaredToBe);
+        }
     }
 
     @Override
@@ -56,7 +67,7 @@ public class Reference extends Genericable<Reference, ReferenceNode> implements 
 
     @Override
     public Outline supposedToBe() {
-        return Nothing;
+        return this.ast().Nothing;
     }
 
     @Override

@@ -9,8 +9,10 @@ import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.namespace.NamespaceNode;
 import org.twelve.gcp.node.statement.Statement;
+import org.twelve.gcp.outline.adt.Option;
+import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.builtin.Module;
-import org.twelve.gcp.outline.primitive.Primitive;
+import org.twelve.gcp.outline.primitive.*;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 import java.util.*;
@@ -43,7 +45,25 @@ public class AST {
     private ASF asf;  // Parent Abstract Syntax Forest
     private Set<Long> cache = new HashSet<>();  // Optional: Inference caching mechanism
 
+    public final AtomicLong Counter;
+    public final UNIT Unit;
+    public final UNKNOWN Unknown;
+    public final UNKNOWN Pending;
+    public final NOTHING Nothing;
+    public final ANY Any;
+    public final ERROR Error;
+    public final IGNORE Ignore;
+    public final STRING String;
+    public final DECIMAL Decimal;
+    public final DOUBLE Double;
+    public final FLOAT Float;
+    public final INTEGER Integer;
+    public final LONG Long;
+    public final BOOL Boolean;
+    public final NUMBER Number;
+    public final Option StringOrNumber;
     // Constructors
+
     public AST(ASF asf) {
         this(new OutlineInferences(), asf);  // Default inference rules
     }
@@ -51,10 +71,39 @@ public class AST {
     public AST(Inferences inference, ASF asf) {
         this.inference = inference;
         this.id = nodeIndexer.incrementAndGet();  // Assign unique ID
+        this.asf = asf;
+
+        this.Counter = new AtomicLong(100);
+        this.Unit = new UNIT(this);
+        this.Unknown = new UNKNOWN(this);
+        this.Pending = new UNKNOWN(this);
+        this.Nothing = new NOTHING(this);
+        this.Any = new ANY(this);
+        this.Error = new ERROR(this);
+        this.Ignore = new IGNORE(this);
+        this.String = new STRING(this);
+        this.Decimal = new DECIMAL(this);
+        this.Double = new DOUBLE(this);
+        this.Float = new FLOAT(this);
+        this.Integer = new INTEGER(this);
+        this.Long = new LONG(this);
+        this.Boolean = new BOOL(this);
+        this.Number = new NUMBER(this);
+        this.StringOrNumber = new Option(null, this,this.String, this.Number);
+        initialize();
+
         this.program = new Program(this);  // Initialize root Program node
         this.symbolEnv = new LocalSymbolEnvironment(this);
-        this.asf = asf;
-        Primitive.initialize();
+    }
+    private void initialize(){
+        this.String.loadMethods();
+        this.Decimal.loadMethods();
+        this.Double.loadMethods();
+        this.Float.loadMethods();
+        this.Integer.loadMethods();
+        this.Long.loadMethods();
+        this.Boolean.loadMethods();
+        this.Number.loadMethods();
     }
 
     // Core Methods
@@ -69,6 +118,7 @@ public class AST {
 
     // Error Handling
     public GCPError addError(GCPError error) {
+        if(error.node()==null) return error;
         // Deduplicate errors by node ID and error code
         if (errors.stream().noneMatch(e ->
                 Objects.equals(e.node().id(), error.node().id()) &&

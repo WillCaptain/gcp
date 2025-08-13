@@ -13,13 +13,14 @@ public class BaseInference implements Inference<Base> {
     }
 
     private Outline findBase(Node node) {
-        while (node != null && !(node.outline() instanceof ProductADT)) {
-            node = node.parent();
+        Node next = node;
+        while (next != null && !(next.outline() instanceof ProductADT)) {
+            next = next.parent();
         }
-        if (node == null) {
-            return Outline.Unknown;
+        if (next == null) {
+            return node.ast().Unknown;
         } else {
-            return ((Entity)node.outline()).base();
+            return ((Entity)next.outline()).base();
         }
     }
 }

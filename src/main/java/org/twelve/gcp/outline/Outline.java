@@ -1,8 +1,7 @@
 package org.twelve.gcp.outline;
 
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.outline.adt.Option;
-import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.primitive.*;
 import org.twelve.gcp.outline.projectable.Projectable;
@@ -15,22 +14,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.twelve.gcp.common.Tool.cast;
 
 public interface Outline extends Serializable {
-    AtomicLong Counter = new AtomicLong(100);
-    UNIT Unit = UNIT.instance();
-    UNKNOWN Unknown = new UNKNOWN();
-    UNKNOWN Pending = new UNKNOWN();
-    NOTHING Nothing = NOTHING.instance();
-    ANY Any = ANY.instance();
-    ERROR Error = ERROR.instance();
-    IGNORE Ignore = IGNORE.instance();
-    STRING String = new STRING();
-    DECIMAL Decimal = new DECIMAL();
-    DOUBLE Double = new DOUBLE();
-    FLOAT Float = new FLOAT();
-    INTEGER Integer = new INTEGER();
-    LONG Long = new LONG();
-    BOOL Boolean = new BOOL();
-    NUMBER Number = NUMBER.instance();
+
+
+    AST ast();
 
     Node node();
 

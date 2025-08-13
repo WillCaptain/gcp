@@ -2,20 +2,19 @@ package org.twelve.gcp.outline.projectable;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
-import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.exception.ErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.adt.Option;
-import org.twelve.gcp.outline.builtin.ANY;
+import org.twelve.gcp.outline.primitive.ANY;
 import org.twelve.gcp.outline.builtin.IGNORE;
-import org.twelve.gcp.outline.builtin.NOTHING;
+import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
-import java.util.List;
 import java.util.Map;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -25,30 +24,34 @@ public class Return extends Genericable<Return, Node> implements Returnable {
     @Getter
     private Outline argument;
 
-    private Outline supposed = Unknown;
+    private Outline supposed;
 
-    private Return(Node node, Outline declared) {
-        super(node, declared);
+    private Return(Node node, AST ast, Outline declared) {
+        super(node, ast, declared);
+        this.supposed = ast.Unknown;
+    }
+
+    public static Returnable from(Node node, AST ast, Outline declared) {
+        if (declared instanceof Returnable) return cast(declared);
+        return new Return(node, ast, declared);
     }
 
     public static Returnable from(Node node, Outline declared) {
-        if (declared instanceof Returnable) return cast(declared);
-        return new Return(node, declared);
+//        if (declared instanceof Returnable) return cast(declared);
+//        return new Return(node, node.ast(), declared);
+        return from(node, node.ast(), declared);
     }
 
     public static Returnable from(Node node) {
-        return from(node, Any);
+        return from(node, node.ast().Any);
     }
 
-    public static Returnable from(Outline declared) {
-        return from(null, declared);
+    public static Returnable from(AST ast, Outline declared) {
+        return from(null, ast, declared);
     }
 
-    /**
-     * for high order function
-     */
-    public static Returnable from() {
-        return from(Any);
+    public static Returnable from(AST ast) {
+        return from(ast, ast.Any);
     }
 
     public boolean addReturn(Outline returns) {
@@ -59,7 +62,7 @@ public class Return extends Genericable<Return, Node> implements Returnable {
         if (supposed instanceof UNKNOWN || (supposed instanceof NOTHING)) {
             supposed = returns;
         } else {
-            supposed = Option.from(this.node, supposed, returns);
+            supposed = Option.from(this.node, this.ast(), supposed, returns);
         }
         return true;
     }
@@ -87,18 +90,31 @@ public class Return extends Genericable<Return, Node> implements Returnable {
         }
         //project related argument in the return constraints
         if (this.argument.id() == projected.id()) {
+            Return result = this.copy();
+            this.projectConstraints(result, projected, projection, session);
+            if (result.supposedToBe() instanceof UNKNOWN && this.ast().asf().isLastInfer()) {//extension methods doesn't have supposed type
+                return result.min();
+            }
+            if (result.supposedToBe() instanceof NOTHING) {//in higher function, don't return nothing
+                return result;
+            } else {
+                return result.supposedToBe();
+            }
+            /*
             if (supposedToBe() instanceof UNKNOWN) {//投影HOF返回值
                 return supposedToBe();
             } //else {//投影FOF返回值
             if (supposedToBe() instanceof Projectable) {
                 return ((Projectable) supposedToBe()).project(projected, projection, session);
             } else {
-                if(supposedToBe() instanceof NOTHING){//in higher function, don't return nothing
+                if (supposedToBe() instanceof NOTHING) {//in higher function, don't return nothing
                     return this;
-                }else {
+                } else {
                     return supposedToBe();
                 }
             }
+
+             */
             //}
         }
         //it is an irrelevant projection
@@ -118,7 +134,7 @@ public class Return extends Genericable<Return, Node> implements Returnable {
     protected void projectConstraints(Genericable<?, ?> me, Projectable projected, Outline projection, ProjectSession session) {
         super.projectConstraints(me, projected, projection, session);
         Outline outline = tryProject(((Return) me).supposed, projected, projection, session);
-        ((Return) me).supposed =outline;
+        ((Return) me).supposed = outline;
     }
 
     @Override
@@ -133,9 +149,11 @@ public class Return extends Genericable<Return, Node> implements Returnable {
         copied.supposed = this.supposed;
         copied.argument = this.argument;
         return copied;
-    }@Override
+    }
+
+    @Override
     public Return copy(Map<Long, Outline> cache) {
-        if(cache.containsKey(this.id())) return cast(cache.get(this.id()));
+        if (cache.containsKey(this.id())) return cast(cache.get(this.id()));
         Return copied = super.copy(cache);
         copied.supposed = this.supposed.copy(cache);
         copied.argument = this.argument;
@@ -143,21 +161,18 @@ public class Return extends Genericable<Return, Node> implements Returnable {
     }
 
 
-    public void replaceIgnores() {
-        if (this.supposed == Ignore) {
-            this.supposed = Unit;
-        } else {
-            if (!(supposed instanceof Option)) return;
-            Option option = cast(supposed);
-            option.options().removeIf(o -> o == Ignore);
-//            if (option.options().removeIf(o -> o == Ignore)) {
-//                option.options().add(Unit);
-//            }
-        }
-    }
+//    public void replaceIgnores() {
+//        if (this.supposed == Ignore) {
+//            this.supposed = Unit;
+//        } else {
+//            if (!(supposed instanceof Option)) return;
+//            Option option = cast(supposed);
+//            option.options().removeIf(o -> o == Ignore);
+//        }
+//    }
 
     public Outline supposedToBe() {
-        if (this.supposed == Nothing && declaredToBe != Any) {
+        if (this.supposed == this.ast().Nothing && declaredToBe != this.ast().Any) {
             return declaredToBe;
         } else {
             return this.supposed;
@@ -166,7 +181,7 @@ public class Return extends Genericable<Return, Node> implements Returnable {
 
     @Override
     protected Return createNew() {
-        return new Return(this.node, this.declaredToBe);
+        return new Return(this.node, this.ast(), this.declaredToBe);
     }
 
     @Override
@@ -201,8 +216,8 @@ public class Return extends Genericable<Return, Node> implements Returnable {
         } else {
             ret = this.supposed.toString();
         }
-        if(ret.equals("`null`")){
-            ret = "?"+this.id;
+        if (ret.equals("`null`")) {
+            ret = "?" + this.id;
         }
         return ret;
     }
