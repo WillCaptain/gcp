@@ -2,7 +2,7 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Expression;
@@ -12,8 +12,6 @@ import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
-
-import static org.twelve.gcp.common.Tool.cast;
 
 /**
  * outline as declared outline constraint of generic
@@ -37,7 +35,7 @@ public class ArgumentInference implements Inference<Argument> {
             return generic;
         } else {
             if (symbol.node() != node) {
-                ErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
+                GCPErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
             }
             return symbol.outline();
         }

@@ -1,6 +1,6 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.outline.Outline;
@@ -19,7 +19,7 @@ public class ReferenceNodeInference implements Inference<ReferenceNode> {
 //            return outline;
         } else {
             if (symbol.node() != node) {
-                ErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
+                GCPErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
                 return node.ast().Error;
             }
             outline = symbol.outline();

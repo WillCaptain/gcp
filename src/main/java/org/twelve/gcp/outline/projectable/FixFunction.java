@@ -7,19 +7,20 @@ import org.twelve.gcp.outline.Outline;
 
 import static org.twelve.gcp.common.Tool.cast;
 
-public class FixFunction  implements Projectable {
-    private final AST ast;
+public class FixFunction  extends Function<Node,Outline> {
+//    private final AST ast;
     protected long id;
-    protected final Node node;
-    private final Outline argument;
+//    protected final Node node;
+//    private final Outline argument;
     private final Outline returns;
 
     public FixFunction(Node node,AST ast, Outline arg, Outline returns) {
-        this.node = node;
-        this.ast = ast;
-        this.id = ast.Counter.getAndIncrement();
-
-        this.argument = arg;
+        super(node,ast,arg,Return.from(ast,returns));
+//        this.node = node;
+//        this.ast = ast;
+//        this.id = ast.Counter.getAndIncrement();
+//
+//        this.argument = arg;
         this.returns = returns;
     }
 
@@ -38,15 +39,15 @@ public class FixFunction  implements Projectable {
         return arg + "->" + guess.returns.toString();
     }
 
-    @Override
-    public AST ast() {
-        return this.ast;
-    }
+//    @Override
+//    public AST ast() {
+//        return this.ast;
+//    }
 
-    @Override
-    public Node node() {
-        return this.node;
-    }
+//    @Override
+//    public Node node() {
+//        return this.node;
+//    }
 
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {

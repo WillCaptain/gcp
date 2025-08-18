@@ -4,7 +4,7 @@ import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.Modifier;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.outline.Outline;
@@ -59,13 +59,13 @@ public class Identifier extends Assignable {
         if (symbol == null) return;
         if (!symbol.outline().inferred()) {
             if (!inferred.canBe(symbol.declared())) {
-                ErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
+                GCPErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
                 return;
             }
             if(!symbol.update(inferred)){
                 inferred = inferred.alternative();
                if(!symbol.update(inferred)) {
-                   ErrorReporter.report(this, GCPErrCode.NOT_BE_ASSIGNEDABLE);
+                   GCPErrorReporter.report(this, GCPErrCode.NOT_BE_ASSIGNEDABLE);
                }
             }
             this.outline = inferred;
@@ -77,7 +77,7 @@ public class Identifier extends Assignable {
            if(!symbol.update(inferred)){
                inferred = inferred.alternative();
                if(!symbol.update(inferred)) {
-                   ErrorReporter.report(this, GCPErrCode.NOT_BE_ASSIGNEDABLE);
+                   GCPErrorReporter.report(this, GCPErrCode.NOT_BE_ASSIGNEDABLE);
                }
            }
             this.outline = inferred;
@@ -91,21 +91,21 @@ public class Identifier extends Assignable {
             Outline matched = poly.match(inferred);
             if (matched != null) {
                 if (matched == this.ast().Error) {//找到多过一个匹配
-                    ErrorReporter.report(this, GCPErrCode.AMBIGUOUS_VARIABLE_REFERENCE);
+                    GCPErrorReporter.report(this, GCPErrCode.AMBIGUOUS_VARIABLE_REFERENCE);
                     return;
                 }
 
                 if (!poly.isMutable(matched, symbol.mutable())) {//匹配到了，但是不可赋值
-                    ErrorReporter.report(this, GCPErrCode.NOT_ASSIGNABLE);
+                    GCPErrorReporter.report(this, GCPErrCode.NOT_ASSIGNABLE);
                     return;
                 }
             } else {//没有找到匹配，说明赋值类型不一致
-                ErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
+                GCPErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
                 return;
             }
         } else {
             if (!symbol.mutable() && !inferred.is(this.outline)) {//不可赋值
-                ErrorReporter.report(this, GCPErrCode.NOT_ASSIGNABLE);
+                GCPErrorReporter.report(this, GCPErrCode.NOT_ASSIGNABLE);
                 return;
             }
         }

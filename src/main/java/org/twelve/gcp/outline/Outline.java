@@ -3,13 +3,11 @@ package org.twelve.gcp.outline;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.builtin.*;
-import org.twelve.gcp.outline.primitive.*;
 import org.twelve.gcp.outline.projectable.Projectable;
 import org.twelve.gcp.outline.projectable.Reference;
 
 import java.io.Serializable;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -98,11 +96,11 @@ public interface Outline extends Serializable {
 //        }
     }
 
-    default Outline copy(Map<Long, Outline> cache) {
-        Outline copied = cast(cache.get(this.id()));
+    default Outline copy(Map<Outline, Outline> cache) {
+        Outline copied = cast(cache.get(this));
         if (copied == null) {
             copied = this.copy();
-            cache.put(this.id(), copied);
+            cache.put(this, copied);
         }
         return copied;
     }

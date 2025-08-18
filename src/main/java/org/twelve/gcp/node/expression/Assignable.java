@@ -3,12 +3,11 @@ package org.twelve.gcp.node.expression;
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.CONSTANTS;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.OperateAble;
-import org.twelve.gcp.outline.projectable.Projectable;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 public abstract class Assignable extends Expression {
@@ -18,7 +17,7 @@ public abstract class Assignable extends Expression {
 
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
         if(!inferred.beAssignedAble()){
-            ErrorReporter.report(GCPErrCode.NOT_BE_ASSIGNEDABLE);
+            GCPErrorReporter.report(GCPErrCode.NOT_BE_ASSIGNEDABLE);
             return;
         }
         //generic处理
@@ -45,7 +44,7 @@ public abstract class Assignable extends Expression {
             }
         }
         if (!inferred.is(this.outline)) {
-            ErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH,
+            GCPErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH,
                     inferred.node() + CONSTANTS.MISMATCH_STR + this);
         }
     }

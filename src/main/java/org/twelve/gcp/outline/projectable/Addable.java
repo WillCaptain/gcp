@@ -2,8 +2,10 @@ package org.twelve.gcp.outline.projectable;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.adt.Option;
+import org.twelve.gcp.outline.primitive.NUMBER;
 import org.twelve.gcp.outline.primitive.STRING;
 
 import java.util.Map;
@@ -22,13 +24,17 @@ public class Addable implements Projectable, OperateAble {
     private Node node;
 
     public Addable(Node node, Outline left, Outline right) {
+        this(node.ast().Counter.getAndIncrement(),node,left,right);
+    }
+
+    private Addable(long id, Node node, Outline left, Outline right) {
         this.node = node;
-        this.id = node.ast().Counter.getAndIncrement();
+        this.id = id;
 
         this.left = left;
         this.right = right;
-        this.node = node;
     }
+
     @Override
     public long id() {
         return this.id;
@@ -36,27 +42,54 @@ public class Addable implements Projectable, OperateAble {
 
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
-        if (this.definedToBe != null && !projection.is(this.definedToBe)) {
+        if(this.id()==projected.id()){
+            if(projection.is(this)){
+                if(left instanceof Projectable ) {
+                    if(projection.is(left)) {
+                        session.removeProjection(left);
+                        ((Projectable) left).project(cast(left), projection, session);
+                    }else{
+                        ((Projectable) left).project(cast(left), ((Projectable) left).guess(), session);
+                    }
+                }
+                if(right instanceof Projectable) {
+                    if(projection.is(right)) {
+                        session.removeProjection(right);
+                        ((Projectable) right).project(cast(right), projection, session);
+                    }else{
+                        ((Projectable) right).project(cast(right), ((Projectable) right).guess(), session);
+                    }
+                }
+                return projection;
+            }else{
+                GCPErrorReporter.report(this.ast(),this.node(), GCPErrCode.OUTLINE_MISMATCH,"add type mismatch");
+                return this.guess();
+            }
+        }else {
+            if (this.definedToBe != null && !projection.is(this.definedToBe)) {
 //            ErrorReporter.report(projectionNode, GCPErrCode.OUTLINE_MISMATCH);
-            return this.node().ast().Error;
+                return this.node().ast().Error;
+            }
+            Outline l = left instanceof Projectable ? ((Projectable) left).project(projected, projection, session) : left;
+            Outline r = right instanceof Projectable ? ((Projectable) right).project(projected, projection, session) : right;
+            if (l instanceof STRING || r instanceof STRING) {
+                return this.node().ast().String;
+            }
+            if (l == this.node().ast().Error || r == this.node().ast().Error) {
+                return this.node().ast().Error;
+            }
+            //if (((l instanceof Projectable) && l.id() != this.left.id()) || ((r instanceof Projectable) && r.id() != this.right.id())) {
+            if (l instanceof Projectable || r instanceof Projectable) {
+                if (l instanceof Addable || r instanceof Addable) return this;//not sure
+                return new Addable(node, l, r);
+            }
+            return getExactNumberOutline(l, r);
         }
-        Outline l = left instanceof Projectable ? ((Projectable) left).project(projected, projection, session) : left;
-        Outline r = right instanceof Projectable ? ((Projectable) right).project(projected, projection, session) : right;
-        if (l instanceof STRING || r instanceof STRING) {
-            return this.node().ast().String;
-        }
-        if (l == this.node().ast().Error || r == this.node().ast().Error) {
-            return this.node().ast().Error;
-        }
-        if (l instanceof Projectable || r instanceof Projectable) {
-            return new Addable(node, l, r);
-        }
-        return getExactNumberOutline(l, r);
     }
 
     @Override
     public Outline guess() {
-        return this.node().ast().StringOrNumber;
+        return this.node().ast().stringOrNumber(node);
     }
 
     @Override
@@ -73,15 +106,15 @@ public class Addable implements Projectable, OperateAble {
 
     @Override
     public Addable copy() {
-        return new Addable(node,left,right);
+        return new Addable(this.id,node, left, right);
     }
 
     @Override
-    public Addable copy(Map<Long, Outline> cache){
-        Addable copied = cast(cache.get(this.id()));
-        if(copied==null){
-            copied = new Addable(node,left.copy(cache),right.copy(cache));
-            cache.put(this.id(),copied);
+    public Addable copy(Map<Outline, Outline> cache) {
+        Addable copied = cast(cache.get(this));
+        if (copied == null) {
+            copied = new Addable(node, left.copy(cache), right.copy(cache));
+            cache.put(this, copied);
         }
         return copied;
     }
@@ -126,12 +159,17 @@ public class Addable implements Projectable, OperateAble {
     }
 
     @Override
+    public boolean tryYouAreMe(Outline another) {
+        return ((another instanceof NUMBER ||another instanceof STRING ));
+    }
+
+    @Override
     public boolean inferred() {
         return this.left.inferred() && this.right.inferred();
     }
 
     @Override
     public String toString() {
-        return  "(str|num)";
+        return "(str|num)";
     }
 }

@@ -1,7 +1,7 @@
 package org.twelve.gcp.inference;
 
 import org.twelve.gcp.common.Modifier;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
@@ -52,14 +52,14 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
         }
         //实体匹配
         if (!(outline instanceof ProductADT)) {
-            ErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
+            GCPErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
             return node.ast().Error;
         }
         ProductADT host = cast(outline);
-        host.loadMethods();
+        host.loadMethods();//load methods when access member to avoid recursive call
         List<EntityMember> found = host.members().stream().filter(m -> m.name().equals(node.member().name())).collect(Collectors.toList());
         if (found.isEmpty()) {
-            ErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
+            GCPErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
             return node.ast().Error;
         } else {
             return found.getFirst().outline();

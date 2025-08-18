@@ -3,9 +3,6 @@ package org.twelve.gcp.exception;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Central error reporting facility for the compiler/interpreter.
  *
@@ -17,7 +14,7 @@ import java.util.List;
  *
  * @author huizi 2025
  */
-public class ErrorReporter {
+public class GCPErrorReporter {
     /**
      * Reports a node-specific error and attaches it to the node's AST.
      *

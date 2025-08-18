@@ -1,6 +1,6 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
 import org.twelve.gcp.outline.Outline;
@@ -70,7 +70,7 @@ public class ArrayAccessorInference implements Inference<ArrayAccessor> {
             gen.addDefinedToBe(new DictOrArray<>(node, node.ast(), node.ast().Nothing.buildIn(), key, value));
             return value;
         } else {
-            ErrorReporter.report(node, GCPErrCode.NOT_AN_ARRAY_OR_DICT);
+            GCPErrorReporter.report(node, GCPErrCode.NOT_AN_ARRAY_OR_DICT);
             return node.ast().Unknown;
         }
     }
@@ -81,7 +81,7 @@ public class ArrayAccessorInference implements Inference<ArrayAccessor> {
                 ((Genericable<?, ?>) index).addDefinedToBe(node.ast().Long);
             }
             if (!(index.is(node.ast().Long))) {
-                ErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH, index + " doesn't match integer or long");
+                GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH, index + " doesn't match integer or long");
             }
             return ((Array) host).itemOutline();
         }
@@ -106,7 +106,7 @@ public class ArrayAccessorInference implements Inference<ArrayAccessor> {
                 ((Genericable<?, ?>) index).addDefinedToBe(dict.key());
             }
             if (!(index.is(dict.key()))) {
-                ErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH, index + " doesn't match map key");
+                GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH, index + " doesn't match map key");
             }
         }
         if (host instanceof Genericable<?, ?>) {

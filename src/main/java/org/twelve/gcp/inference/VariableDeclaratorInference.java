@@ -1,19 +1,8 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.exception.ErrorReporter;
-import org.twelve.gcp.exception.GCPErrCode;
-import org.twelve.gcp.node.expression.EntityNode;
-import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.statement.Assignment;
 import org.twelve.gcp.node.statement.VariableDeclarator;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outlineenv.EnvSymbol;
-import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
-
-import java.util.Set;
-
-import static org.twelve.gcp.common.Tool.cast;
-import static org.twelve.gcp.outline.Outline.*;
 
 /**
  * add identifier into symbol environment as unknown outline before the inference

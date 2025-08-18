@@ -4,13 +4,12 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.common.Mutable;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.expression.typeable.WrapperTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
-import org.twelve.gcp.outline.builtin.BuildInOutline;
 import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 import org.twelve.gcp.outline.projectable.Projectable;
@@ -115,8 +114,8 @@ public class Entity extends ProductADT implements Projectable {
     }
 
     @Override
-    public Entity copy(Map<Long, Outline> cache) {
-        Entity copied = cast(cache.get(this.id()));
+    public Entity copy(Map<Outline, Outline> cache) {
+        Entity copied = cast(cache.get(this));
         if (copied == null) {
             List<EntityMember> members = new ArrayList<>();
             for (EntityMember m : this.members()) {
@@ -124,7 +123,7 @@ public class Entity extends ProductADT implements Projectable {
                 members.add(EntityMember.from(m.name(), m.outline.copy(cache), m.modifier(), m.mutable() == Mutable.True, m.node(), m.isDefault()));
             }
             copied = new Entity(this.node, this.ast(), this.base, members);
-            cache.put(this.id(), copied);
+            cache.put(this, copied);
         }
         return copied;
     }
@@ -180,7 +179,7 @@ public class Entity extends ProductADT implements Projectable {
 //                session.addProjection(projected, outline);
                 return outline;
             } else {
-                ErrorReporter.report(projection.ast(),projection.node(), GCPErrCode.PROJECT_FAIL,
+                GCPErrorReporter.report(projection.ast(),projection.node(), GCPErrCode.PROJECT_FAIL,
                         projection.node() + CONSTANTS.MISMATCH_STR + this);
                 return this.guess();
             }

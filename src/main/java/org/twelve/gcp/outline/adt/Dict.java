@@ -2,7 +2,7 @@ package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
@@ -52,7 +52,7 @@ public class Dict extends DictOrArray<Outline> {
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
         if (projected.id() == this.id()) {
             if (!projection.is(this)) {
-                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL);
+                GCPErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL);
                 return this.guess();
             }
             Dict you = cast(projection);
@@ -93,11 +93,11 @@ public class Dict extends DictOrArray<Outline> {
     }
 
     @Override
-    public Dict copy(Map<Long, Outline> cache) {
-        Dict copied = cast(cache.get(this.id()));
+    public Dict copy(Map<Outline, Outline> cache) {
+        Dict copied = cast(cache.get(this));
         if (copied == null) {
             copied = new Dict(this.node, this.key.copy(cache), this.value.copy(cache));
-            cache.put(this.id(), copied);
+            cache.put(this, copied);
         }
         return copied;
     }

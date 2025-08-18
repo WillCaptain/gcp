@@ -1,7 +1,7 @@
 package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
@@ -28,7 +28,7 @@ public class IdentifierInference implements Inference<Identifier> {
             supposed = oEnv.lookupSymbol(node.name());
         }
         if (supposed == null) {
-            ErrorReporter.report(node, GCPErrCode.VARIABLE_NOT_DEFINED);
+            GCPErrorReporter.report(node, GCPErrCode.VARIABLE_NOT_DEFINED);
             return node.ast().Unknown;
         }
         if(supposed.outline() instanceof UNKNOWN){

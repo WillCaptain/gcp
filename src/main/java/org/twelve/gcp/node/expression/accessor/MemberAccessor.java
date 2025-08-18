@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.expression.accessor;
 
 import org.twelve.gcp.ast.Token;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
@@ -37,7 +37,7 @@ public class MemberAccessor extends Accessor {
         if (this.outline == this.ast().Error) return;
         ProductADT owner = cast(this.productADT.outline());
         if (!owner.checkMember(member.name(), inferred)) {
-            ErrorReporter.report(this, GCPErrCode.FIELD_NOT_FOUND,
+            GCPErrorReporter.report(this, GCPErrCode.FIELD_NOT_FOUND,
                     member.name() + " not found in " + this.productADT);
         }
     }
@@ -63,7 +63,7 @@ public class MemberAccessor extends Accessor {
     @Override
     public void markUnknowns() {
         if (this.outline instanceof UNKNOWN) {
-            ErrorReporter.report(this, GCPErrCode.INFER_ERROR);
+            GCPErrorReporter.report(this, GCPErrCode.INFER_ERROR);
         }
     }
 }

@@ -3,7 +3,7 @@ package org.twelve.gcp.outline.builtin;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
@@ -52,7 +52,7 @@ public class Module implements Outline {
         if (this.symbols.containsKey(key)) {
             return this.symbols.get(key);
         } else {
-            ErrorReporter.report(symbol, GCPErrCode.VARIABLE_NOT_DEFINED);
+            GCPErrorReporter.report(symbol, GCPErrCode.VARIABLE_NOT_DEFINED);
             return null;
         }
     }

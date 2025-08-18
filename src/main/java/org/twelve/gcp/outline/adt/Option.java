@@ -2,8 +2,9 @@ package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.builtin.BuildInOutline;
 import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 
@@ -73,14 +74,14 @@ public class Option extends SumADT {
     }
 
     @Override
-    public Option copy(Map<Long, Outline> cache) {
-        Option copied = cast(cache.get(this.id()));
+    public Option copy(Map<Outline, Outline> cache) {
+        Option copied = cast(cache.get(this));
         if (copied == null) {
             copied = new Option(this.node(),this.ast());
             for (Outline option : this.options) {
                 copied.options.add(option.copy(cache));
             }
-            cache.put(this.id(), copied);
+            cache.put(this, copied);
         }
         return copied;
     }
@@ -197,12 +198,18 @@ public class Option extends SumADT {
 
     @Override
     public Outline projectMySelf(Outline projection, ProjectSession session) {
-        Option copied = this.copy();
-        copied.options.clear();
-        for (Outline outline : this.projectList(this.options, this, projection, session)) {
-            copied.sum(outline);
+        if(projection.is(this)){
+            return projection;
+        }else{
+            GCPErrorReporter.report(this.ast(),this.node(), GCPErrCode.PROJECT_FAIL, projection +" is not "+ this);
+            return this.guess();
         }
-        return (copied.options.size() == 1) ? copied.options.getFirst() : copied;
+//        Option copied = this.copy();
+//        copied.options.clear();
+//        for (Outline outline : this.projectList(this.options, this, projection, session)) {
+//            copied.sum(outline);
+//        }
+//        return (copied.options.size() == 1) ? copied.options.getFirst() : copied;
     }
 
     @Override

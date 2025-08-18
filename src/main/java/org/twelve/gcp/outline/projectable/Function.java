@@ -29,7 +29,7 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
 
         this.argument = argument;
         this.returns = returns;
-        this.returns.setArgument(this.argument);
+        this.returns.setArgument(this.argument.id());
     }
 
     @Override

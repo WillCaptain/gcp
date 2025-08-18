@@ -88,12 +88,12 @@ public class ASTBuilder {
         return new FunctionCallNode(func, args);
     }
 
-    public LiteralNode<?> buildLiteral(String lexeme) {
-        return LiteralNode.parse(ast, new Token<>(lexeme));
-    }
+//    public LiteralNode<?> buildLiteral(String lexeme) {
+//        return LiteralNode.parse(ast, new Token<>(lexeme));
+//    }
 
-    public LiteralNode<?> buildLiteral(Integer lexeme) {
-        return LiteralNode.parse(ast, new Token<>(lexeme));
+    public <T>LiteralNode<?> buildLiteral(T lexeme) {
+        return LiteralNode.parse(ast, new Token<T>(lexeme));
     }
 
     public BinaryExpression buildBinaryOperation(Expression lhs, String operator, Expression rhs) {

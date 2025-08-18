@@ -3,7 +3,7 @@ package org.twelve.gcp.outline.adt;
 import com.sun.xml.ws.developer.Serialization;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.Mutable;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
@@ -11,7 +11,6 @@ import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -109,8 +108,8 @@ public abstract class ProductADT extends ADT {
     }
 
     @Override
-    public ProductADT copy(Map<Long, Outline> cache) {
-        ProductADT copied = cast(cache.get(this.id()));
+    public ProductADT copy(Map<Outline, Outline> cache) {
+        ProductADT copied = cast(cache.get(this));
         if(copied==null){
             copied = cast(super.copy());
             ProductADT finalCopied = copied;
@@ -118,7 +117,7 @@ public abstract class ProductADT extends ADT {
                if(v.isDefault()) return;
                 finalCopied.members.put(k,EntityMember.from(v.name(), v.outline.copy(cache), v.modifier(), v.mutable()==Mutable.True, v.node(),v.isDefault()));
             });
-            cache.put(this.id(),copied);
+            cache.put(this,copied);
         }
         return copied;
     }
@@ -146,7 +145,7 @@ public abstract class ProductADT extends ADT {
     public void addMembers(List<EntityMember> members) {
         for (EntityMember member : members) {
             if (!this.addMember(member) && this.node() != null) {
-                ErrorReporter.report(this.node(), GCPErrCode.DUPLICATED_DEFINITION);
+                GCPErrorReporter.report(this.node(), GCPErrCode.DUPLICATED_DEFINITION);
             }
         }
     }

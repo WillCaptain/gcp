@@ -15,10 +15,10 @@ public class AddInference implements OperatorInference {
     public Outline infer(Outline left, Outline right, BinaryExpression node) {
         AST ast = node.ast();
         if (left instanceof Genericable<?,?>) {
-            ((Genericable<?,?>) left).addDefinedToBe(ast.StringOrNumber);
+            ((Genericable<?,?>) left).addDefinedToBe(ast.stringOrNumber(left.node()));
         }
         if (right instanceof Genericable<?,?>) {
-            ((Genericable<?,?>) right).addDefinedToBe(ast.StringOrNumber);
+            ((Genericable<?,?>) right).addDefinedToBe(ast.stringOrNumber(right.node()));
         }
         if ((!(left instanceof UNKNOWN) && !left.is(ast.StringOrNumber)) || (!(right instanceof UNKNOWN) && !right.is(ast.StringOrNumber))) {
             return ast.Error;

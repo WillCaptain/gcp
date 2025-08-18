@@ -4,7 +4,6 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.projectable.ProjectSession;
-import org.twelve.gcp.outline.projectable.Projectable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -76,8 +75,8 @@ public class Poly extends SumADT {
     }
 
     @Override
-    public Poly copy(Map<Long, Outline> cache) {
-        Poly copied = cast(cache.get(this.id()));
+    public Poly copy(Map<Outline, Outline> cache) {
+        Poly copied = cast(cache.get(this));
         if (copied == null) {
             copied = Poly.from(this.node());
             for (Outline option : this.options) {
@@ -87,7 +86,7 @@ public class Poly extends SumADT {
                 copied.declared.add(declared.copy(cache));
             }
             copied.meta.putAll(this.meta);
-            cache.put(this.id(), copied);
+            cache.put(this, copied);
         }
         return copied;
     }
@@ -228,7 +227,7 @@ public class Poly extends SumADT {
 
     @Override
     public Outline projectMySelf(Outline projection, ProjectSession session) {
-        Poly copied = this.copy();
+        Poly copied = this;//this.copy();
         copied.options = this.projectList(this.options, this, projection, session);
         copied.declared = this.projectList(this.declared, this, projection, session);
         return copied;

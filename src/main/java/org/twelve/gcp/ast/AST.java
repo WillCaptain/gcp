@@ -62,6 +62,9 @@ public class AST {
     public final BOOL Boolean;
     public final NUMBER Number;
     public final Option StringOrNumber;
+    public Option stringOrNumber(Node node){
+        return new Option(node, this,this.String, this.Number);
+    }
     // Constructors
 
     public AST(ASF asf) {

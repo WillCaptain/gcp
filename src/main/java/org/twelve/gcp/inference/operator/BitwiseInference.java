@@ -1,6 +1,6 @@
 package org.twelve.gcp.inference.operator;
 
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.BinaryExpression;
 import org.twelve.gcp.outline.Outline;
@@ -32,7 +32,7 @@ public class BitwiseInference implements OperatorInference {
             ((Genericable<?,?>) right).addDefinedToBe(r);
             return new INTEGER(node);
         }
-        ErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);
+        GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);
         return node.ast().Error;
     }
 }

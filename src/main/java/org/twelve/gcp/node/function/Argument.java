@@ -2,7 +2,7 @@ package org.twelve.gcp.node.function;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
@@ -82,7 +82,7 @@ public class Argument extends Identifier {
     @Override
     public void markUnknowns() {
         if (this.outline instanceof UNKNOWN) {
-            ErrorReporter.report(this, GCPErrCode.INFER_ERROR);
+            GCPErrorReporter.report(this, GCPErrCode.INFER_ERROR);
         }
     }
 

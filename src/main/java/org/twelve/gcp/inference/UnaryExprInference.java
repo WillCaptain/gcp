@@ -1,6 +1,6 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.UnaryExpression;
 import org.twelve.gcp.node.expression.UnaryPosition;
@@ -41,11 +41,11 @@ public class UnaryExprInference implements Inference<UnaryExpression> {
 
             default:
                 // Throw an exception for unsupported operators
-                ErrorReporter.report(node.operatorNode(), GCPErrCode.UNSUPPORTED_UNARY_OPERATION);
+                GCPErrorReporter.report(node.operatorNode(), GCPErrCode.UNSUPPORTED_UNARY_OPERATION);
         }
 
         // Throw an exception for outline type mismatches or invalid positions
-        ErrorReporter.report(node.operatorNode(), GCPErrCode.OUTLINE_MISMATCH);
+        GCPErrorReporter.report(node.operatorNode(), GCPErrCode.OUTLINE_MISMATCH);
         return node.ast().Error;
     }
 

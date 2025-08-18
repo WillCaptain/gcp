@@ -1,6 +1,6 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.DictNode;
 import org.twelve.gcp.outline.Outline;
@@ -25,7 +25,7 @@ public class DictNodeInference implements Inference<DictNode> {
                     key.set(inferredK);
                 }
                 if(!inferredK.is(key.get())){
-                    ErrorReporter.report(k, GCPErrCode.OUTLINE_MISMATCH);
+                    GCPErrorReporter.report(k, GCPErrCode.OUTLINE_MISMATCH);
                 }
             }
             Outline inferredV = v.infer(inferences);
@@ -36,7 +36,7 @@ public class DictNodeInference implements Inference<DictNode> {
                     value.set(inferredV);
                 }
                 if(!inferredV.is(value.get())){
-                    ErrorReporter.report(v, GCPErrCode.OUTLINE_MISMATCH);
+                    GCPErrorReporter.report(v, GCPErrCode.OUTLINE_MISMATCH);
                 }
             }
         });

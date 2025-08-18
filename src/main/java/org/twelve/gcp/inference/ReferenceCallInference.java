@@ -1,6 +1,6 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.referable.ReferenceCallNode;
 import org.twelve.gcp.outline.Outline;
@@ -18,7 +18,7 @@ public class ReferenceCallInference implements Inference<ReferenceCallNode>{
 //            ReferAble referAble = cast(func);
             return referAble.project(node.types().stream().map(t->new OutlineWrapper(node,t.infer(inferences))).toList());
         }else {
-            ErrorReporter.report(node, GCPErrCode.NOT_REFER_ABLE);
+            GCPErrorReporter.report(node, GCPErrCode.NOT_REFER_ABLE);
             return func;
         }
     }

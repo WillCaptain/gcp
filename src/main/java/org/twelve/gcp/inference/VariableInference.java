@@ -1,7 +1,7 @@
 package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Variable;
@@ -21,7 +21,7 @@ public class VariableInference implements Inference<Variable> {
         } else {
 //            if (symbol.node() != node && !(node.parent().parent() instanceof EntityNode)) {
             if (symbol.node() != node) {
-                ErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
+                GCPErrorReporter.report(node, GCPErrCode.DUPLICATED_DEFINITION);
                 return node.ast().Error;
             }
             return symbol.outline();

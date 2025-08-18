@@ -2,7 +2,7 @@ package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
@@ -70,7 +70,7 @@ public class DictOrArray<K extends Outline> extends ProductADT implements Projec
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
         if (projected.id() == this.id()) {
             if (!projection.is(this)) {
-                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL);
+                GCPErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL);
                 return this.guess();
             }
             DictOrArray<?> you = cast(projection);

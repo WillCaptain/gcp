@@ -1,25 +1,20 @@
 package org.twelve.gcp.outline.projectable;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.common.Pair;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
 import org.twelve.gcp.outline.primitive.NOTHING;
 
-import java.util.Arrays;
 import java.util.Map;
-import java.util.Optional;
-
-import static org.twelve.gcp.common.Tool.cast;
 
 /**
  * 传统泛型
  */
 public class Reference extends Genericable<Reference, ReferenceNode> implements Returnable{
-    private Outline argument;
+    private Long argument;
 
     private Reference(ReferenceNode node, Outline declared) {
         super(node, declared);
@@ -55,7 +50,7 @@ public class Reference extends Genericable<Reference, ReferenceNode> implements 
     }
 
     @Override
-    public void setArgument(Outline argument) {
+    public void setArgument(Long argument) {
         this.argument = argument;
     }
 
@@ -90,7 +85,7 @@ public class Reference extends Genericable<Reference, ReferenceNode> implements 
     @Override
     public Outline eventual() {
         if (this.extendToBe() instanceof NOTHING) {
-            ErrorReporter.report(this.node, GCPErrCode.NOT_INITIALIZED);
+            GCPErrorReporter.report(this.node, GCPErrCode.NOT_INITIALIZED);
         }
         return this.extendToBe().eventual();
     }
@@ -98,14 +93,14 @@ public class Reference extends Genericable<Reference, ReferenceNode> implements 
     @Override
     public Reference copy() {
         Reference copied = super.copy();
-        copied.argument = this.argument;
+        copied.argument = this.argument;//.copy();
         return copied;
     }
 
     @Override
-    public Reference copy(Map<Long, Outline> cache) {
+    public Reference copy(Map<Outline, Outline> cache) {
         Reference copied = super.copy(cache);
-        copied.argument = this.argument;
+        copied.argument = this.argument;//.copy(cache);
         return copied;
     }
 }

@@ -1,6 +1,6 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.ArrayNode;
 import org.twelve.gcp.node.expression.Expression;
@@ -31,19 +31,19 @@ public class ArrayNodeInference implements Inference<ArrayNode> {
         if (node.begin() != null) {
             Outline begin = node.begin().infer(inferences);
             if (!begin.is(node.ast().Integer)) {
-                ErrorReporter.report(node.begin(), GCPErrCode.NOT_INTEGER);
+                GCPErrorReporter.report(node.begin(), GCPErrCode.NOT_INTEGER);
             }
         }
         //validate end
         Outline end = node.end().infer(inferences);
         if (!end.is(node.ast().Integer)) {
-            ErrorReporter.report(node.end(), GCPErrCode.NOT_INTEGER);
+            GCPErrorReporter.report(node.end(), GCPErrCode.NOT_INTEGER);
         }
         //validate step
         if (node.step() != null) {
             Outline step = node.step().infer(inferences);
             if (!step.is(node.ast().Integer)) {
-                ErrorReporter.report(node.step(), GCPErrCode.NOT_INTEGER);
+                GCPErrorReporter.report(node.step(), GCPErrCode.NOT_INTEGER);
             }
         }
         //infer processor
@@ -53,7 +53,7 @@ public class ArrayNodeInference implements Inference<ArrayNode> {
                 Function<?, Genericable<?,?>> f = cast(processor);
                 outline = f.returns().project(f.argument(), node.ast().Integer, new ProjectSession());
             } else {
-                ErrorReporter.report(node.condition(), GCPErrCode.NOT_A_FUNCTION);
+                GCPErrorReporter.report(node.condition(), GCPErrCode.NOT_A_FUNCTION);
             }
         }
         //validate condition
@@ -62,10 +62,10 @@ public class ArrayNodeInference implements Inference<ArrayNode> {
             if (condition instanceof Function<?, ?>) {
                 Function<?, Genericable<?,?>> f = cast(condition);
                 if (!f.returns().supposedToBe().is(node.ast().Boolean)) {
-                    ErrorReporter.report(node.condition(), GCPErrCode.CONDITION_IS_NOT_BOOL);
+                    GCPErrorReporter.report(node.condition(), GCPErrCode.CONDITION_IS_NOT_BOOL);
                 }
             } else {
-                ErrorReporter.report(node.condition(), GCPErrCode.NOT_A_FUNCTION);
+                GCPErrorReporter.report(node.condition(), GCPErrCode.NOT_A_FUNCTION);
             }
         }
         return Array.from(node, outline);
@@ -85,7 +85,7 @@ public class ArrayNodeInference implements Inference<ArrayNode> {
                     outline = v;
                     continue;
                 }
-                ErrorReporter.report(value, GCPErrCode.OUTLINE_MISMATCH, v + " doesn't match " + outline);
+                GCPErrorReporter.report(value, GCPErrCode.OUTLINE_MISMATCH, v + " doesn't match " + outline);
 //            }
         }
         return Array.from(node, outline);

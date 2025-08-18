@@ -1,6 +1,6 @@
 package org.twelve.gcp.outlineenv;
 
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.builtin.Module;
@@ -38,7 +38,7 @@ public class GlobalSymbolEnvironment implements SymbolEnvironment {
         scope = scope.getNamespace(moduleSymbol.name());//last level is the module level
         Module module = scope.module();
         if(module==null){
-            ErrorReporter.report(moduleSymbol, GCPErrCode.MODULE_NOT_DEFINED);
+            GCPErrorReporter.report(moduleSymbol, GCPErrCode.MODULE_NOT_DEFINED);
             return null;
         }else{
             return module;

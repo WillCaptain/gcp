@@ -2,7 +2,7 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.function.FunctionCallNode;
@@ -23,7 +23,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         Outline func = node.function().invalidate().infer(inferences);
 //        func.toString();
         if (func == null) {
-            ErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_DEFINED);
+            GCPErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_DEFINED);
             return ast.Error;
         }
         if (func == ast.Pending) {//recursive
@@ -44,7 +44,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         }
 //        if (result == Outline.Unknown && !node.ast().asf().isLastInfer()) {
         if (result == ast.Unknown) {
-            ErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_FOUND);
+            GCPErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_FOUND);
             return result;
         }
 
@@ -118,7 +118,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             return project((FirstOrderFunction) target, argument);
 
         }
-        ErrorReporter.report(argument, GCPErrCode.NOT_A_FUNCTION);
+        GCPErrorReporter.report(argument, GCPErrCode.NOT_A_FUNCTION);
         return argument.ast().Error;
     }
 
@@ -162,8 +162,9 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             //开始一个projection session
             session = new ProjectSession();
         }
+        session.copiedCache().clear();
 //        Outline back = function;
-        function = function.copy();
+        function = function.copy(session.copiedCache());
         //先投影参数
         Outline projectedArg = function.argument().project(function.argument(), argument.outline(), session);
         //change the argument constraints

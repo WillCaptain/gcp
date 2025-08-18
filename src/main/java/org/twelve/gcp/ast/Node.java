@@ -1,7 +1,7 @@
 package org.twelve.gcp.ast;
 
 import org.twelve.gcp.common.Tool;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.exception.GCPRuntimeException;
 import org.twelve.gcp.inference.Inferences;
@@ -83,7 +83,7 @@ public abstract class Node implements Serializable {
         if (this.ast != node.ast()) {
             System.out.println(node.ast());
             System.out.println(this.ast);
-            ErrorReporter.report(GCPErrCode.NODE_AST_MISMATCH);
+            GCPErrorReporter.report(GCPErrCode.NODE_AST_MISMATCH);
         }
         this.nodes.add(index, cast(node));
         node.parent = this;
@@ -145,7 +145,7 @@ public abstract class Node implements Serializable {
                 this.ast().symbolEnv().exit();
             }
         } catch (GCPRuntimeException e) {
-            ErrorReporter.report(this, e.errCode(), "unexpected exception occurs in outline inference");
+            GCPErrorReporter.report(this, e.errCode(), "unexpected exception occurs in outline inference");
         }
         if (outline instanceof ERROR && !this.ast().asf().isLastInfer()) {
             this.outline = this.ast().Unknown;
@@ -195,7 +195,7 @@ public abstract class Node implements Serializable {
      */
     public void markUnknowns() {
         if (this.outline() instanceof UNKNOWN) {
-            ErrorReporter.report(this, GCPErrCode.INFER_ERROR);
+            GCPErrorReporter.report(this, GCPErrCode.INFER_ERROR);
         }
         this.nodes.forEach(Node::markUnknowns);
     }

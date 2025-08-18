@@ -2,7 +2,7 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.SCOPE_TYPE;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.ThisNode;
 import org.twelve.gcp.outline.Outline;
@@ -19,7 +19,7 @@ public class ThisInference implements Inference<ThisNode> {
         while(scope.scopeType()!= SCOPE_TYPE.IN_PRODUCT_ADT){
             scope = scope.parent();
             if(scope==null){
-                ErrorReporter.report(node, GCPErrCode.UNAVAILABLE_THIS);
+                GCPErrorReporter.report(node, GCPErrCode.UNAVAILABLE_THIS);
             }
         }
         return scope.node().outline();

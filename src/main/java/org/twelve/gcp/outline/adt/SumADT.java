@@ -171,7 +171,7 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
         if(projected.id()==this.id()){
             return this.projectMySelf(projection,session);
         }else{
-            SumADT sum = this.copy();
+            SumADT sum = this;//this.copy();
             List<Outline> os = new ArrayList<>(sum.options);
             sum.options.clear();
             for (Outline option : os) {

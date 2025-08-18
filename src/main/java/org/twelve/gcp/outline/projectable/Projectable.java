@@ -10,6 +10,7 @@ public interface Projectable extends Outline {
 
     default Outline project(Projectable projected, Outline projection, ProjectSession session) {
         //check if want to be projected has done the projection before
+
         Outline cachedProjection = session.getProjection(projected) == null ? projection : session.getProjection(projected);
         while (cachedProjection instanceof Projectable && session.getProjection(cast(cachedProjection)) != null) {
 //            cachedProjection = session.getProjection(cast(projection));
@@ -26,13 +27,15 @@ public interface Projectable extends Outline {
             }
             return result;
         } else {//fetch the cached projection and project deeper if the result still need to be projected
-            if (cachedProjected instanceof Projectable && cachedProjected.id() != cachedProjection.id()) {
+            if (cachedProjected instanceof Projectable && cachedProjected.id() != cachedProjection.id() && !session.contains(this,projected)) {
+                session.addTrace(this,projected);//to avoid recursive projection
                 return ((Projectable) cachedProjected).project(projected, cachedProjection, session);
             } else {
                 return cachedProjected;
             }
         }
     }
+
 //    default boolean is(Outline another) {
 //        return this.tryIamYou(another) || another.tryYouAreMe(this);
 //    }

@@ -8,6 +8,7 @@ import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.expression.*;
+import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.node.imexport.Export;
@@ -608,7 +609,7 @@ public class InferenceTest {
     }
 
     @Test
-    void test_inference_of_array_methods(){
+    void test_inference_of_array_map(){
         /*
          * let x = [1,2];
          * let y = x.map(i->i.to_str())
@@ -625,12 +626,34 @@ public class InferenceTest {
         builder.buildReturnStatement(builder.buildArrayAccessor(builder.buildId("y"),builder.buildLiteral(0)));
         AST ast = builder.ast();
         assertTrue(ast.asf().infer());
+        ast.program().body().statements().get(1).get(0).get(1).inferred();
         Outline y = ast.program().body().statements().get(1).get(0).get(0).outline();
         assertEquals("[String]",y.toString());
         Outline y0 = ast.program().body().statements().get(2).get(0).outline();
         assertEquals("String",y0.toString());
+        assertTrue(ast.errors().isEmpty());
     }
-
+    @Test
+    void test_inference_of_array_reduce(){
+        /*
+         * let x = [1,2];
+         * let y = x.reduce((acc,i)->acc+i,0.1)
+         */
+        ASTBuilder builder = new ASTBuilder();
+        builder.buildVariableDeclarator(VariableKind.LET).declare("x",
+                builder.buildArray().add(builder.buildLiteral(1)).add(builder.buildLiteral(2)).build());
+        MemberAccessor accessor = builder.buildMemberAccessor(builder.buildId("x"),"reduce");
+        Expression add = builder.buildBinaryOperation(builder.buildId("acc"),"+",builder.buildId("i"));
+        FunctionNode lambda = builder.buildFunc().buildArg("acc").buildArg("i").returns(add);
+        FunctionCallNode call = builder.buildCall(accessor,lambda,builder.buildLiteral(0.1));
+        builder.buildVariableDeclarator(VariableKind.LET).declare("y",call);
+        builder.buildReturnStatement(builder.buildId("y"));
+        AST ast = builder.ast();
+        assertTrue(ast.asf().infer());
+        Outline y = ast.program().body().statements().get(2).get(0).outline();
+        assertEquals("Double",y.toString());
+        assertTrue(ast.errors().isEmpty());
+    }
     @Test
     void test_inference_of_array_definition() {
         AST ast = ASTHelper.mockArrayDefinition();

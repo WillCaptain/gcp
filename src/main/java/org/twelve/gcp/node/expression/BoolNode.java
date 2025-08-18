@@ -2,7 +2,7 @@ package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.primitive.BOOL;
@@ -21,6 +21,6 @@ public class BoolNode  extends Identifier {
 
     @Override
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
-        ErrorReporter.report(this, GCPErrCode.THIS_IS_NOT_ASSIGNABLE);
+        GCPErrorReporter.report(this, GCPErrCode.THIS_IS_NOT_ASSIGNABLE);
     }
 }

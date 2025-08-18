@@ -4,7 +4,7 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.Modifier;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
@@ -30,8 +30,9 @@ public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer
     public static Array from(Node node, Outline itemOutline) {
         return new Array(node, node.ast(), itemOutline);
     }
+
     public static Array from(AST ast, Outline itemOutline) {
-        return new Array(null,ast, itemOutline);
+        return new Array(null, ast, itemOutline);
     }
 
     public Outline itemOutline() {
@@ -40,22 +41,43 @@ public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer
 
     @Override
     public boolean loadMethods() {
-        if(!super.loadMethods()) return false;
+        if (!super.loadMethods()) return false;
         this.createMapper(this.members);
+        this.createReducer(this.members);
         return true;
     }
+
+    @Override
+    public boolean inferred() {
+        return this.itemOutline().inferred();
+    }
+
+    private void createReducer(Map<String, EntityMember> members) {
+        AST ast = this.ast();
+        Identifier mock_a = new Identifier(this.ast(), new Token<>("a"));
+        Reference ret_of_reduce = Reference.from(new ReferenceNode(mock_a, null), null);
+        FirstOrderFunction reduce = FirstOrderFunction.from(this.ast(), ret_of_reduce, ret_of_reduce, this.itemOutline());
+//        Generic arg = cast(Generic.from(ast, reduce));
+        List<Reference> refs = new ArrayList<>();
+        refs.add(ret_of_reduce);
+        Returnable ret = Return.from(ast);
+        ret.addReturn(ret_of_reduce);
+        FirstOrderFunction reducer = FirstOrderFunction.from(ast, refs, ret,reduce, ret_of_reduce);
+        members.put("reduce", EntityMember.from("reduce", reducer, Modifier.PUBLIC, false, null, true));
+    }
+
     private void createMapper(Map<String, EntityMember> members) {
         AST ast = this.ast();
         Identifier mock_a = new Identifier(this.ast(), new Token<>("a"));
-        Reference ret_of_map = Reference.from(new ReferenceNode(mock_a,null),null);//the return reference of map
-        FirstOrderFunction map = FirstOrderFunction.from(this.ast(),ret_of_map, this.itemOutline());//input array item, output ret_of_map
-        Generic arg = cast(Generic.from(ast,map));
+        Reference ret_of_map = Reference.from(new ReferenceNode(mock_a, null), null);//the return reference of map
+        FirstOrderFunction map = FirstOrderFunction.from(this.ast(), ret_of_map, this.itemOutline());//input array item, output ret_of_map
+        Generic arg = cast(Generic.from(ast, map));
         List<Reference> refs = new ArrayList<>();
         refs.add(ret_of_map);
-        Returnable ret = Return.from(ast,Array.from(ast,ret_of_map));
-        //ret.addReturn(ret.declaredToBe());
+        Returnable ret = Return.from(ast);
+        ret.addReturn(Array.from(ast, ret_of_map));
         FirstOrderFunction mapper = FirstOrderFunction.from(ast, arg, ret, refs);
-        members.put("map",EntityMember.from("map",mapper, Modifier.PUBLIC,false,null,true));
+        members.put("map", EntityMember.from("map", mapper, Modifier.PUBLIC, false, null, true));
     }
 
 
@@ -82,7 +104,7 @@ public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
         if (projected.id() == this.id()) {
             if (!projection.is(this)) {
-                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL);
+                GCPErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL);
                 return this.guess();
             }
             Array you = cast(projection);
@@ -92,7 +114,7 @@ public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer
             return projection;
         } else {
             if (this.value instanceof Projectable) {
-                return new Array(this.node,this.ast(), ((Projectable) this.value).project(projected, projection, session));
+                return new Array(this.node, this.ast(), ((Projectable) this.value).project(projected, projection, session));
             } else {
                 return this;
             }
@@ -102,18 +124,18 @@ public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer
     @Override
     public Outline guess() {
         if (this.value instanceof Projectable) {
-            return new Array(this.node,this.ast(),((Projectable) this.value).guess());
+            return new Array(this.node, this.ast(), ((Projectable) this.value).guess());
         } else {
             return this;
         }
     }
 
     @Override
-    public Array copy(Map<Long, Outline> cache) {
-        Array copied = cast(cache.get(this.id()));
+    public Array copy(Map<Outline, Outline> cache) {
+        Array copied = cast(cache.get(this));
         if (copied == null) {
-            copied = new Array(this.node,this.ast(), this.value.copy(cache));
-            cache.put(this.id(), copied);
+            copied = new Array(this.node, this.ast(), this.value.copy(cache));
+            cache.put(this, copied);
         }
         return copied;
     }

@@ -1,11 +1,10 @@
 package org.twelve.gcp.outline.projectable;
 
-import lombok.Getter;
 import lombok.Setter;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
-import org.twelve.gcp.exception.ErrorReporter;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.OutlineWrapper;
@@ -21,8 +20,8 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class Return extends Genericable<Return, Node> implements Returnable {
     @Setter
-    @Getter
-    private Outline argument;
+//    @Getter
+    private Long argument;
 
     private Outline supposed;
 
@@ -56,13 +55,15 @@ public class Return extends Genericable<Return, Node> implements Returnable {
 
     public boolean addReturn(Outline returns) {
         if (!(returns instanceof IGNORE) && !returns.is(this.declaredToBe)) {
-            ErrorReporter.report(this.node, GCPErrCode.OUTLINE_MISMATCH);
+            GCPErrorReporter.report(this.node, GCPErrCode.OUTLINE_MISMATCH);
             return false;
         }
         if (supposed instanceof UNKNOWN || (supposed instanceof NOTHING)) {
             supposed = returns;
         } else {
-            supposed = Option.from(this.node, this.ast(), supposed, returns);
+            if(!(returns instanceof NOTHING)) {
+                supposed = Option.from(this.node, this.ast(), supposed, returns);
+            }
         }
         return true;
     }
@@ -89,8 +90,8 @@ public class Return extends Genericable<Return, Node> implements Returnable {
             return this.projectMySelf(projection, session);
         }
         //project related argument in the return constraints
-        if (this.argument.id() == projected.id()) {
-            Return result = this.copy();
+        if (this.argument == projected.id()) {
+            Return result = this.copy(session.copiedCache());
             this.projectConstraints(result, projected, projection, session);
             if (result.supposedToBe() instanceof UNKNOWN && this.ast().asf().isLastInfer()) {//extension methods doesn't have supposed type
                 return result.min();
@@ -100,31 +101,15 @@ public class Return extends Genericable<Return, Node> implements Returnable {
             } else {
                 return result.supposedToBe();
             }
-            /*
-            if (supposedToBe() instanceof UNKNOWN) {//投影HOF返回值
-                return supposedToBe();
-            } //else {//投影FOF返回值
-            if (supposedToBe() instanceof Projectable) {
-                return ((Projectable) supposedToBe()).project(projected, projection, session);
-            } else {
-                if (supposedToBe() instanceof NOTHING) {//in higher function, don't return nothing
-                    return this;
-                } else {
-                    return supposedToBe();
-                }
-            }
-
-             */
-            //}
         }
         //it is an irrelevant projection
         if (supposedToBe() instanceof UNKNOWN) {
             return this;
         } else {
-            Return result = this.copy();
+            Return result = this.copy(session.copiedCache());
             this.projectConstraints(result, projected, projection, session);
             if (!(this.supposedToBe() instanceof UNKNOWN) && (!result.max().is(result.supposedToBe()) || !result.supposedToBe().is(result.min()))) {
-                ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.supposed);
+                GCPErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.supposed);
             }
             return result;
         }
@@ -134,6 +119,7 @@ public class Return extends Genericable<Return, Node> implements Returnable {
     protected void projectConstraints(Genericable<?, ?> me, Projectable projected, Outline projection, ProjectSession session) {
         super.projectConstraints(me, projected, projection, session);
         Outline outline = tryProject(((Return) me).supposed, projected, projection, session);
+//        ((Return) me).supposed = outline instanceof Projectable ? ((Projectable) outline).guess():outline;
         ((Return) me).supposed = outline;
     }
 
@@ -146,14 +132,14 @@ public class Return extends Genericable<Return, Node> implements Returnable {
     @Override
     public Return copy() {
         Return copied = super.copy();
-        copied.supposed = this.supposed;
+        copied.supposed = this.supposed.copy();
         copied.argument = this.argument;
         return copied;
     }
 
     @Override
-    public Return copy(Map<Long, Outline> cache) {
-        if (cache.containsKey(this.id())) return cast(cache.get(this.id()));
+    public Return copy(Map<Outline, Outline> cache) {
+        if (cache.containsKey(this)) return cast(cache.get(this));
         Return copied = super.copy(cache);
         copied.supposed = this.supposed.copy(cache);
         copied.argument = this.argument;

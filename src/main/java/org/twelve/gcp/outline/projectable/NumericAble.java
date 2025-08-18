@@ -47,11 +47,11 @@ public class NumericAble implements Projectable {
     }
 
     @Override
-    public NumericAble copy(Map<Long, Outline> cache){
-        NumericAble copied = cast(cache.get(this.id()));
+    public NumericAble copy(Map<Outline, Outline> cache){
+        NumericAble copied = cast(cache.get(this));
         if(copied==null){
             copied = new NumericAble(left.copy(cache),right.copy(cache),node);
-            cache.put(this.id(),copied);
+            cache.put(this,copied);
         }
         return copied;
     }
