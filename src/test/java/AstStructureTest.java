@@ -78,8 +78,8 @@ public class AstStructureTest {
         //check to string
         assertEquals("import grade as level, college as school from education;", ast.program().body().imports().getFirst().lexeme());
         //check location
-        assertEquals(29, imported.loc().start());
-        assertEquals(52, imported.loc().end());
+        assertEquals(22, imported.loc().start());
+        assertEquals(54, imported.loc().end());
         //check source
         assertEquals("education", imported.source().lexeme());
         assertEquals(44, imported.source().loc().start());
@@ -122,8 +122,8 @@ public class AstStructureTest {
         //check to string
         assertEquals("export height as stature, name;", ast.program().body().exports().getFirst().toString());
         //check location
-        assertEquals(100, exported.loc().start());
-        assertEquals(119, exported.loc().end());
+        assertEquals(93, exported.loc().start());
+        assertEquals(121, exported.loc().end());
         //check a
         ExportSpecifier a = exported.specifiers().getFirst();
         assertEquals("height as stature", a.lexeme());

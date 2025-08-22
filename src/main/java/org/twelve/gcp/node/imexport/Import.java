@@ -37,6 +37,12 @@ public class Import extends Node {
     }
 
     @Override
+    public Location loc() {
+        Location loc = super.loc();
+        return new SimpleLocation(loc.start()-7,loc.end()+2);
+    }
+
+    @Override
     public String lexeme() {
         StringBuilder sb = new StringBuilder();
         sb.append("import ");
