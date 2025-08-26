@@ -36,7 +36,7 @@ public class MemberNode extends VariableDeclarator {
 
     @Override
     public String lexeme() {
-        return (this.mutable() ? "mute " : "") + this.identifier().lexeme() +
+        return (this.mutable() ? "var " : "") + this.identifier().lexeme() +
                 " = " +
                 this.expression().lexeme();
     }

@@ -6,6 +6,7 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.LiteralNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
@@ -30,7 +31,6 @@ public class MemberAccessor extends Accessor {
     public MemberAccessor(Expression host, Integer index) {
         this(host,new Identifier(host.ast(),new Token<>(index.toString())));
     }
-
 
     @Override
     public void assign(LocalSymbolEnvironment env, Outline inferred) {

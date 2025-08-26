@@ -3,6 +3,7 @@ package org.twelve.gcp.node.base;
 import com.sun.xml.ws.developer.Serialization;
 import org.twelve.gcp.ast.*;
 import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.Body;
 import org.twelve.gcp.node.expression.body.ProgramBody;
 import org.twelve.gcp.node.namespace.NamespaceNode;
@@ -10,6 +11,8 @@ import org.twelve.gcp.node.statement.Statement;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.twelve.gcp.common.Tool.cast;
 
 public class Program extends Body {
     private NamespaceNode namespace;
@@ -30,6 +33,23 @@ public class Program extends Body {
     public NamespaceNode setNamespace(List<Identifier> names) {
         this.moduleName = names.remove(names.size() - 1);
         this.namespace = this.replaceNode(this.namespace, new NamespaceNode(this.ast(), names));
+        return this.namespace;
+    }
+    public NamespaceNode setNamespace(Identifier name) {
+        this.moduleName = name;
+        this.namespace = this.replaceNode(this.namespace, new NamespaceNode(this.ast(), new ArrayList<>()));
+        return this.namespace;
+    }
+    public NamespaceNode setNamespace(MemberAccessor names) {
+        this.moduleName = names.member();
+        Node host = names.host();
+        List<Identifier> ns = new ArrayList<>();
+        while(host instanceof MemberAccessor){
+            ns.add(0,((MemberAccessor) host).member());
+            host = ((MemberAccessor) host).host();
+        }
+        ns.add(0,cast(host));
+        this.namespace = this.replaceNode(this.namespace, new NamespaceNode(this.ast(), ns));
         return this.namespace;
     }
 
