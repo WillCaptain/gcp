@@ -43,7 +43,16 @@ public class UnaryExpression extends Expression {
     }
 
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return inferences.visit(this);
+    }
+
+    @Override
+    public String lexeme() {
+        if(position==UnaryPosition.POSTFIX){
+            return operatorNode.toString()+operand.toString();
+        }else{
+            return operand.toString()+operatorNode.toString();
+        }
     }
 }

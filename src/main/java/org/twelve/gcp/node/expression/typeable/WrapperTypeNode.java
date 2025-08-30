@@ -18,7 +18,7 @@ public class WrapperTypeNode extends TypeNode {
     }
 
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return this.outline;
     }
 

@@ -34,7 +34,7 @@ public class BinaryExpression extends Expression{
     }
 
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
 

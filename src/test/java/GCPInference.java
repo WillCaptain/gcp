@@ -19,7 +19,6 @@ import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
-import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.primitive.INTEGER;
 import org.twelve.gcp.outline.primitive.LONG;
 import org.twelve.gcp.outline.primitive.NUMBER;
@@ -91,7 +90,7 @@ public class GCPInference {
         FunctionBody body = new FunctionBody(ast);
 
         Assignment assignment = new Assignment(new Identifier(ast, new Token<>("x")), LiteralNode.parse(ast, new Token<>(10)));
-        body.addStatement(assignment);
+        body.addStatement(new ExpressionStatement(assignment));
         body.addStatement(new ReturnStatement(new Identifier(ast, new Token<>("x"))));
         FunctionNode f = FunctionNode.from(body, x);
 
@@ -141,7 +140,7 @@ public class GCPInference {
 
 
         Assignment assignment = new Assignment(new Identifier(ast, new Token<>("y")), new Identifier(ast, new Token<>("x")));
-        body.addStatement(assignment);
+        body.addStatement(new ExpressionStatement(assignment));
         body.addStatement(new ReturnStatement(new Identifier(ast, new Token<>("x"))));
         FunctionNode f = FunctionNode.from(body, x);
 
@@ -284,9 +283,9 @@ public class GCPInference {
         Argument z = new Argument(new Identifier(ast, new Token<>("z")));
         FunctionBody body = new FunctionBody(ast);
         Assignment assignment = new Assignment(new Identifier(ast, new Token<>("y")), new Identifier(ast, new Token<>("x")));
-        body.addStatement(assignment);
+        body.addStatement(new ExpressionStatement(assignment));
         assignment = new Assignment(new Identifier(ast, new Token<>("z")), new Identifier(ast, new Token<>("y")));
-        body.addStatement(assignment);
+        body.addStatement(new ExpressionStatement(assignment));
 
         BinaryExpression add = new BinaryExpression(new Identifier(ast, new Token<>("x")),
                 new Identifier(ast, new Token<>("y")), new OperatorNode<>(ast, BinaryOperator.ADD));
@@ -636,11 +635,11 @@ public class GCPInference {
         Assignment f = cast(ast.program().body().statements().getFirst().nodes().getFirst());
         Outline l = f.lhs().outline();
         FunctionBody body =  cast(f.nodes().get(1).nodes().get(1).nodes().get(0).nodes().get(0).nodes().get(1).nodes().get(0).nodes().get(0).nodes().get(1));
-        Outline x = body.nodes().get(0).nodes().get(0).outline();
+        Outline x = body.nodes().get(0).nodes().get(0).get(0).outline();
         assertEquals("`<a>-><a>`",x.toString());
-        Outline y = body.nodes().get(1).nodes().get(0).outline();
+        Outline y = body.nodes().get(1).nodes().get(0).get(0).outline();
         assertEquals("`<a>-><a>`",y.toString());
-        Outline z = body.nodes().get(2).nodes().get(1).outline();
+        Outline z = body.nodes().get(2).get(0).nodes().get(1).outline();
         assertEquals("`<a>-><a>`",z.toString());
         Outline fstr = ast.program().body().statements().get(1).nodes().getFirst().outline();
         assertEquals("(String->String)->(String->String)->(String->String)->String->String",fstr.toString());

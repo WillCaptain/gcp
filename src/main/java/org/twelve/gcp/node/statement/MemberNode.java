@@ -42,7 +42,7 @@ public class MemberNode extends VariableDeclarator {
     }
 
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         super.accept(inferences);
         return this.outline();
     }

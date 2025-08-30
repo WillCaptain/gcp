@@ -119,7 +119,7 @@ public class InferenceTest {
         var.declare(new Identifier(ast, new Token<>("age")), str);
         ast.program().body().addStatement(var);
         Assignment assignment = new Assignment(new Identifier(ast, new Token<>("age")), num);
-        ast.addStatement(assignment);
+        ast.addStatement(new ExpressionStatement(assignment));
         asf.infer();
         assertTrue(asf.inferred());
         assertEquals(1, ast.errors().size());
@@ -149,7 +149,7 @@ public class InferenceTest {
         var.declare(new Identifier(ast, new Token<>("age")), new PolyNode(str, i));
         ast.program().body().addStatement(var);
         Assignment assignment = new Assignment(new Identifier(ast, new Token<>("age")), f);
-        ast.addStatement(assignment);
+        ast.addStatement(new ExpressionStatement(assignment));
         asf.infer();
         assertEquals(1, ast.errors().size());
         assertEquals(GCPErrCode.OUTLINE_MISMATCH, ast.errors().getFirst().errorCode());
@@ -171,7 +171,7 @@ public class InferenceTest {
         assertEquals(2, poly.options().size());
         assertEquals(1, ast.errors().size());
         assertEquals(GCPErrCode.OUTLINE_MISMATCH, ast.errors().getFirst().errorCode());//id doesn't math any poly options
-        assertEquals(ast.program().body().nodes().get(2), ast.errors().getFirst().node());
+        assertEquals(ast.program().body().nodes().get(2).get(0), ast.errors().getFirst().node());
     }
 
     @Test
@@ -192,7 +192,7 @@ public class InferenceTest {
         ast = ASTHelper.mockErrorAssignOnDefinedPoly();
         ast.asf().infer();
         assertTrue(ast.asf().inferred());
-        Poly p1 = cast(((Assignment) ast.program().body().nodes().get(1)).lhs().outline());
+        Poly p1 = cast(((Assignment) ast.program().body().nodes().get(1).get(0)).lhs().outline());
         VariableDeclarator declarator = cast(ast.program().body().nodes().get(2));
         Outline p2 = declarator.assignments().get(0).lhs().outline();
         assertEquals(2, ast.errors().size());
@@ -208,25 +208,18 @@ public class InferenceTest {
 
     @Test
     void test_literal_inference() {
-        /*
-        module default
-        var union = 100|"some";//union can only be 100 or "some"
-        union = 100;
-        union = "some";
-        union = 200;//literal union doesn't match
-         */
         AST ast = ASTHelper.mockDefinedLiteralUnion();
         ast.asf().infer();
         Identifier lhs = cast(((VariableDeclarator) ast.program().body().nodes().get(0)).assignments().get(0).lhs());
-        LiteralUnion union = cast(lhs.outline());
-        assertEquals("100", union.values().get(0).lexeme());
-        assertEquals("\"some\"", union.values().get(1).lexeme());
+        Option union = cast(lhs.outline());
+        assertEquals("Integer", union.options().get(0).toString());
+        assertEquals("String", union.options().get(1).toString());
 
         ast = ASTHelper.mockAssignOnDefinedLiteralUnion();
         ast.asf().infer();
         assertTrue(ast.asf().inferred());
         assertEquals(1, ast.errors().size());
-        assertEquals(ast.program().body().statements().get(3), ast.errors().getFirst().node());
+        assertEquals(ast.program().body().statements().get(3).get(0), ast.errors().getFirst().node());
     }
 
     @Test

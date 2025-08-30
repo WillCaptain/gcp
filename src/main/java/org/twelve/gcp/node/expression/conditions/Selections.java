@@ -29,9 +29,17 @@ public class Selections extends Expression {
             this.arms.add(this.addNode(a));
         }
     }
+    public Selections(SELECTION_TYPE selectionType,AST ast) {
+        super(ast, null);
+        this.selectionType = selectionType;
+    }
+
+    public void addArm(Arm arm){
+        this.arms.add(this.addNode(arm));
+    }
 
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
 
@@ -40,7 +48,7 @@ public class Selections extends Expression {
     }
 
     public List<Arm> arms(){
-        return new ArrayList<>(this.arms);
+        return this.arms;
     }
 
     @Override

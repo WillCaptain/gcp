@@ -1,7 +1,7 @@
 package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.node.LiteralUnionNode;
+import org.twelve.gcp.node.expression.typeable.OptionTypeNode;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
@@ -56,7 +56,8 @@ public interface Inferences {
     Outline visit(ThisNode me);
     Outline visit(Base base);
     Outline visit(PolyNode poly);
-    Outline visit(LiteralUnionNode union);
+    Outline visit(OptionTypeNode option);
+    Outline visit(PolyTypeNode poly);
     Outline visit(Selections selections);
     Outline visit(Arm arm);
     Outline visit(ImportSpecifier importSpecifier);

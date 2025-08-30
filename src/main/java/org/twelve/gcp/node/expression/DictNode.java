@@ -37,7 +37,7 @@ public class DictNode extends Expression {
         return this.values.isEmpty();
     }
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
 }

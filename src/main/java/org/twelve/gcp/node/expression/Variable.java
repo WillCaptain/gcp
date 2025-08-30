@@ -50,7 +50,7 @@ public class Variable extends Identifier {
     }
 
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
 

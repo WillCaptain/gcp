@@ -1,20 +1,27 @@
 package org.twelve.gcp.node.statement;
 
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.inference.operator.AssignableOperator;
 import org.twelve.gcp.node.expression.Assignable;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.body.Body;
+import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.outline.Outline;
 
-public class Assignment extends Statement {
+public class Assignment extends Expression {
     private final Assignable lhs;  // The variable being assigned to
     private final Expression rhs; // The expression providing the value
+    private final OperatorNode<AssignableOperator> operator;
 
     public Assignment(Assignable lhs, Expression rhs) {//possible a:Type = expression
-        super(lhs.ast());//Unknown means need to type infer
+        this(lhs,rhs,new OperatorNode<>(lhs.ast(),AssignableOperator.EQUALS));//Unknown means need to type infer
+    }
+
+    public Assignment(Assignable lhs, Expression rhs, OperatorNode<AssignableOperator> operator) {//possible a:Type = expression
+        super(lhs.ast(),null);//Unknown means need to type infer
         this.lhs = this.addNode(lhs);
         this.rhs = this.addNode(rhs);
+        this.operator = operator;
     }
 
     @Override
@@ -35,17 +42,17 @@ public class Assignment extends Statement {
         StringBuilder sb = new StringBuilder();
             sb.append(this.lhs.lexeme());
         if (this.rhs != null){
-            sb.append(" = ");
+            sb.append(" "+this.operator.lexeme()+" ");
             sb.append(this.rhs.lexeme());
         }
-        if (this.parent instanceof Body) {
-            sb.append(";");
-        }
+//        if (this.parent instanceof Body) {
+//            sb.append(";");
+//        }
         return sb.toString();
     }
 
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
     public void setInferred() {

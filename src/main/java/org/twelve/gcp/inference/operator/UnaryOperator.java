@@ -35,4 +35,13 @@ public enum UnaryOperator implements Operator {
     public String symbol() {
         return symbol;
     }
+
+    public static UnaryOperator from(String symbol){
+        for (UnaryOperator value : UnaryOperator.values()) {
+            if(value.symbol().equals(symbol)){
+                return value;
+            }
+        }
+        return null;
+    }
 }

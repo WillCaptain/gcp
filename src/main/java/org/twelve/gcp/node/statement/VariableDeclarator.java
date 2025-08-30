@@ -78,7 +78,7 @@ public class VariableDeclarator extends Statement {
     }
 
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
     public VariableKind kind() {

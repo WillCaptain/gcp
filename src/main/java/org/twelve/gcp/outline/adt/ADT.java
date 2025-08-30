@@ -4,6 +4,7 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.primitive.Literal;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
 
 import java.util.HashMap;
@@ -30,13 +31,14 @@ public abstract class ADT implements Outline {
         return this.ast;
     }
 
-    public boolean loadMethods(){
-        if(this.members.containsKey(CONSTANTS.TO_STR)) return false;
-        EntityMember toString = EntityMember.from(CONSTANTS.TO_STR, FirstOrderFunction.from(this.ast(),this.ast().String,this.ast().Unit),
-                Modifier.PUBLIC, false,null,true);
+    public boolean loadMethods() {
+        if (this.members.containsKey(CONSTANTS.TO_STR)) return false;
+        EntityMember toString = EntityMember.from(CONSTANTS.TO_STR, FirstOrderFunction.from(this.ast(), this.ast().String, this.ast().Unit),
+                Modifier.PUBLIC, false, null, true);
         this.members.put(CONSTANTS.TO_STR, toString);
         return true;
     }
+
     @Override
     public long id() {
         return this.id;
@@ -49,12 +51,13 @@ public abstract class ADT implements Outline {
     @Override
     public boolean tryIamYou(Outline another) {
         if (!(another instanceof ProductADT)) return false;//若对方不是product adt，交由对方的tryYouAreMe去判定
+        if (another instanceof Literal) return false;
 
         //another的每一个成员，this都应有一个member对应，方可满足is关系
         ProductADT extended = cast(another);
         for (EntityMember member : extended.members()) {
             Optional<EntityMember> found = this.members().stream().filter(m -> m.name().equals(member.name())).findFirst();
-            if(!found.isPresent()|| !found.get().outline().is(member.outline())){
+            if (!found.isPresent() || !found.get().outline().is(member.outline())) {
                 return false;
             }
 //            if (!this.members().stream().anyMatch(m -> m.name().equals(member.name()) && m.outline().is(member.outline()))) {

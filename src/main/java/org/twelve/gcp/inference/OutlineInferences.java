@@ -1,6 +1,6 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.node.LiteralUnionNode;
+import org.twelve.gcp.node.expression.typeable.OptionTypeNode;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
@@ -178,8 +178,13 @@ public class OutlineInferences implements Inferences {
     }
 
     @Override
-    public Outline visit(LiteralUnionNode union) {
-        return new LiteralUnionInference().infer(union,this);
+    public Outline visit(OptionTypeNode option) {
+        return new OptionTypeInference().infer(option,this);
+    }
+
+    @Override
+    public Outline visit(PolyTypeNode poly) {
+        return new PolyTypeInference().infer(poly,this);
     }
 
     @Override

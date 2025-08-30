@@ -18,7 +18,7 @@ public class Base  extends Identifier{
         return "base";
     }
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
 

@@ -22,7 +22,7 @@ public class ExportSpecifier extends ImportExportSpecifier {
         return cast(this.get(1));
     }
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
 }

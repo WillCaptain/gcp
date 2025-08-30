@@ -1,7 +1,7 @@
 package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.node.LiteralUnionNode;
+import org.twelve.gcp.node.expression.typeable.OptionTypeNode;
 import org.twelve.gcp.node.ValueNode;
 import org.twelve.gcp.outline.Outline;
 
@@ -27,7 +27,7 @@ public class LiteralUnion extends ADT {
         this.node = node;
     }
 
-    public static LiteralUnion from(LiteralUnionNode node) {
+    public static LiteralUnion from(OptionTypeNode node) {
         return new LiteralUnion(node,node.nodes().stream().toArray(ValueNode[]::new));
     }
 

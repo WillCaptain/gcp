@@ -1,17 +1,16 @@
-package org.twelve.gcp.node;
+package org.twelve.gcp.node.expression.typeable;
 
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.SimpleLocation;
 import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.stream.Collectors;
 
-public class LiteralUnionNode extends Expression {
-    public LiteralUnionNode(Expression ... expressions) {
-        super(expressions[0].ast(), null);
-        for (Expression expression : expressions) {
+public class OptionTypeNode extends TypeNode {
+    public OptionTypeNode(TypeNode ... types) {
+        super(types[0].ast(), null);
+        for (TypeNode expression : types) {
             this.addNode(expression);
         }
     }
@@ -29,7 +28,7 @@ public class LiteralUnionNode extends Expression {
     }
 
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
 }

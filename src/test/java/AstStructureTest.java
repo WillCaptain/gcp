@@ -238,7 +238,7 @@ public class AstStructureTest {
     @Test
     void test_union(){
         AST ast = ASTHelper.mockDefinedLiteralUnion();
-        String expected = "module default\n\nvar union = 100|\"some\";";
+        String expected = "module default\n\nvar union: 100|\"some\" = 100;";
         assertEquals(expected,ast.lexeme());
     }
 

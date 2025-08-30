@@ -4,7 +4,7 @@ import org.twelve.gcp.builder.FunctionNodeBuilder;
 import org.twelve.gcp.builder.VariableDeclaratorBuilder;
 import org.twelve.gcp.common.*;
 import org.twelve.gcp.inference.operator.BinaryOperator;
-import org.twelve.gcp.node.LiteralUnionNode;
+import org.twelve.gcp.node.expression.typeable.OptionTypeNode;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
@@ -24,7 +24,6 @@ import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.node.statement.*;
-import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Option;
@@ -174,7 +173,7 @@ public class ASTHelper {
 //        Assignment assignment1 = new Assignment(new Identifier(ast, new Token<>("add", 0)), add1);
         Assignment assignment2 = new Assignment(new Identifier(ast, new Token<>("add", 0)), new Identifier(ast, new Token<>("forError")));
 //        ast.addStatement(assignment1);
-        ast.addStatement(assignment2);
+        ast.addStatement(new ExpressionStatement(assignment2));
         return ast;
     }
 
@@ -343,7 +342,7 @@ public class ASTHelper {
         AST ast = mockDefinedPoly();
         Assignment assignment = new Assignment(new Identifier(ast, new Token<>("poly")),
                 LiteralNode.parse(ast, new Token<>(10.0f)));
-        ast.addStatement(assignment);
+        ast.addStatement(new ExpressionStatement(assignment));
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         declare.declare(new Identifier(ast, new Token<>("poly")), LiteralNode.parse(ast, new Token<>(10.0f)));
@@ -354,9 +353,12 @@ public class ASTHelper {
     public static AST mockDefinedLiteralUnion() {
         ASF asf = new ASF();
         AST ast = asf.newAST();
-        LiteralUnionNode union = new LiteralUnionNode(LiteralNode.parse(ast, new Token<>(100)), LiteralNode.parse(ast, new Token<>("some")));
+
+        OptionTypeNode union = new OptionTypeNode(
+                new LiteralTypeNode(LiteralNode.parse(ast, new Token<>(100))),
+                new LiteralTypeNode(LiteralNode.parse(ast, new Token<>("some"))));
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.VAR);
-        declare.declare(new Identifier(ast, new Token<>("union", 0)), union);
+        declare.declare(new Identifier(ast, new Token<>("union", 0)), union,LiteralNode.parse(ast,new Token<>(100)));
         ast.addStatement(declare);
         return ast;
     }
@@ -365,13 +367,13 @@ public class ASTHelper {
         AST ast = mockDefinedLiteralUnion();
         Assignment assignment = new Assignment(new Identifier(ast, new Token<>("union")),
                 LiteralNode.parse(ast, new Token<>(100)));
-        ast.addStatement(assignment);
+        ast.addStatement(new ExpressionStatement(assignment));
         assignment = new Assignment(new Identifier(ast, new Token<>("union")),
                 LiteralNode.parse(ast, new Token<>("some")));
-        ast.addStatement(assignment);
+        ast.addStatement(new ExpressionStatement(assignment));
         assignment = new Assignment(new Identifier(ast, new Token<>("union")),
                 LiteralNode.parse(ast, new Token<>(200)));
-        ast.addStatement(assignment);
+        ast.addStatement(new ExpressionStatement(assignment));
         return ast;
     }
 
@@ -515,9 +517,9 @@ public class ASTHelper {
         nms.add(new MemberNode(new Identifier(ast, new Token<>("name")), LiteralNode.parse(ast, new Token<>("Will")), false));
         nms.add(new MemberNode(new Identifier(ast, new Token<>("age")), new Identifier(ast, new Token<>("y")), false));
         Expression ex = new EntityNode(nms);
-        body.addStatement(new Assignment(new Identifier(ast, new Token<>("x")), ex));
+        body.addStatement(new ExpressionStatement(new Assignment(new Identifier(ast, new Token<>("x")), ex)));
         //z = x;
-        body.addStatement(new Assignment(new Identifier(ast, new Token<>("z")), new Identifier(ast, new Token<>("x"))));
+        body.addStatement(new ExpressionStatement(new Assignment(new Identifier(ast, new Token<>("z")), new Identifier(ast, new Token<>("x")))));
         //x.age
         body.addStatement(new ReturnStatement(new MemberAccessor(new Identifier(ast, new Token<>("x")), new Identifier(ast, new Token<>("age")))));
         Expression fx = FunctionNode.from(body, refs, args);
@@ -1070,7 +1072,7 @@ public class ASTHelper {
         values[1] = LiteralNode.parse(ast, new Token<>("zhang"));
         Assignment xassign = new Assignment(new Identifier(ast, new Token<>("x")),
                 new ArrayNode(ast, values));
-        body.addStatement(xassign);
+        body.addStatement(new ExpressionStatement(xassign));
         body.addStatement(new ReturnStatement(new Identifier(ast, new Token<>("y"))));
         FunctionNode gDef = FunctionNode.from(body, new Argument(new Identifier(ast, new Token<>("x")), new ArrayTypeNode(ast)),
                 new Argument(new Identifier(ast, new Token<>("i"))));
@@ -1096,7 +1098,7 @@ public class ASTHelper {
         b.declare(new Identifier(ast, new Token<>("b")), new ArrayNode(ast, values));
         body.addStatement(b);
         Assignment bassign = new Assignment(new Identifier(ast, new Token<>("b")), new Identifier(ast, new Token<>("x")));
-        body.addStatement(bassign);
+        body.addStatement(new ExpressionStatement(bassign));
         VariableDeclarator c = new VariableDeclarator(ast, VariableKind.LET);
         c.declare(new Identifier(ast, new Token<>("c")),
                 new IdentifierTypeNode(new Identifier(ast, new Token<>("a"))),
@@ -1226,7 +1228,7 @@ public class ASTHelper {
         Expression entity = new EntityNode(members);
         abody.addStatement(new ReturnStatement(entity));
         Expression a = new FunctionNode(new Argument(new Identifier(ast, new Token<>("a"))), abody);
-        fbody.addStatement(new Assignment(new Identifier(ast, new Token<>("x")), a));
+        fbody.addStatement(new ExpressionStatement(new Assignment(new Identifier(ast, new Token<>("x")), a)));
 
         Expression f = new FunctionNode(x, fbody);
 
@@ -1271,12 +1273,12 @@ public class ASTHelper {
                 new Identifier(ast, new Token<>("b")), LiteralNode.parse(ast, new Token<>("some")),
                 new OperatorNode<>(ast, BinaryOperator.ADD))));
         Expression fb = FunctionNode.from(bodyb, new Argument(new Identifier(ast, new Token<>("b"))));
-        Statement f2b = new Assignment(new Identifier(ast, new Token<>("x")), fb);
+        Statement f2b = new ExpressionStatement(new Assignment(new Identifier(ast, new Token<>("x")), fb));
         body.addStatement(f2b);
-        body.addStatement(new Assignment(new Identifier(ast, new Token<>("y")),
-                new Identifier(ast, new Token<>("x"))));
-        body.addStatement(new Assignment(new Identifier(ast, new Token<>("x")),
-                new Identifier(ast, new Token<>("z"))));
+        body.addStatement(new ExpressionStatement(new Assignment(new Identifier(ast, new Token<>("y")),
+                new Identifier(ast, new Token<>("x")))));
+        body.addStatement(new ExpressionStatement(new Assignment(new Identifier(ast, new Token<>("x")),
+                new Identifier(ast, new Token<>("z")))));
         body.addStatement(new ReturnStatement(new Identifier(ast, new Token<>("y"))));
         List<ReferenceNode> refs = new ArrayList<>();
         refs.add(new ReferenceNode(new Identifier(ast, new Token<>("a")), null));

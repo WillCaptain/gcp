@@ -30,7 +30,7 @@ public class DictTypeNode extends TypeNode{
     }
 
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
 }

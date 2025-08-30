@@ -30,7 +30,7 @@ public class TupleNode extends EntityNode {
         this.values = values;
     }
     @Override
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
 

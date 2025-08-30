@@ -174,7 +174,7 @@ public abstract class Node implements Serializable {
     /**
      * Visitor pattern entry point for inference.
      */
-    protected Outline accept(Inferences inferences) {
+    public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
 
