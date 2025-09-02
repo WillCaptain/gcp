@@ -273,11 +273,6 @@ public class AstStructureTest {
 
     @Test
     void test_reference_in_function(){
-        /*
-        let f = fx<a,b>(x:a)->{
-           let y:b = 100;
-           y
-        }*/
         AST ast = ASTHelper.mockReferenceInFunction();
         String expected = """
                 module default
