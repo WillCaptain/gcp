@@ -309,7 +309,7 @@ public class AstStructureTest {
                 
                 let a = [1,2,3,4];
                 let b: [String] = [];
-                let c: [] = [...5];
+                let c: [?] = [...5];
                 let d = [1...6,2,x->x+"2",x->x%2==0];
                 let e = [];""";
         assertEquals(expected,ast.lexeme());
@@ -330,7 +330,7 @@ public class AstStructureTest {
                 let b: [Integer : String] = [:];
                 let c = [:];
                 let d: [String : ?] = ["Will":30, 30:30];
-                let e: [:] = ["Male":0];""";
+                let e: [?:?] = ["Male":0];""";
         assertEquals(expected,ast.lexeme());
     }
 
@@ -341,7 +341,7 @@ public class AstStructureTest {
                 module default
                 
                 let f = x->x[0];
-                let g = (x: [])->i->{
+                let g = (x: [?])->i->{
                   let y = x[i];
                   x = ["will","zhang"];
                   y

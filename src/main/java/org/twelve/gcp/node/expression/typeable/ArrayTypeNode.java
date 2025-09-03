@@ -9,7 +9,11 @@ public class ArrayTypeNode extends TypeNode{
 
     public ArrayTypeNode(AST ast, TypeNode itemNode) {
         super(ast);
-        this.itemNode = this.addNode(itemNode);
+        if(itemNode instanceof Question){
+            this.itemNode = null;
+        }else {
+            this.itemNode = this.addNode(itemNode);
+        }
     }
     public ArrayTypeNode(AST ast) {
         this(ast,null);
@@ -26,7 +30,7 @@ public class ArrayTypeNode extends TypeNode{
     @Override
     public String lexeme() {
         if(this.itemNode==null){
-            return "[]";
+            return "[?]";
         }else{
             return "["+this.itemNode.lexeme()+"]";
         }

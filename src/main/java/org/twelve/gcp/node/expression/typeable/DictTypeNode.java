@@ -25,7 +25,7 @@ public class DictTypeNode extends TypeNode{
     }
     @Override
     public String lexeme() {
-        if(this.keyNode==null) return "[:]";
+        if(this.keyNode==null) return "[?:?]";
         return "["+this.keyNode.lexeme()+" : "+this.valueNode.lexeme()+"]";
     }
 
