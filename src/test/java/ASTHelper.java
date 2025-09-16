@@ -250,7 +250,7 @@ public class ASTHelper {
 
         FunctionBody body = new FunctionBody(ast);
 //        Pair<ONode, Modifier> getFullName = new Pair<>(FunctionNode.from(body), Modifier.PUBLIC);
-        MemberAccessor name = new MemberAccessor(new Base(ast, new Token<>("base")), new Identifier(ast, new Token<>("name")));
+        MemberAccessor name = new MemberAccessor(new BaseNode(ast, new Token<>("base")), new Identifier(ast, new Token<>("name")));
         BinaryExpression add = new BinaryExpression(name, LiteralNode.parse(ast, new Token<>("Zhang")),
                 new OperatorNode<>(ast, BinaryOperator.ADD));
         body.addStatement(new ReturnStatement(add));
@@ -267,7 +267,7 @@ public class ASTHelper {
         members.add(getName);//重载get_name方法
 
         EntityNode entity = new EntityNode(members,
-                ast.program().body().get(0).nodes().getFirst().nodes().getFirst());
+                new Identifier(ast,new Token<>("person")));
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         declare.declare(new Identifier(ast, new Token<>("me", 0)), entity);
@@ -306,7 +306,7 @@ public class ASTHelper {
 
 
         EntityNode entity = new EntityNode(members,
-                ast.program().body().get(0).nodes().getFirst().nodes().getFirst());
+                new Identifier(ast,new Token<>("person")));
 
         VariableDeclarator declare = new VariableDeclarator(ast, VariableKind.LET);
         declare.declare(new Identifier(ast, new Token<>("me", 0)), entity);

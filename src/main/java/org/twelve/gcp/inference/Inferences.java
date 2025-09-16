@@ -54,7 +54,7 @@ public interface Inferences {
     Outline visit(TupleNode tupleNode);
     Outline visit(MemberAccessor memberAccessor);
     Outline visit(ThisNode me);
-    Outline visit(Base base);
+    Outline visit(BaseNode baseNode);
     Outline visit(PolyNode poly);
     Outline visit(OptionTypeNode option);
     Outline visit(PolyTypeNode poly);

@@ -29,6 +29,9 @@ public class EntityNode extends ValueNode<EntityNode>{
     public EntityNode(List<MemberNode> members, Node base, Location loc) {
         super(members.getFirst().ast(), loc);
         this.scope = this.ast().scopeIndexer().incrementAndGet();
+        if(base!=null) {
+            this.addNode(base);
+        }
         for (MemberNode member : members) {
             this.addNode(member);
         }
@@ -89,6 +92,7 @@ public class EntityNode extends ValueNode<EntityNode>{
     public Map<String, MemberNode> members() {
         Map<String, MemberNode> ms = new HashMap<>();
         for (Node node : this.nodes()) {
+            if(node==this.base) continue;
             MemberNode m = cast(node);
             ms.put(m.identifier().name(), m);
         }
@@ -98,5 +102,9 @@ public class EntityNode extends ValueNode<EntityNode>{
     @Override
     public boolean isSame(EntityNode entity) {
         return false;
+    }
+
+    public boolean inferred() {
+        return this.outline.inferred();
     }
 }

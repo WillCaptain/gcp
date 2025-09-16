@@ -3,6 +3,7 @@ package org.twelve.gcp.node.expression.typeable;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.ValueNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.primitive.Literal;
 
 /**
@@ -25,12 +26,17 @@ public class LiteralTypeNode extends TypeNode {
 
     @Override
     public Outline outline() {
-        return new Literal(typeNode,typeNode.outline(),ast());
+        return new Literal(typeNode, typeNode.outline(), ast());
     }
 
     @Override
     public Outline accept(Inferences inferences) {
-//        return this.typeNode.accept(inferences);
-       return this.outline();
+        if (this.typeNode.outline() instanceof UNKNOWN) {
+            return this.typeNode.infer(inferences);
+//            return this.typeNode.accept(inferences);
+        } else {
+            return this.outline();
+        }
     }
+
 }

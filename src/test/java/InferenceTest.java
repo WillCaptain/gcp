@@ -366,7 +366,7 @@ public class InferenceTest {
         let name_2 = person.get_name();
          */
         AST ast = ASTHelper.mockSimplePersonEntityWithOverrideMember();
-        ast.asf().infer();
+        assertTrue(ast.asf().infer());
         VariableDeclarator var = cast(ast.program().body().statements().getFirst());
         Entity person = cast(var.assignments().getFirst().lhs().outline());
         List<EntityMember> ms =  person.members().stream().filter(m->!m.isDefault()).toList();

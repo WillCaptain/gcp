@@ -14,7 +14,7 @@ public class UnaryExpression extends Expression {
     private UnaryPosition position;
     public UnaryExpression(Expression operand, OperatorNode<UnaryOperator> operator, UnaryPosition position) {
         super(operand.ast(), null);
-        if(operator.operator().contains(position)){
+        if(!operator.operator().contains(position)){
             GCPErrorReporter.report(operator, GCPErrCode.UNARY_POSITION_MISMATCH);
         }
         this.operatorNode = this.addNode(operator);

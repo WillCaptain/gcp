@@ -48,20 +48,6 @@ public class Entity extends ProductADT implements Projectable {
         this.base = base;
     }
 
-//    protected Entity(Node node, Outline base, List<EntityMember> extended) {
-//        this(node, node.ast(), base, extended);
-//    }
-//    private Entity(AST ast, Outline base, List<EntityMember> extended) {
-//        this(null, ast, base, extended);
-//    }
-
-//   protected Entity(Node node, BuildInOutline buildIn, List<EntityMember> members) {
-//        super(node.ast(),buildIn, members);
-//        this.node = node;
-//        this.id = ast().Counter.getAndIncrement();
-//        this.base = null;
-//    }
-
     public Entity produce(Entity another) {
         return Entity.from(this.node(), this.interact(this.members(), another.members()));
     }
@@ -95,13 +81,6 @@ public class Entity extends ProductADT implements Projectable {
     public static Entity from(AST ast, List<EntityMember> members) {
         return new Entity(null, ast, ast.Any, members);
     }
-//    public static Entity from(AST ast) {
-//        return from(ast, new ArrayList<>());
-//    }
-
-//    public static Entity from(AST ast,List<EntityMember> members) {
-//        return from(ast,ast.Any.buildIn(), members);
-//    }
 
     @Override
     public long id() {
@@ -234,18 +213,11 @@ public class Entity extends ProductADT implements Projectable {
                 if (declared.id() != m.node().outline().id()) {
                     n = new Variable(n.identifier(), n.mutable(), new WrapperTypeNode(n.ast(), declared));
                 }
-//                if(!mProjected.is(declared)){
-//                    ErrorReporter.report(m.node(),GCPErrCode.OUTLINE_MISMATCH,mProjected+" doesn't match with "+declared);
-//                }
             }
 
             ms.add(EntityMember.from(m.name(), mProjected, m.modifier(), m.mutable().toBool(), n, m.isDefault()));
         }
-        /*if (this.base == null) {
-            projected = new Entity(this.node, this.base, ms);
-        } else {
-            projected = new Entity(this.node, (ProductADT) this.base.project(reference, projection), ms);
-        }*/
+
         return new Entity(this.node, this.ast(), null, ms);
     }
 }

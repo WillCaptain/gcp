@@ -168,8 +168,8 @@ public class OutlineInferences implements Inferences {
     }
 
     @Override
-    public Outline visit(Base base) {
-        return new BaseInference().infer(base, this);
+    public Outline visit(BaseNode baseNode) {
+        return new BaseInference().infer(baseNode, this);
     }
 
     @Override

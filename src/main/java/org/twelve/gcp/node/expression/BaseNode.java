@@ -8,8 +8,8 @@ import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
-public class Base  extends Identifier{
-    public Base(AST ast, Token token) {
+public class BaseNode extends Identifier{
+    public BaseNode(AST ast, Token token) {
         super(ast, token);
     }
 

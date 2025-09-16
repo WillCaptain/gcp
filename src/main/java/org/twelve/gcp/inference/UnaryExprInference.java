@@ -40,13 +40,14 @@ public class UnaryExprInference implements Inference<UnaryExpression> {
                 break;
 
             default:
-                // Throw an exception for unsupported operators
-                GCPErrorReporter.report(node.operatorNode(), GCPErrCode.UNSUPPORTED_UNARY_OPERATION);
+                break;
         }
 
         // Throw an exception for outline type mismatches or invalid positions
-        GCPErrorReporter.report(node.operatorNode(), GCPErrCode.OUTLINE_MISMATCH);
-        return node.ast().Error;
+        GCPErrorReporter.report(node.operand(), GCPErrCode.UNSUPPORTED_UNARY_OPERATION,ol.toString()+" is not supported in unary operation.");
+//        GCPErrorReporter.report(node.operatorNode(), GCPErrCode.OUTLINE_MISMATCH);
+        //return node.ast().Error;
+        return ol;
     }
 
 }

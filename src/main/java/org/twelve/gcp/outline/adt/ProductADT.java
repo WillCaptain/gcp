@@ -28,16 +28,6 @@ public abstract class ProductADT extends ADT {
      * Product ADT对应的基础类型
      */
     protected BuildInOutline buildIn;
-    /**
-     * 该Product ADT的成员方法，方法允许重载
-     */
-//    protected final Map<String, EntityMethod> methods = new HashMap<>();
-    /**
-     * 该Product ADT的成员变量，成员变量的重载在outline中允许，表现为Poly ADT
-     */
-//    protected final Map<String, EntityField> fields = new HashMap<>();
-
-
 
     protected ProductADT(AST ast,BuildInOutline buildIn) {
         super(ast);
@@ -61,9 +51,6 @@ public abstract class ProductADT extends ADT {
         if (another instanceof ProductADT) {
             return this.buildIn.is(((ProductADT) another).buildIn);
         }
-//        if ((another instanceof OutlineWrapper && ((OutlineWrapper) another).outline() instanceof ProductADT)) {
-//            return this.buildIn.is(((ProductADT) ((OutlineWrapper)another).outline()).buildIn);
-//        }
         return true;
     }
 
@@ -76,20 +63,6 @@ public abstract class ProductADT extends ADT {
     public boolean canBe(Outline another) {
         return this.maybe(another) && super.canBe(another);
     }
-
-//    @Override
-//    public boolean tryIamYou(Outline another) {
-//        if (!(another instanceof ProductADT)) return false;//若对方不是product adt，交由对方的tryYouAreMe去判定
-//
-//        //another的每一个成员，this都应有一个member对应，方可满足is关系
-//        ProductADT extended = cast(another);
-//        for (EntityMember member : extended.members()) {
-//            if (!this.members().stream().anyMatch(m -> m.name().equals(member.name()) && m.outline().is(member.outline()))) {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
 
     /**
      * 浅拷贝
