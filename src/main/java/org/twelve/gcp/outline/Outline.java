@@ -58,6 +58,7 @@ public interface Outline extends Serializable {
      * @return 我是否是对方类型或者对方类型的子类
      */
     default boolean is(Outline another) {
+        //if(this==another) return true;
         return this.tryIamYou(another) || another.tryYouAreMe(this);
     }
 

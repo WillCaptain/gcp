@@ -471,7 +471,7 @@ public class GCPInference {
     @Test
     void test_gcp_declared_hof_projection(){
         /*
-         * let f = fx<a>(x:a->{name:?,age:Integer})->{
+         * let f = fx<a>(x:a->{name:a,age:Integer})->{
          *   x("Will").name
          * }
          * f<Integer>;

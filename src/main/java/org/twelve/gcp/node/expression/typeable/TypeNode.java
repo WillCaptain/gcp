@@ -11,7 +11,13 @@ public abstract class TypeNode extends Node {
     public TypeNode(AST ast, Location loc) {
         super(ast,loc);
     }
-//    @Override
+
+    @Override
+    public boolean inferred() {
+        return this.outline.inferred();
+    }
+
+    //    @Override
 //    public Outline infer(Inferences inferences) {
 //        return new OutlineWrapper(this, super.infer(inferences));
 //    }

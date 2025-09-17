@@ -21,17 +21,26 @@ public class Literal extends Primitive {
     }
 
     @Override
+    public String toString() {
+        return this.origin.toString();
+    }
+
+    @Override
+    public boolean is(Outline another) {
+        if(another instanceof Literal){
+            return this.origin.is(((Literal) another).origin) && ((ValueNode<?>) another.node()).isSame(cast(this.node()));
+        }else{
+            return super.is(another);
+        }
+    }
+
+    @Override
     public boolean tryIamYou(Outline another) {
         if (another instanceof Literal) {
             return another.tryYouAreMe(this);
         } else {
             return this.origin.is(another);
         }
-    }
-
-    @Override
-    public String toString() {
-        return this.origin.toString();
     }
 
     @Override

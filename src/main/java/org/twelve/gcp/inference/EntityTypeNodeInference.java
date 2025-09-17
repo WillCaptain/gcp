@@ -14,7 +14,8 @@ public class EntityTypeNodeInference implements Inference<EntityTypeNode>{
     public Outline infer(EntityTypeNode node, Inferences inferences) {
         List<EntityMember> members = new ArrayList<>();
         for (Variable m : node.members()) {
-            EntityMember member = EntityMember.from(m.name(),m.declared().infer(inferences),m.modifier(),m.mutable());
+            Outline declared = m.declared()==null?node.ast().Any:m.declared().infer(inferences);
+            EntityMember member = EntityMember.from(m.name(),declared,m.modifier(),m.mutable());
             members.add(member);
         }
         return Entity.from(node,members);

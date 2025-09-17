@@ -13,7 +13,8 @@ public class ReferenceNode extends Identifier {
     private final TypeNode declared;
     public ReferenceNode(Identifier ref, TypeNode declared) {
         super(ref.ast(), ref.token());
-        this.declared = declared;
+        this.declared = this.addNode(declared);
+
     }
 
     @Override

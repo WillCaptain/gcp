@@ -1161,7 +1161,7 @@ public class ASTHelper {
 
     public static AST mockDeclaredHofProjection() {
         /*
-         * let f = fx<a>(x:a->{name:?,age:Integer})->{
+         * let f = fx<a>(x:a->{name:a,age:Integer})->{
          *   x("Will").name
          * }
          * f<Integer>;

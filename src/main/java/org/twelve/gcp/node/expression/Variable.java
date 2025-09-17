@@ -35,15 +35,15 @@ public class Variable extends Identifier {
     }
 
     @Override
+    public boolean inferred() {
+        return this.outline().inferred();
+    }
+
+    @Override
     public String lexeme() {
         String ext = "";
         if (this.declared != null) {
             ext = ": " + this.declared.lexeme();
-//            if(this.declared instanceof IdentifierType){
-//                ext += this.declared.lexeme();
-//            }else{
-//                ext += this.declared.outline();
-//            }
             if (ext.trim().equals(":")) ext = "";
         }
         return identifier.name() + ext;
@@ -53,10 +53,6 @@ public class Variable extends Identifier {
     public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
-
-//    public Boolean isDeclared() {
-//        return !(this.declared.outline() instanceof UNKNOWN);
-//    }
 
     @Override
     public Outline outline() {
