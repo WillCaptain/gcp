@@ -16,9 +16,4 @@ public abstract class TypeNode extends Node {
     public boolean inferred() {
         return this.outline.inferred();
     }
-
-    //    @Override
-//    public Outline infer(Inferences inferences) {
-//        return new OutlineWrapper(this, super.infer(inferences));
-//    }
 }

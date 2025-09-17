@@ -35,11 +35,6 @@ public class Variable extends Identifier {
     }
 
     @Override
-    public boolean inferred() {
-        return this.outline().inferred();
-    }
-
-    @Override
     public String lexeme() {
         String ext = "";
         if (this.declared != null) {
