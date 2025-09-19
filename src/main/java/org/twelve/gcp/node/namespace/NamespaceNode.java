@@ -8,7 +8,7 @@ import org.twelve.gcp.outline.builtin.Namespace;
 
 import java.util.List;
 
-public class NamespaceNode extends Node {
+public class NamespaceNode extends AbstractNode {
     public NamespaceNode(AST ast, List<Identifier> names) {
         super(ast, null);
         Namespace outline = null;

@@ -1,7 +1,7 @@
 package org.twelve.gcp.outline.projectable;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.node.expression.BinaryExpression;
 import org.twelve.gcp.outline.Outline;
 
@@ -32,7 +32,7 @@ public class NumericAble implements Projectable {
     }
 
     @Override
-    public Node node() {
+    public AbstractNode node() {
         return this.node;
     }
 

@@ -1,7 +1,7 @@
 package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.exception.GCPErrorReporter;
@@ -23,11 +23,11 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer {
 
-    private Array(Node node, AST ast, Outline itemOutline) {
+    private Array(AbstractNode node, AST ast, Outline itemOutline) {
         super(node, ast, Array_.instance(), ast.Integer, itemOutline);
     }
 
-    public static Array from(Node node, Outline itemOutline) {
+    public static Array from(AbstractNode node, Outline itemOutline) {
         return new Array(node, node.ast(), itemOutline);
     }
 
@@ -82,7 +82,7 @@ public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer
 
 
     @Override
-    public Node node() {
+    public AbstractNode node() {
         return this.node;
     }
 

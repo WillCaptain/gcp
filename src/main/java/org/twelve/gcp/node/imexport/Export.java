@@ -9,7 +9,7 @@ import org.twelve.gcp.outline.Outline;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Export extends Node {
+public class Export extends AbstractNode {
     private final List<ExportSpecifier> specifiers = new ArrayList<>();
 
     public Export(List<Pair<Identifier, Identifier>> vars) {

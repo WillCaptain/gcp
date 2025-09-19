@@ -1,7 +1,7 @@
 package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Expression;
@@ -107,7 +107,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
 
         return target.ast().Error;
     }
-    private Outline project(Outline target, Node argument) {
+    private Outline project(Outline target, AbstractNode argument) {
 //        ProjectSession session = new ProjectSession();
         //hlf function call
         if (target instanceof Genericable) {
@@ -131,7 +131,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      * @param argument HFL函数调用的参数
      * @return 虚拟的函数返回
      */
-    private Outline project(Genericable<?, ?> generic, Node argument) {
+    private Outline project(Genericable<?, ?> generic, AbstractNode argument) {
         if (generic.definedToBe() instanceof HigherOrderFunction) {
             return ((HigherOrderFunction) generic.definedToBe()).returns();
         }
@@ -156,7 +156,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      * @param function 实际调用的函数定义
      * @param argument 要投影的参数节点
      */
-    private Outline project(FirstOrderFunction function, Node argument) {
+    private Outline project(FirstOrderFunction function, AbstractNode argument) {
         ProjectSession session = function.getSession();
         if (session == null) {
             //开始一个projection session

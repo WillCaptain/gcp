@@ -1,13 +1,13 @@
 package org.twelve.gcp.node.namespace;
 
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.builtin.Module;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 import java.util.List;
 
-public class ModuleNode extends Node {
+public class ModuleNode extends AbstractNode {
     private final Identifier name;
     private NamespaceNode namespace = null;
 

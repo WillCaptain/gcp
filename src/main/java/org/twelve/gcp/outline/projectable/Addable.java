@@ -1,7 +1,7 @@
 package org.twelve.gcp.outline.projectable;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.outline.Outline;
@@ -21,13 +21,13 @@ public class Addable implements Projectable, OperateAble {
     private final Outline left;
     private final Outline right;
     private Outline definedToBe = null;
-    private Node node;
+    private AbstractNode node;
 
-    public Addable(Node node, Outline left, Outline right) {
+    public Addable(AbstractNode node, Outline left, Outline right) {
         this(node.ast().Counter.getAndIncrement(),node,left,right);
     }
 
-    private Addable(long id, Node node, Outline left, Outline right) {
+    private Addable(long id, AbstractNode node, Outline left, Outline right) {
         this.node = node;
         this.id = id;
 
@@ -137,7 +137,7 @@ public class Addable implements Projectable, OperateAble {
     }
 
     @Override
-    public Node node() {
+    public AbstractNode node() {
         return this.node;
     }
 

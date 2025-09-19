@@ -1,7 +1,7 @@
 package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
@@ -12,11 +12,11 @@ import org.twelve.gcp.outline.projectable.Projectable;
 import static org.twelve.gcp.common.Tool.cast;
 
 public class DictOrArray<K extends Outline> extends ProductADT implements Projectable {//} implements GenericContainer {
-    protected final Node node;
+    protected final AbstractNode node;
     protected final K key;
     protected final Outline value;
 
-    public DictOrArray(Node node, AST ast, BuildInOutline base, K key, Outline value) {
+    public DictOrArray(AbstractNode node, AST ast, BuildInOutline base, K key, Outline value) {
         super(ast,base);
         this.node = node;
         this.key = key;
@@ -24,7 +24,7 @@ public class DictOrArray<K extends Outline> extends ProductADT implements Projec
     }
 
     @Override
-    public Node node() {
+    public AbstractNode node() {
         return this.node;
     }
 

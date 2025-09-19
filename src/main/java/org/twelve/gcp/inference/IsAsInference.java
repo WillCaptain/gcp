@@ -11,7 +11,8 @@ public class IsAsInference implements Inference<IsAs> {
     @Override
     public Outline infer(IsAs node, Inferences inferences) {
         Outline lhs = node.a().infer(inferences);
-        if(!node.b().canBe(lhs)){
+        Outline b = node.b().infer(inferences);
+        if(!b.canBe(lhs)){
             GCPErrorReporter.report(node, GCPErrCode.TYPE_CAST_NEVER_SUCCEED,node.a()+" will never be "+node.b());
         }else{
             if(lhs instanceof Genericable<?,?>){
@@ -20,7 +21,7 @@ public class IsAsInference implements Inference<IsAs> {
         }
         if(node.parent() instanceof Arm){
             node.ast().symbolEnv().enter(((Arm) node.parent()).consequence());
-            node.ast().symbolEnv().defineSymbol(node.c().name(),node.b(),false,node.c());
+            node.ast().symbolEnv().defineSymbol(node.c().name(),b,false,node.c());
             node.ast().symbolEnv().exit();;
         }
         return node.ast().Boolean;

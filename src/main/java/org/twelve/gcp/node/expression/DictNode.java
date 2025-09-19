@@ -1,12 +1,11 @@
 package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.common.Pair;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.outline.Outline;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -27,7 +26,7 @@ public class DictNode extends Expression {
     public String lexeme() {
         if (this.isEmpty()) return "[:]";
         StringBuilder sb = new StringBuilder("[");
-        for (Node key : values.keySet()) {
+        for (AbstractNode key : values.keySet()) {
             sb.append(key.lexeme()).append(":").append(values.get(key).lexeme()).append(", ");
         }
         return sb.substring(0,sb.length()-2)+"]";

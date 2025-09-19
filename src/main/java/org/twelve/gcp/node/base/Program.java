@@ -42,7 +42,7 @@ public class Program extends Body {
     }
     public NamespaceNode setNamespace(MemberAccessor names) {
         this.moduleName = names.member();
-        Node host = names.host();
+        AbstractNode host = names.host();
         List<Identifier> ns = new ArrayList<>();
         while(host instanceof MemberAccessor){
             ns.add(0,((MemberAccessor) host).member());

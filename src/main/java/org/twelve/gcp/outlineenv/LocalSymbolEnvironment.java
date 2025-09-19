@@ -1,7 +1,7 @@
 package org.twelve.gcp.outlineenv;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.common.SCOPE_TYPE;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
@@ -59,7 +59,7 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         return this.root;
     }
 
-    public AstScope enter(Node node) {
+    public AstScope enter(AbstractNode node) {
 //        if(this.current.id()==scopeId){
 //            this.previous = this.current;
 //            return this.current;

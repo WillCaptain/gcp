@@ -1,7 +1,7 @@
 package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
@@ -17,7 +17,7 @@ import java.util.Map;
 import static org.twelve.gcp.common.Tool.cast;
 
 public class Dict extends DictOrArray<Outline> {
-    public Dict(Node node, Outline key, Outline value) {
+    public Dict(AbstractNode node, Outline key, Outline value) {
         super(node,node.ast(), Dict_.instance(), key, value);
     }
     public Dict(AST ast, Outline key, Outline value) {

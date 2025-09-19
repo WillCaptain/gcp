@@ -10,7 +10,7 @@ import org.twelve.gcp.outline.Outline;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Import extends Node {
+public class Import extends AbstractNode {
     private final ModuleNode source;
     private final List<ImportSpecifier> specifiers = new ArrayList<>();
 

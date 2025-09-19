@@ -3,6 +3,7 @@ package org.twelve.gcp.node.expression;
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
+import org.twelve.gcp.ast.UnpackAble;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -14,7 +15,7 @@ import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 import static org.twelve.gcp.common.Tool.cast;
 
-public class Identifier extends Assignable {
+public class Identifier extends Assignable implements UnpackAble {
     private final Token<String> token;
 
     public Identifier(AST ast, Token<String> token) {

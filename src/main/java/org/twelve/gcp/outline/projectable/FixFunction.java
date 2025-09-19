@@ -14,7 +14,7 @@ public class FixFunction  extends Function<Node,Outline> {
 //    private final Outline argument;
     private final Outline returns;
 
-    public FixFunction(Node node,AST ast, Outline arg, Outline returns) {
+    public FixFunction(Node node, AST ast, Outline arg, Outline returns) {
         super(node,ast,arg,Return.from(ast,returns));
 //        this.node = node;
 //        this.ast = ast;

@@ -1,6 +1,5 @@
 package org.twelve.gcp.outline.adt;
 
-import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.node.expression.Identifier;

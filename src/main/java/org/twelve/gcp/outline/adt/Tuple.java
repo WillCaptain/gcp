@@ -1,11 +1,7 @@
 package org.twelve.gcp.outline.adt;
 
-import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.projectable.ProjectSession;
-import org.twelve.gcp.outline.projectable.Projectable;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.twelve.gcp.common.Tool.cast;

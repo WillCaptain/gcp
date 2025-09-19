@@ -2,7 +2,7 @@ package org.twelve.gcp.node.expression;
 
 import com.sun.istack.NotNull;
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.outline.Outline;
 
@@ -59,7 +59,7 @@ public class ArrayNode extends Expression {
                 sb.append(",").append(this.condition.lexeme());
             }
         } else {
-            sb.append(Arrays.stream(values).map(Node::lexeme).collect(Collectors.joining(",")));
+            sb.append(Arrays.stream(values).map(AbstractNode::lexeme).collect(Collectors.joining(",")));
         }
         sb.append("]");
         return sb.toString();

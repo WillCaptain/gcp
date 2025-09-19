@@ -1,29 +1,29 @@
 package org.twelve.gcp.node.expression;
 
-import org.twelve.gcp.ast.Location;
-import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.UnpackAble;
 import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.outline.Outline;
+
+import static org.twelve.gcp.common.Tool.cast;
 
 /**
  * a is b as c
  */
 public class IsAs extends Expression {
     private final Expression a;
-    private final Identifier c;
-    private final Outline b;
+    private final UnpackAble c;
+    private final TypeNode b;
 
-    public IsAs(Expression a, Outline b, Identifier c) {
+    public IsAs(Expression a, TypeNode b, UnpackAble c) {
         super(a.ast(), null);
-        this.a = a;
-        this.b = b;
+        this.a = this.addNode(a);
+        this.b = this.addNode(b);
         this.c = c;
-        this.addNode(a);
         if (a != c) this.addNode(c);
     }
 
-    public IsAs(Identifier a, Outline is) {
+    public IsAs(Identifier a, TypeNode is) {
         this(a, is, a);
     }
 
@@ -37,10 +37,10 @@ public class IsAs extends Expression {
     }
 
     public Identifier c() {
-        return c;
+        return cast(c);
     }
 
-    public Outline b() {
+    public TypeNode b() {
         return b;
     }
 

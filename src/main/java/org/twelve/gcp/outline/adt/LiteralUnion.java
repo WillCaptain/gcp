@@ -1,6 +1,6 @@
 package org.twelve.gcp.outline.adt;
 
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.node.expression.typeable.OptionTypeNode;
 import org.twelve.gcp.node.ValueNode;
 import org.twelve.gcp.outline.Outline;
@@ -17,9 +17,9 @@ import static org.twelve.gcp.common.Tool.cast;
  */
 public class LiteralUnion extends ADT {
     private final List<ValueNode> values = new ArrayList();
-    private final Node node;
+    private final AbstractNode node;
 
-    private LiteralUnion(Node node, ValueNode... values) {
+    private LiteralUnion(AbstractNode node, ValueNode... values) {
         super(node.ast());
         for (ValueNode value : values) {
             this.values.add(value);
@@ -51,7 +51,7 @@ public class LiteralUnion extends ADT {
     }
 
     @Override
-    public Node node() {
+    public AbstractNode node() {
         return this.node;
     }
 

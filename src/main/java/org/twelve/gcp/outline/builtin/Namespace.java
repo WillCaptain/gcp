@@ -1,7 +1,7 @@
 package org.twelve.gcp.outline.builtin;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 
@@ -31,7 +31,7 @@ public class Namespace implements Outline {
     }
 
     @Override
-    public Node node() {
+    public AbstractNode node() {
         return this.node;
     }
 

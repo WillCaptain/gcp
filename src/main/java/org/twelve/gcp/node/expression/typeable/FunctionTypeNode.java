@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.expression.typeable;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.outline.Outline;
 
@@ -29,7 +29,7 @@ public class FunctionTypeNode extends TypeNode {
     @Override
     public String lexeme() {
         return new StringBuilder()
-                .append(this.arguments.stream().map(Node::lexeme).collect(Collectors.joining("->")))
+                .append(this.arguments.stream().map(AbstractNode::lexeme).collect(Collectors.joining("->")))
                 .append("->"+this.returns.lexeme()).toString();
     }
 

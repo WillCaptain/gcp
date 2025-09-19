@@ -377,7 +377,7 @@ public class ASTHelper {
         return ast;
     }
 
-    public static Node mockEntityProjection1(int type, Consumer<FunctionBody> mockCallNode) {
+    public static AbstractNode mockEntityProjection1(int type, Consumer<FunctionBody> mockCallNode) {
         //let f = (x,z,y)-> z.combine(x,y);
         //f(20,{combine = (x,y)->{{
         //        age = x1,
@@ -708,12 +708,12 @@ public class ASTHelper {
         //}else if(some is String as str){
         //    str
         //}else{100}
-        IsAs isInt = new IsAs(new Identifier(ast, some), ast.Integer);
+        IsAs isInt = new IsAs(new Identifier(ast, some),new IdentifierTypeNode(new Identifier(ast,new Token<>("Integer"))));
         Consequence consequence = new Consequence(ast);
         consequence.addStatement(new ReturnStatement(new Identifier(ast, some)));
         Arm arm1 = new Arm(isInt, consequence);
         Token<String> str = new Token<>("str");
-        IsAs isStr = new IsAs(new Identifier(ast, some), ast.String, new Identifier(ast, str));
+        IsAs isStr = new IsAs(new Identifier(ast, some), new IdentifierTypeNode(new Identifier(ast,new Token<>("String"))), new Identifier(ast, str));
         consequence = new Consequence(ast);
         consequence.addStatement(new ReturnStatement(new Identifier(ast, str)));
         Arm arm2 = new Arm(isStr, consequence);

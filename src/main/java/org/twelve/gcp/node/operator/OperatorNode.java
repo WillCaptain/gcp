@@ -2,9 +2,8 @@ package org.twelve.gcp.node.operator;
 
 import org.twelve.gcp.ast.*;
 import org.twelve.gcp.inference.operator.Operator;
-import org.twelve.gcp.outline.Outline;
 
-public class OperatorNode<O extends Operator> extends Node {
+public class OperatorNode<O extends Operator> extends AbstractNode {
     private final O operator;
 
     public OperatorNode(AST ast, O operator) {

@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.statement.MemberNode;
@@ -37,7 +37,7 @@ public class TupleNode extends EntityNode {
     @Override
     public String lexeme() {
         StringBuilder sb = new StringBuilder("(");
-        sb.append(Arrays.stream(values).map(Node::lexeme).collect(Collectors.joining(",")))
+        sb.append(Arrays.stream(values).map(AbstractNode::lexeme).collect(Collectors.joining(",")))
                 .append(")");
         return sb.toString();
     }

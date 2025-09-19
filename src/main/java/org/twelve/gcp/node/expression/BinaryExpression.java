@@ -1,6 +1,6 @@
 package org.twelve.gcp.node.expression;
 
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.operator.OperatorNode;
@@ -29,7 +29,7 @@ public class BinaryExpression extends Expression{
         return operatorNode.operator();
     }
 
-    public Node operatorNode() {
+    public AbstractNode operatorNode() {
         return operatorNode;
     }
 

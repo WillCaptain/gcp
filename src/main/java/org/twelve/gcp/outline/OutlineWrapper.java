@@ -1,10 +1,10 @@
 package org.twelve.gcp.outline;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.common.CONSTANTS;
 
-public record OutlineWrapper(Node node, Outline outline) implements Outline {
+public record OutlineWrapper(AbstractNode node, Outline outline) implements Outline {
 
     @Override
     public AST ast() {

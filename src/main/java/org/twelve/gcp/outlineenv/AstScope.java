@@ -1,7 +1,7 @@
 package org.twelve.gcp.outlineenv;
 
 import lombok.Setter;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.common.SCOPE_TYPE;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
@@ -15,14 +15,14 @@ import java.util.Optional;
 
 public class AstScope implements Scope {
     private final Long scopeId;
-    private final Node node;
+    private final AbstractNode node;
     private Map<String, EnvSymbol> symbols = new HashMap<>();
     private Map<String, EnvSymbol> outlines = new HashMap<>();
     private final AstScope parent;
     @Setter
     private SCOPE_TYPE scopeType = SCOPE_TYPE.IN_BLOCK;
 
-    AstScope(Long scopeId, AstScope parent, Node node) {
+    AstScope(Long scopeId, AstScope parent, AbstractNode node) {
         this.scopeId = scopeId;
         this.parent = parent;
         this.node = node;
@@ -32,7 +32,7 @@ public class AstScope implements Scope {
         return this.scopeId;
     }
 
-    public Node node() {
+    public AbstractNode node() {
         return this.node;
     }
 

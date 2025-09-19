@@ -1,7 +1,6 @@
 package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.Location;
-import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.SimpleLocation;
 import org.twelve.gcp.inference.Inferences;

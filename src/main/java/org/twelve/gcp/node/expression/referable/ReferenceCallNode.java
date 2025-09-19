@@ -1,7 +1,6 @@
 package org.twelve.gcp.node.expression.referable;
 
-import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
@@ -37,7 +36,7 @@ public class ReferenceCallNode extends Expression {
     public String lexeme() {
         return new StringBuilder(this.host.lexeme())
                 .append("<")
-                .append(this.types.stream().map(Node::lexeme).collect(Collectors.joining(",")))
+                .append(this.types.stream().map(AbstractNode::lexeme).collect(Collectors.joining(",")))
                 .append(">").toString();
     }
 

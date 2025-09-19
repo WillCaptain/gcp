@@ -12,7 +12,7 @@ public class DOUBLE extends NUMBER{
         super(double_,node,node.ast());
         this.loadMethods();
     }
-    protected DOUBLE(BuildInOutline buildInOutline, Node node,AST ast) {
+    protected DOUBLE(BuildInOutline buildInOutline, Node node, AST ast) {
         super(buildInOutline,node,ast);
     }
     public DOUBLE(AST ast){

@@ -1,6 +1,6 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.common.SCOPE_TYPE;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -14,7 +14,7 @@ public class ThisInference implements Inference<ThisNode> {
         return findEntity(node);
     }
 
-    private Outline findEntity(Node node) {
+    private Outline findEntity(AbstractNode node) {
         AstScope scope = node.ast().symbolEnv().current();
         while(scope.scopeType()!= SCOPE_TYPE.IN_PRODUCT_ADT){
             scope = scope.parent();

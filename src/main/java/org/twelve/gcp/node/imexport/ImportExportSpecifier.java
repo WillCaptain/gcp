@@ -1,10 +1,10 @@
 package org.twelve.gcp.node.imexport;
 
-import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
-public abstract class ImportExportSpecifier extends Node {
+public abstract class ImportExportSpecifier extends AbstractNode {
     public ImportExportSpecifier(Identifier a, Identifier b) {
         super(a.ast());
         Identifier origin = a;//new Identifier(ast, a);
