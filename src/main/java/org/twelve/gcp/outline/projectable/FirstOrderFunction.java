@@ -34,22 +34,10 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?, ?>
         this.references = new ArrayList<>();
     }
 
-//    private FirstOrderFunction(FunctionNode node, Genericable<?, ?> argument, Returnable returns) {
-//        this(node, node.ast(), argument, returns, new ArrayList<>());
-//    }
-
     private FirstOrderFunction(FunctionNode node, AST ast, Genericable<?, ?> argument, Returnable returns, List<Reference> references) {
         super(node, ast, argument, returns);
         this.references = references == null ? new ArrayList<>() : references;
     }
-//    private FirstOrderFunction(FunctionNode node, Genericable<?, ?> argument, Returnable returns, List<Reference> references) {
-//        super(node, argument, returns);
-//        this.references = references == null ? new ArrayList<>() : references;
-//    }
-//    private FirstOrderFunction(AST ast, Genericable<?, ?> argument, Returnable returns, List<Reference> references) {
-//        super(ast, argument, returns);
-//        this.references = references == null ? new ArrayList<>() : references;
-//    }
 
     public static FirstOrderFunction from(FunctionNode node, Genericable<?, ?> argument, Returnable returns) {
         return new FirstOrderFunction(node, node.ast(), argument, returns, new ArrayList<>());
@@ -63,7 +51,6 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?, ?>
                 rests[i] = args[i + 1];
             }
             Returnable r = Return.from(ast, from(ast, returns, rests));
-//            Returnable r = returns instanceof Returnable ? cast(returns) : Return.from(ast, from(ast, returns, rests));
             r.addReturn(returns.ast().Nothing);
             return new FirstOrderFunction(null, ast, Generic.from(ast, arg), r, refs);
         } else {
@@ -73,22 +60,9 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?, ?>
         }
     }
 
+
     public static FirstOrderFunction from(AST ast, Outline returns, Outline... args) {
         return from(ast, null, returns, args);
-//        if (args.length > 1) {
-//            Outline arg = args[0];
-//            Outline[] rests = new Outline[args.length - 1];
-//            for (int i = 0; i < rests.length; i++) {
-//                rests[i] = args[i + 1];
-//            }
-//            Returnable r = Return.from(ast, from(ast, returns, rests));
-//            r.addReturn(returns.ast().Nothing);
-//            return new FirstOrderFunction(ast, Generic.from(ast, arg), r);
-//        } else {
-//            Returnable r = Return.from(ast, returns);
-//            r.addReturn(ast.Nothing);
-//            return new FirstOrderFunction(ast, Generic.from(ast, args[0]), r);
-//        }
     }
 
     public static FirstOrderFunction from(FunctionNode node, Genericable<?, ?> argument, Returnable returns, List<Reference> references) {
@@ -144,9 +118,17 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?, ?>
         if (projected instanceof Genericable<?, ?>) {
             arg = cast(projected);
         } else {
-            arg = Generic.from(this.node.argument(), projected);
+//            arg = Generic.from(this.node.argument(), projected);
+            arg = Generic.from(this.argument().node(), projected);
         }
-        ret = cast(ret.project(reference, projection));
+        Outline projectedRet = ret.project(reference, projection);
+        if(projectedRet instanceof Returnable){
+            ret = cast(projectedRet);
+
+        }else{
+            ret = Return.from(ret.node());
+            ret.addReturn(projectedRet);
+        }
         return new FirstOrderFunction(this.node, this.ast(), arg, ret, refs);
     }
 

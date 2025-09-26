@@ -85,7 +85,7 @@ public interface Node extends Serializable {
 
     String type();
 
-    int nodeIndex();
+    long nodeIndex();
 
     Node get(int index);
 

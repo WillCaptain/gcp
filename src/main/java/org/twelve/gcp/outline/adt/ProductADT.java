@@ -122,10 +122,7 @@ public abstract class ProductADT extends ADT {
             }
         }
     }
-    @Override
-    public boolean containsUnknown() {
-        return this.members().stream().anyMatch(m->m.outline.containsUnknown());
-    }
+
     /**
      * 添加单个member
      *
@@ -178,9 +175,7 @@ public abstract class ProductADT extends ADT {
         return outline.is(member.outline());
     }
 
-    public Optional<EntityMember> getMember(String name) {
-        return this.members().stream().filter(m -> m.name().equals(name)).findFirst();
-    }
+
 
     protected List<EntityMember> interact(List<EntityMember> one, List<EntityMember> another){
         List<EntityMember> members = new ArrayList<>(one);

@@ -16,17 +16,19 @@ public abstract class Assignable extends Expression {
     }
 
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
-        if(!inferred.beAssignedAble()){
+        if (!inferred.beAssignedAble()) {
             GCPErrorReporter.report(GCPErrCode.NOT_BE_ASSIGNEDABLE);
             return;
         }
         //generic处理
         if (this.outline instanceof Genericable) {
-            Genericable<?,?> me = ((Genericable<?,?>) this.outline);
-            if (inferred instanceof Genericable<?,?>) {
-                if (inferred.node()!=null &&
-                        me.node().nodeIndex() > inferred.node().nodeIndex()) {//bigger index argument refer smaller
-                    me.addExtendToBe(inferred);
+            Genericable<?, ?> me = ((Genericable<?, ?>) this.outline);
+            if (inferred instanceof Genericable<?, ?>) {
+                if (inferred.node() != null) {
+                    if (me.node().nodeIndex() > inferred.node().nodeIndex()) {//bigger index argument refer smaller
+//                    if (me.node().id() > inferred.node().id()) {//bigger index argument refer smaller
+                        me.addExtendToBe(inferred);
+                    }
                 }
             } else {
                 me.addExtendToBe(inferred);
@@ -39,6 +41,7 @@ public abstract class Assignable extends Expression {
         if (inferred instanceof OperateAble) {
             OperateAble<?> you = (OperateAble<?>) inferred;
             if (!(this.outline instanceof Genericable<?, ?>) ||
+//                    this.outline.node().id() < you.node().id()) {
                     this.outline.node().nodeIndex() < you.node().nodeIndex()) {
                 you.addHasToBe(this.outline);
             }

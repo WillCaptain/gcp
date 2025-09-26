@@ -14,10 +14,6 @@ import static org.twelve.gcp.common.Tool.cast;
 public class FunctionInference implements Inference<FunctionNode> {
     @Override
     public Outline infer(FunctionNode node, Inferences inferences) {
-//        Map<String, Reference> references = new HashMap<>();
-//        for (ReferenceNode ref : node.refs()) {
-//            references.put(ref.name(),cast(ref.infer(inferences)));
-//        }
         List<Reference> refs = node.refs().stream().map(r->(Reference)r.infer(inferences)).toList();
         Genericable<?,?> argument = cast(node.argument().infer(inferences));
         Returnable returns = cast(node.body().infer(inferences));

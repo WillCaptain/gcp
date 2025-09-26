@@ -78,6 +78,20 @@ public class Return extends Genericable<Return, Node> implements Returnable {
     }
 
     @Override
+    public boolean tryYouAreMe(Outline another) {
+        if(this.supposed instanceof UNKNOWN || this.supposed instanceof NOTHING){
+            return super.tryYouAreMe(another);
+        }else{
+            return another.is(this.supposed);
+        }
+    }
+
+    @Override
+    public boolean containsUnknown() {
+        return super.containsUnknown() || this.supposed.containsUnknown();
+    }
+
+    @Override
     protected Outline projectMySelf(Outline projection, ProjectSession session) {
         //todo
         return super.projectMySelf(projection, session);

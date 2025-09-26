@@ -30,7 +30,8 @@ public class FunctionNode extends Expression implements ReferAbleNode {
         AST ast = funcBody.ast();
         List<Argument> args = new ArrayList<>();
         for (Argument argument : arguments) {
-            args.add(argument.setIndex(args.size()));
+//            args.add(argument.setIndex(args.size()));
+            args.add(argument);
         }
 
         if (args.isEmpty()) {

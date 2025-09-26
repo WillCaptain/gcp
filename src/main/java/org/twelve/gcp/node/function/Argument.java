@@ -12,10 +12,13 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.Genericable;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import static org.twelve.gcp.common.Tool.cast;
 
 public class Argument extends Identifier {
-    private int index = 0;
+    private long index = 0;
+    private static AtomicLong indexer = new AtomicLong();
 
     public static Argument unit(AST ast) {
         return new Argument(new Identifier(ast, Token.unit()), null);
@@ -32,6 +35,7 @@ public class Argument extends Identifier {
         super(name.ast(), name.token());
         this.declared = this.addNode(declared);
         this.defaultValue = this.addNode(defaultValue);
+        this.index = indexer.incrementAndGet();
     }
 
     public Argument(Identifier name, TypeNode declared) {
@@ -69,10 +73,10 @@ public class Argument extends Identifier {
         return cast(super.outline());
     }
 
-    public Argument setIndex(int index) {
-        this.index = index;
-        return this;
-    }
+//    public Argument setIndex(int index) {
+//        this.index = index;
+//        return this;
+//    }
 
     @Override
     public boolean inferred() {
@@ -87,7 +91,7 @@ public class Argument extends Identifier {
     }
 
     @Override
-    public int nodeIndex() {
+    public long nodeIndex() {
         return this.index;
     }
 

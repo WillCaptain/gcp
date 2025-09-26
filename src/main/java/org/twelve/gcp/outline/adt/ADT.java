@@ -3,9 +3,14 @@ package org.twelve.gcp.outline.adt;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.common.Modifier;
+import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.primitive.Literal;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
+import org.twelve.gcp.outline.projectable.ProjectSession;
+import org.twelve.gcp.outline.projectable.Projectable;
+import org.twelve.gcp.outlineenv.AstScope;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +24,7 @@ public abstract class ADT implements Outline {
     protected long id;
 
     protected final Map<String, EntityMember> members = new HashMap<>();
+    private int scopeLayer;
 
     public ADT(AST ast) {
         this.ast = ast;
@@ -39,6 +45,7 @@ public abstract class ADT implements Outline {
         return true;
     }
 
+
     @Override
     public long id() {
         return this.id;
@@ -46,6 +53,15 @@ public abstract class ADT implements Outline {
 
     public List<EntityMember> members() {
         return members.values().stream().toList();
+    }
+
+    public Optional<EntityMember> getMember(String name) {
+        return this.members().stream().filter(m -> m.name().equals(name)).findFirst();
+    }
+
+    @Override
+    public boolean containsUnknown() {
+        return this.members().stream().anyMatch(m -> m.outline.containsUnknown());
     }
 
     @Override
@@ -60,9 +76,6 @@ public abstract class ADT implements Outline {
             if (!found.isPresent() || !found.get().outline().is(member.outline())) {
                 return false;
             }
-//            if (!this.members().stream().anyMatch(m -> m.name().equals(member.name()) && m.outline().is(member.outline()))) {
-//                return false;
-//            }
         }
         return true;
     }

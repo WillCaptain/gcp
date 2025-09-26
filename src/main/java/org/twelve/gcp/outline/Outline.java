@@ -5,6 +5,7 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.projectable.Projectable;
 import org.twelve.gcp.outline.projectable.Reference;
+import org.twelve.gcp.outlineenv.AstScope;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -135,32 +136,11 @@ public interface Outline extends Serializable {
         return false;
     }
 
-    default boolean beAssignable(){return true;}
+    default boolean beAssignable() {
+        return true;
+    }
 
-    default Outline alternative(){return this;}
-
-    /**
-     * to Poly/interacted entity
-     * outline&outline
-     * @param another
-     * @return
-     */
-//    default Outline produce(Outline another){
-//        if(another instanceof Poly){
-//            return another.produce(this);
-//        }else{
-//            Poly poly = Poly.create();
-//           poly =  cast(poly.produce(this).produce(another));
-//           if(poly.options().size()==1)return poly.options().getFirst();
-//           else return poly;
-//        }
-//    }
-//
-//    default Outline sum(Outline another){
-//        if(another instanceof Option){
-//            return another.sum(this);
-//        }else{
-//            return Option.from(this, another);
-//        }
-//    }
+    default Outline alternative() {
+        return this;
+    }
 }

@@ -2,10 +2,7 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.node.expression.typeable.FunctionTypeNode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.projectable.HigherOrderFunction;
-import org.twelve.gcp.outline.projectable.Reference;
-import org.twelve.gcp.outline.projectable.Return;
-import org.twelve.gcp.outline.projectable.Returnable;
+import org.twelve.gcp.outline.projectable.*;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -20,6 +17,7 @@ public class FunctionTypeNodeInference implements Inference<FunctionTypeNode> {
             ret = Return.from(node.ast(),node.returns().infer(inferences));
             ret.addReturn(ret.declaredToBe());
         }
-        return HigherOrderFunction.from(node, ret, node.arguments().stream().map(a -> a.infer(inferences)).toArray(Outline[]::new));
+//        return HigherOrderFunction.from(node, ret, node.arguments().stream().map(a -> a.infer(inferences)).toArray(Outline[]::new));
+        return FirstOrderFunction.from(node.ast(), null,ret, node.arguments().stream().map(a -> a.infer(inferences)).toArray(Outline[]::new));
     }
 }

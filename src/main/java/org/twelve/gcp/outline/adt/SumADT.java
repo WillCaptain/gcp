@@ -216,4 +216,9 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
     public boolean containsGeneric() {
         return this.options.stream().anyMatch(o->o instanceof Projectable && ((Projectable) o).containsGeneric());
     }
+
+    @Override
+    public boolean containsUnknown() {
+        return super.containsUnknown() || this.options.stream().anyMatch(Outline::containsUnknown);
+    }
 }

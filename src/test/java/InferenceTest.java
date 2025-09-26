@@ -527,8 +527,6 @@ public class InferenceTest {
 
         FunctionNode function = cast(((FunctionCallNode) assignment.rhs()).function());
         assertEquals(1, ast.errors().size());
-//        Genericable<?,?> arg = cast(function.argument().outline());
-//        assertInstanceOf(INTEGER.class, arg.couldBe());
     }
 
     @Test

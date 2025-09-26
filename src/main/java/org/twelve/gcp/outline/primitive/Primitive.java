@@ -5,6 +5,8 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.*;
+import org.twelve.gcp.outline.projectable.ProjectSession;
+import org.twelve.gcp.outline.projectable.Projectable;
 
 public abstract class Primitive extends ProductADT {
 
@@ -16,13 +18,6 @@ public abstract class Primitive extends ProductADT {
         this.node = node;
 //        this.created = true;
     }
-
-//    @Override
-//    public final bo loadMethods() {
-//        if (this.created) {
-//            super.loadMethods();
-//        }
-//    }
 
     @Override
     public long id() {

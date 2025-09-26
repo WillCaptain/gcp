@@ -60,6 +60,7 @@ public class EntityNode extends ValueNode<EntityNode>{
         StringBuilder sb = new StringBuilder((base == null ? "" : base.lexeme()) + "{\n");
         int index = 0;
         for (Node node : this.nodes()) {
+            if(node==this.base) continue;
             String[] lines = node.lexeme().split("\n");
 
             for (int i = 0; i < lines.length; i++) {

@@ -56,11 +56,11 @@ public class Entity extends ProductADT implements Projectable {
         return cast(another.sum(this, false));
     }
 
-    public static Entity from(Node node, ProductADT base, List<EntityMember> extended) {
+    public static Entity from(Node node, Outline base, List<EntityMember> extended) {
         return from(node, base, extended, new ArrayList<>());
     }
 
-    public static Entity from(Node node, ProductADT base, List<EntityMember> extended, List<Reference> references) {
+    public static Entity from(Node node, Outline base, List<EntityMember> extended, List<Reference> references) {
         return new Entity(node, node.ast(), base, extended);
     }
 
@@ -136,8 +136,12 @@ public class Entity extends ProductADT implements Projectable {
 
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
+        Outline base = this.base;
+        if (this.base != null && this.base instanceof Projectable) {
+            base = ((Projectable) this.base).project(projected, projection, session);
+        }
         if (this.id() == projected.id()) {//project myself:{a} project{a,b}
-            Entity outline = Entity.from(this.node());
+            Entity outline = Entity.from(this.node(),base,new ArrayList<>());
             for (EntityMember yourMember : ((ADT) projection).members()) {//match projection members
                 Optional<EntityMember> myMember = this.getMember(yourMember.name());//find matched member in projected
                 if (myMember.isPresent()) {//project a
@@ -158,13 +162,13 @@ public class Entity extends ProductADT implements Projectable {
 //                session.addProjection(projected, outline);
                 return outline;
             } else {
-                GCPErrorReporter.report(projection.ast(),projection.node(), GCPErrCode.PROJECT_FAIL,
+                GCPErrorReporter.report(projection.ast(), projection.node(), GCPErrCode.PROJECT_FAIL,
                         projection.node() + CONSTANTS.MISMATCH_STR + this);
                 return this.guess();
             }
         } else {//project possible members
 //            Entity outline = this.node()==null?Entity.from(this.ast()):Entity.from(this.node());
-            Entity outline = Entity.from(this.node());
+            Entity outline = Entity.from(this.node(),base,new ArrayList<>());
             for (EntityMember m : this.members()) {
                 if (m.outline() instanceof Projectable) {
                     Projectable p = cast(m.outline());
@@ -203,6 +207,10 @@ public class Entity extends ProductADT implements Projectable {
     @Override
     public Outline project(Reference reference, OutlineWrapper projection) {
         Entity projected;
+        Outline base = null;
+        if (this.base != null) {
+            base = this.base.project(reference, projection);
+        }
         List<EntityMember> ms = new ArrayList<>();
         for (String key : this.members.keySet()) {
             EntityMember m = this.members.get(key);
@@ -218,6 +226,6 @@ public class Entity extends ProductADT implements Projectable {
             ms.add(EntityMember.from(m.name(), mProjected, m.modifier(), m.mutable().toBool(), n, m.isDefault()));
         }
 
-        return new Entity(this.node, this.ast(), null, ms);
+        return new Entity(this.node, this.ast(), base, ms);
     }
 }

@@ -5,9 +5,11 @@ import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.common.SCOPE_TYPE;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.ADT;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.adt.ProductADT;
+import org.twelve.gcp.outline.projectable.Generic;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -73,7 +75,12 @@ public class AstScope implements Scope {
             //find base
             EnvSymbol baseSymbol = this.lookupSymbol("base");
             if (baseSymbol != null) {
-                Optional<EntityMember> member = ((ProductADT) baseSymbol.outline()).getMember(key);
+                Optional<EntityMember> member = null;
+                if(baseSymbol.outline() instanceof ADT) {
+                    member = ((ADT) baseSymbol.outline()).getMember(key);
+                }else{
+                    member = ((ADT)((Generic)baseSymbol.outline()).min()).getMember(key);
+                }
                 if (member.isPresent()) {
                     if (symbol == null) {
                         EntityMember m = member.get();

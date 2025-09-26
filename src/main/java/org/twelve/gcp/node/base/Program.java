@@ -14,7 +14,7 @@ import java.util.List;
 
 import static org.twelve.gcp.common.Tool.cast;
 
-public class Program extends Body {
+public class Program extends AbstractNode {
     private NamespaceNode namespace;
     private ProgramBody body;
     private Identifier moduleName = null;
@@ -63,7 +63,7 @@ public class Program extends Body {
         return body;
     }
 
-    @Override
+    //@Override
     public <T extends Statement> T addStatement(T statement) {
         return this.body.addStatement(statement);
     }

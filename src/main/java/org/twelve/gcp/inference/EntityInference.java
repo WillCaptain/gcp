@@ -1,13 +1,16 @@
 package org.twelve.gcp.inference;
 
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.SCOPE_TYPE;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.EntityNode;
+import org.twelve.gcp.outline.adt.ADT;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
+import org.twelve.gcp.outline.projectable.Generic;
 
 import java.util.ArrayList;
 
@@ -23,9 +26,23 @@ public class EntityInference implements Inference<EntityNode> {
             Outline base = null;
             if (node.base() != null) {
                 base = node.base().infer(inferences);
-                if (!(base instanceof ProductADT)) {
-                    GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);
-                    return node.ast().Error;
+                if(base instanceof Generic){
+                    /*((Generic) base).addDefinedToBe(new ADT(node.ast()) {
+                        @Override
+                        public Node node() {
+                            return node;
+                        }
+
+                        @Override
+                        public boolean tryYouAreMe(Outline another) {
+                            return another instanceof ADT;
+                        }
+                    });*/
+                }else {
+                    if (!(base instanceof ADT)) {
+                        GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);
+                        return node.ast().Error;
+                    }
                 }
                 node.ast().symbolEnv().defineSymbol("base", base, false, null);
             }

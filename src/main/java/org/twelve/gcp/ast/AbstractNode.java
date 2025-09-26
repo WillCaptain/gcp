@@ -216,7 +216,7 @@ public abstract class AbstractNode implements Node {
         return this.getClass().getSimpleName();
     }
     @Override
-    public int nodeIndex() {
+    public long nodeIndex() {
         return this.parent().nodes().indexOf(this);
     }
     @Override

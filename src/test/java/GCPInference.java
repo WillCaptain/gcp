@@ -615,7 +615,7 @@ public class GCPInference {
         /*
         let factorial = n -> n==0?1:n*factorial(n-1);
         factorial(100);
-        factorial(100);
+        factorial("100");
          */
         AST ast = ASTHelper.mockRecursive();
         ast.asf().infer();
@@ -630,6 +630,17 @@ public class GCPInference {
 
     @Test
     void test_complicated_hof_projection(){
+        /*
+        let f = fx<a>(x: a->a)->y->z->{
+          x = b->b+"some";
+          y = x;
+          x = z;
+          y
+        };
+        f<String>;
+        f<Integer>;
+        f(n->"some");
+         */
         AST ast = ASTHelper.mockComplicatedHofProjection();
         assertTrue(ast.asf().infer());
         Assignment f = cast(ast.program().body().statements().getFirst().nodes().getFirst());
@@ -659,7 +670,11 @@ public class GCPInference {
         assertTrue(ast.asf().infer());
         Outline outline = ast.program().body().statements().getLast().outline();
         assertEquals("String",outline.toString());
-        assertTrue(ast.errors().isEmpty());
+        assertEquals(1,ast.errors().size());
+        assertEquals(GCPErrCode.PROJECT_FAIL,ast.errors().get(0).errorCode());
+        Node wrong = ast.program().body().get(3).get(0).get(1).get(1);
+        assertEquals(wrong,ast.errors().get(0).node());
+
         assertEquals("""
                 module default
                 

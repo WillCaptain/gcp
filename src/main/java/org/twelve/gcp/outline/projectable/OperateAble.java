@@ -9,4 +9,5 @@ public interface OperateAble<T extends Node> {
     T node();
 
     void addHasToBe(Outline outline);
+
 }
