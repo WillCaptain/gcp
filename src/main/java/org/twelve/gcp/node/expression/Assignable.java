@@ -2,6 +2,7 @@ package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -50,5 +51,9 @@ public abstract class Assignable extends Expression {
             GCPErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH,
                     inferred.node() + CONSTANTS.MISMATCH_STR + this);
         }
+    }
+
+    protected Token<String> token() {
+        return new Token<>("{()}");
     }
 }

@@ -4,17 +4,18 @@ import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.SimpleLocation;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
+import org.twelve.gcp.node.unpack.UnpackNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.ERROR;
 import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 public class Variable extends Identifier {
-    private final Identifier identifier;
+    private final Assignable identifier;
     private final TypeNode declared;
     private final Boolean mutable;
 
-    public Variable(Identifier identifier, Boolean mutable, TypeNode declared) {
+    public Variable(Assignable identifier, Boolean mutable, TypeNode declared) {
         super(identifier.ast(), identifier.token());
         this.mutable = mutable;
         this.identifier = identifier;
@@ -30,7 +31,7 @@ public class Variable extends Identifier {
         }
     }
 
-    public Identifier identifier() {
+    public Assignable identifier() {
         return this.identifier;
     }
 
@@ -41,7 +42,7 @@ public class Variable extends Identifier {
             ext = ": " + this.declared.lexeme();
             if (ext.trim().equals(":")) ext = "";
         }
-        return identifier.name() + ext;
+        return identifier.lexeme() + ext;
     }
 
     @Override
@@ -69,7 +70,11 @@ public class Variable extends Identifier {
     @Override
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
         if (!(this.outline instanceof ERROR)) {
-            super.assign(env, inferred);
+            if (this.identifier instanceof UnpackNode) {
+                this.identifier.assign(env, inferred);
+            } else {
+                super.assign(env, inferred);
+            }
         }
     }
 

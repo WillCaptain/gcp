@@ -28,4 +28,12 @@ public class Tuple  extends Entity {
         sb.append(")");
         return sb.toString();
     }
+
+    public Outline get(Integer index){
+        return this.getMember(index.toString()).get().outline();
+    }
+
+    public Integer size(){
+        return this.members().size();
+    }
 }

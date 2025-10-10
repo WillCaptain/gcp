@@ -25,8 +25,6 @@ public class AssignmentInference implements Inference<Assignment> {
         if(valueOutline.containsUnknown()){
             valueOutline = node.rhs().infer(inferences);
         }
-//        Outline valueOutline = node.rhs().infer(inferences);
-
 
         if (valueOutline == ast.Ignore || valueOutline == ast.Unit) {
             GCPErrorReporter.report(node.rhs(), GCPErrCode.UNAVAILABLE_OUTLINE_ASSIGNMENT);
