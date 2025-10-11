@@ -30,11 +30,6 @@ public class TupleUnpackNode extends UnpackNode {
     }
 
     @Override
-    public String lexeme() {
-        return this.toString();
-    }
-
-    @Override
     public String toString() {
         StringBuilder str = new StringBuilder();
         str.append(begins.stream().map(Object::toString).collect(Collectors.joining(", ")));
@@ -59,7 +54,7 @@ public class TupleUnpackNode extends UnpackNode {
     private Integer assignBegins(List<Node> begins, Tuple tuple, LocalSymbolEnvironment env) {
         if (begins.isEmpty()) return 0;
         for (int i = 0; i < this.begins.size(); i++) {
-            if (tuple.size() > i + 1) {
+            if (tuple.size() > i ) {
                 if (this.begins.get(i) instanceof Assignable) {
                     ((Assignable) this.begins.get(i)).assign(env, tuple.get(i));
                 }
@@ -75,7 +70,7 @@ public class TupleUnpackNode extends UnpackNode {
         if (this.ends.isEmpty()) return;
         List<Node> reversed = ends.reversed();
         for (int i = 0; i < reversed.size(); i++) {
-            if (border + i < tuple.size() - 1) {
+            if (border + i < tuple.size() ) {
                 if (reversed.get(i) instanceof Assignable) {
                     ((Assignable) reversed.get(i)).assign(env, tuple.get(tuple.size() - 1 - i));
                 }
@@ -97,6 +92,7 @@ public class TupleUnpackNode extends UnpackNode {
         for (Node id : list) {
             if(id instanceof UnpackNode){
                 ids.addAll(((UnpackNode) id).identifiers());
+                continue;
             }
             if(!(id instanceof UnderLineNode)){
                 ids.add(cast(id));
