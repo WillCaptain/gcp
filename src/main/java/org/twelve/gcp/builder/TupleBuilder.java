@@ -27,6 +27,6 @@ public class TupleBuilder {
         return this;
     }
     public TupleNode build() {
-        return new TupleNode(ast,members.toArray(new Expression[0]));
+        return new TupleNode(members.toArray(new Expression[0]));
     }
 }

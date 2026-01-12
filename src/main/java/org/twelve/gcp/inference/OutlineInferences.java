@@ -1,13 +1,13 @@
 package org.twelve.gcp.inference;
 
+import org.twelve.gcp.node.expression.body.WithExpression;
+import org.twelve.gcp.node.expression.conditions.*;
 import org.twelve.gcp.node.expression.typeable.OptionTypeNode;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.Block;
 import org.twelve.gcp.node.expression.body.FunctionBody;
-import org.twelve.gcp.node.expression.conditions.Arm;
-import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.node.expression.IsAs;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.node.expression.typeable.*;
@@ -19,10 +19,13 @@ import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.ExportSpecifier;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.imexport.ImportSpecifier;
-import org.twelve.gcp.node.statement.Assignment;
+import org.twelve.gcp.node.expression.Assignment;
 import org.twelve.gcp.node.statement.ExpressionStatement;
 import org.twelve.gcp.node.statement.ReturnStatement;
 import org.twelve.gcp.node.statement.VariableDeclarator;
+import org.twelve.gcp.node.unpack.SymbolEntityUnpackNode;
+import org.twelve.gcp.node.unpack.TupleUnpackNode;
+import org.twelve.gcp.node.unpack.UnpackNode;
 import org.twelve.gcp.outline.Outline;
 
 
@@ -38,8 +41,8 @@ public class OutlineInferences implements Inferences {
     }
 
     @Override
-    public Outline visit(TernaryExpression te) {
-        return new TernaryExprInference().infer(te, this);
+    public Outline visit(Selections selections) {
+        return new SelectionsInference().infer(selections, this);
     }
 
     @Override
@@ -59,57 +62,62 @@ public class OutlineInferences implements Inferences {
 
     @Override
     public Outline visit(IdentifierTypeNode identifierTypeNode) {
-            return new IdentifierTypeNodeInference().infer(identifierTypeNode,this);
+        return new IdentifierTypeNodeInference().infer(identifierTypeNode, this);
     }
 
     @Override
     public Outline visit(FunctionTypeNode functionTypeNode) {
-        return new FunctionTypeNodeInference().infer(functionTypeNode,this);
+        return new FunctionTypeNodeInference().infer(functionTypeNode, this);
     }
 
     @Override
     public Outline visit(EntityTypeNode entityTypeNode) {
-        return new EntityTypeNodeInference().infer(entityTypeNode,this);
+        return new EntityTypeNodeInference().infer(entityTypeNode, this);
+    }
+
+    @Override
+    public Outline visit(TupleTypeNode tupleTypeNode) {
+        return new TupleTypeNodeInference().infer(tupleTypeNode, this);
     }
 
     @Override
     public Outline visit(As asNode) {
-        return new AsInference().infer(asNode,this);
+        return new AsInference().infer(asNode, this);
     }
 
     @Override
     public Outline visit(ArrayNode arrayNode) {
-        return new ArrayNodeInference().infer(arrayNode,this);
+        return new ArrayNodeInference().infer(arrayNode, this);
     }
 
     @Override
     public Outline visit(ArrayTypeNode arrayTypeNode) {
-        return new ArrayTypeNodeInference().infer(arrayTypeNode,this);
+        return new ArrayTypeNodeInference().infer(arrayTypeNode, this);
     }
 
     @Override
     public Outline visit(ArrayAccessor arrayAccessor) {
-        return new ArrayAccessorInference().infer(arrayAccessor,this);
+        return new ArrayAccessorInference().infer(arrayAccessor, this);
     }
 
     @Override
     public Outline visit(DictNode dictNode) {
-        return new DictNodeInference().infer(dictNode,this);
+        return new DictNodeInference().infer(dictNode, this);
     }
 
     @Override
     public Outline visit(DictTypeNode dictTypeNode) {
-        return new DictTypeNodeInference().infer(dictTypeNode,this);
+        return new DictTypeNodeInference().infer(dictTypeNode, this);
     }
 
     @Override
     public Outline visit(ReferenceNode ref) {
-        return new ReferenceNodeInference().infer(ref,this);
+        return new ReferenceNodeInference().infer(ref, this);
     }
 
     @Override
     public Outline visit(Variable variable) {
-        return new VariableInference().infer(variable,this);
+        return new VariableInference().infer(variable, this);
     }
 
     @Override
@@ -138,6 +146,11 @@ public class OutlineInferences implements Inferences {
     }
 
     @Override
+    public Outline visit(WithExpression with) {
+        return new WithExpressionInference().infer(with, this);
+    }
+
+    @Override
     public Outline visit(ReturnStatement returns) {
         return new ReturnInference().infer(returns, this);
     }
@@ -154,7 +167,7 @@ public class OutlineInferences implements Inferences {
 
     @Override
     public Outline visit(TupleNode tuple) {
-        return new TupleInference().infer(tuple,this);
+        return new TupleInference().infer(tuple, this);
     }
 
     @Override
@@ -174,47 +187,42 @@ public class OutlineInferences implements Inferences {
 
     @Override
     public Outline visit(PolyNode poly) {
-        return new PolyInference().infer(poly,this);
+        return new PolyInference().infer(poly, this);
     }
 
     @Override
     public Outline visit(OptionTypeNode option) {
-        return new OptionTypeInference().infer(option,this);
+        return new OptionTypeInference().infer(option, this);
     }
 
     @Override
     public Outline visit(PolyTypeNode poly) {
-        return new PolyTypeInference().infer(poly,this);
-    }
-
-    @Override
-    public Outline visit(Selections selections) {
-        return new SelectionsInference().infer(selections,this);
+        return new PolyTypeInference().infer(poly, this);
     }
 
     @Override
     public Outline visit(Arm arm) {
-        return new ArmInference().infer(arm,this);
+        return new ArmInference().infer(arm, this);
     }
 
     @Override
     public Outline visit(ImportSpecifier importSpecifier) {
-        return new ImportSpecifierInference().infer(importSpecifier,this);
+        return new ImportSpecifierInference().infer(importSpecifier, this);
     }
 
     @Override
     public Outline visit(ExportSpecifier exportSpecifier) {
-        return new ExportSpecifierInference().infer(exportSpecifier,this);
+        return new ExportSpecifierInference().infer(exportSpecifier, this);
     }
 
     @Override
     public Outline visit(IsAs isAs) {
-        return new IsAsInference().infer(isAs,this);
+        return new IsAsInference().infer(isAs, this);
     }
 
     @Override
     public Outline visit(ReferenceCallNode refCallNode) {
-        return new ReferenceCallInference().infer(refCallNode,this);
+        return new ReferenceCallInference().infer(refCallNode, this);
     }
 
 
@@ -226,5 +234,51 @@ public class OutlineInferences implements Inferences {
     @Override
     public Outline visit(FunctionCallNode call) {
         return new FunctionCallInference().infer(call, this);
+    }
+
+    @Override
+    public Outline visit(MatchTest test) {
+        return new MatchTestInference().infer(test, this);
+    }
+
+    @Override
+    public Outline visit(MatchExpression match) {
+        return new MatchExpressionInference().infer(match, this);
+    }
+
+    @Override
+    public Outline visit(UnpackNode unpackNode) {
+        return new UnpackNodeInference().infer(unpackNode, this);
+    }
+
+    @Override
+    public Outline visit(TupleUnpackNode tupleUnpackNode) {
+        return new TupleUnpackNodeInference().infer(tupleUnpackNode,this);
+    }
+
+    @Override
+    public Outline visit(SymbolIdentifier symbolNode){
+        return new SymbolIdentifierInference().infer(symbolNode,this);
+    }
+
+    @Override
+    public Outline visit(OutlineDefinition outlineDefinition) {
+        return new OutlineDefinitionInference().infer(outlineDefinition,this);
+    }
+
+    @Override
+    public Outline visit(SymbolEntityTypeTypeNode symbolEntityTypeNode) {
+        return new SymbolEntityTypeNodeInference().infer(symbolEntityTypeNode,this);
+    }
+
+    @Override
+    public Outline visit(SymbolTupleTypeTypeNode symbolTupleTypeNode) {
+        return new SymbolTupleTypeNodeInference().infer(symbolTupleTypeNode,this);
+    }
+
+    @Override
+    public Outline visit(SymbolEntityUnpackNode unpack) {
+        //return new SymbolEntityUnpackNodeInference().infer(unpack,this);
+        return null;
     }
 }

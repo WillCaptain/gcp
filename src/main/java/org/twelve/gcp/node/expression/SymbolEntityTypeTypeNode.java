@@ -1,0 +1,39 @@
+package org.twelve.gcp.node.expression;
+
+
+import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.node.expression.typeable.EntityTypeNode;
+import org.twelve.gcp.outline.Outline;
+
+import java.util.List;
+
+public class SymbolEntityTypeTypeNode extends EntityTypeNode implements SymbolTypeNode<EntityTypeNode> {
+
+
+    private final SymbolIdentifier symbol;
+
+    public SymbolEntityTypeTypeNode(SymbolIdentifier symbol, List<Variable> members) {
+        super(members);
+        this.symbol = this.addNode(0, symbol);
+    }
+
+    @Override
+    public Outline accept(Inferences inferences) {
+        return inferences.visit(this);
+    }
+
+    @Override
+    public SymbolIdentifier symbol() {
+        return this.symbol;
+    }
+
+    @Override
+    public EntityTypeNode data() {
+        return this;
+    }
+
+    @Override
+    public String lexeme() {
+        return symbol.lexeme() + super.lexeme();
+    }
+}

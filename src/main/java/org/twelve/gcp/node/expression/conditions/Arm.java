@@ -1,10 +1,12 @@
 package org.twelve.gcp.node.expression.conditions;
 
 import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.LiteralNode;
+import org.twelve.gcp.node.expression.body.Block;
 import org.twelve.gcp.outline.Outline;
 
 /**
@@ -13,46 +15,32 @@ import org.twelve.gcp.outline.Outline;
  * if predicate is null means this is else/alternative
  * @author huizi 2025
  */
-public class Arm extends Expression {
+public abstract class Arm<T extends Expression> extends Block {
+    protected final T test;
+    protected final Consequence consequence;
 
-    private final Expression test;
-    private final Consequence consequence;
-    private final LiteralNode<Boolean> others;
-
-    public Arm(Expression test, Consequence consequence) {
-        super(consequence.ast(),null);
+    public Arm(AST ast, T test, Consequence consequence) {
+        super(ast);
         this.addNode(test);
         this.addNode(consequence);
         this.test = test;
         this.consequence = consequence;
-        this.others = LiteralNode.parse(consequence.ast(), new Token<>(true));
-    }
-    public Arm(Consequence consequence) {
-        this(null,consequence);
-
-    }
-
-
-    public Expression test(){
-        return this.test==null?others:test;
-    }
-
-    public Boolean isElse(){
-        return this.test==null;
     }
 
     public Consequence consequence(){
-        return consequence;
+        return this.consequence;
     }
-
     @Override
     public Outline accept(Inferences inferences) {
         return inferences.visit(this);
     }
-
     @Override
     public Outline outline() {
         return this.consequence.outline();
     }
+
+    public abstract T test();
+
+    public abstract Boolean isElse();
 
 }

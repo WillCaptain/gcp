@@ -97,7 +97,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             return constraint;
         }
         //merge entity
-        if (target instanceof Entity && constraint instanceof Entity) {
+        if (target instanceof Entity && constraint.type().equals(target.type())) {
             return ((Entity) target).produce((Entity) constraint);
         }
         //add generic

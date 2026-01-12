@@ -3,7 +3,6 @@ import org.junit.jupiter.api.Test;
 import org.twelve.gcp.ast.ASF;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
-import org.twelve.gcp.common.SELECTION_TYPE;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.expression.body.FunctionBody;
@@ -244,7 +243,7 @@ public class AstStructureTest {
 
     @Test
     void test_if(){
-        AST ast = ASTHelper.mockIf(SELECTION_TYPE.IF);
+        AST ast = ASTHelper.mockIf(true);
         String expected = """
                 module default
                 
@@ -254,7 +253,7 @@ public class AstStructureTest {
                   "Someone"
                 };""";
         assertEquals(expected,ast.lexeme());
-        ast = ASTHelper.mockIf(SELECTION_TYPE.TERNARY);
+        ast = ASTHelper.mockIf(false);
         assertEquals("module default\n\nname==\"Will\"? name: \"Someone\";",ast.lexeme());
     }
     @Test

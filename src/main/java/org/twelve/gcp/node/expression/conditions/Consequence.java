@@ -4,6 +4,7 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.body.Block;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.UNIT;
 
 public class Consequence extends Block {
 
@@ -13,6 +14,10 @@ public class Consequence extends Block {
 
     @Override
     public Outline accept(Inferences inferences) {
-        return inferences.visit((Block) this);
+        Outline o = inferences.visit((Block) this);
+        if(o instanceof UNIT){
+            //this.nodes().
+        }
+        return o;
     }
 }

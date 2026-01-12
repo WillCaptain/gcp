@@ -35,7 +35,7 @@ public class Entity extends ProductADT implements Projectable {
      * entity2 = entity1{name="Will“}
      * 此时entity1就是entity2的基entity
      */
-    private final Outline base;
+    protected Outline base;
     /**
      * Entity不是标准类型，所以一定会对应一个节点
      */
@@ -116,7 +116,7 @@ public class Entity extends ProductADT implements Projectable {
     }
 
     public Outline base() {
-        return this.base;
+        return this.base == null ? this.ast().Any : this.base;
     }
 
     @Override
@@ -141,7 +141,7 @@ public class Entity extends ProductADT implements Projectable {
             base = ((Projectable) this.base).project(projected, projection, session);
         }
         if (this.id() == projected.id()) {//project myself:{a} project{a,b}
-            Entity outline = Entity.from(this.node(),base,new ArrayList<>());
+            Entity outline = Entity.from(this.node(), base, new ArrayList<>());
             for (EntityMember yourMember : ((ADT) projection).members()) {//match projection members
                 Optional<EntityMember> myMember = this.getMember(yourMember.name());//find matched member in projected
                 if (myMember.isPresent()) {//project a
@@ -168,7 +168,7 @@ public class Entity extends ProductADT implements Projectable {
             }
         } else {//project possible members
 //            Entity outline = this.node()==null?Entity.from(this.ast()):Entity.from(this.node());
-            Entity outline = Entity.from(this.node(),base,new ArrayList<>());
+            Entity outline = Entity.from(this.node(), base, new ArrayList<>());
             for (EntityMember m : this.members()) {
                 if (m.outline() instanceof Projectable) {
                     Projectable p = cast(m.outline());
@@ -214,9 +214,9 @@ public class Entity extends ProductADT implements Projectable {
         List<EntityMember> ms = new ArrayList<>();
         for (String key : this.members.keySet()) {
             EntityMember m = this.members.get(key);
-            Variable n = m.node();
+            Variable n = cast(m.node());
             Outline mProjected = m.outline().project(reference, projection);
-            if (m.node() != null && m.node().declared() != null) {
+            if (m.node() != null && n.declared() != null) {
                 Outline declared = m.node().outline().project(reference, projection);
                 if (declared.id() != m.node().outline().id()) {
                     n = new Variable(n.identifier(), n.mutable(), new WrapperTypeNode(n.ast(), declared));
@@ -227,5 +227,14 @@ public class Entity extends ProductADT implements Projectable {
         }
 
         return new Entity(this.node, this.ast(), base, ms);
+    }
+
+    @Override
+    public boolean tryIamYou(Outline another) {
+        if (another instanceof Entity) {
+            return super.tryIamYou(another) && this.base().is(((Entity) another).base());
+        } else {
+            return super.tryIamYou(another);
+        }
     }
 }

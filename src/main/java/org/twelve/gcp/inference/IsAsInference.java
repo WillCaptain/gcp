@@ -12,18 +12,19 @@ public class IsAsInference implements Inference<IsAs> {
     public Outline infer(IsAs node, Inferences inferences) {
         Outline lhs = node.a().infer(inferences);
         Outline b = node.b().infer(inferences);
-        if(!b.canBe(lhs)){
-            GCPErrorReporter.report(node, GCPErrCode.TYPE_CAST_NEVER_SUCCEED,node.a()+" will never be "+node.b());
-        }else{
-            if(lhs instanceof Genericable<?,?>){
+        if (!b.canBe(lhs)) {
+            GCPErrorReporter.report(node, GCPErrCode.TYPE_CAST_NEVER_SUCCEED, node.a() + " will never be " + node.b());
+        } else {
+            if (lhs instanceof Genericable<?, ?>) {
 //                ((Genericable<?,?>) lhs).addCouldBe(node.b());//its a hint to indicate it is possible to be
             }
         }
-        if(node.parent() instanceof Arm){
-            node.ast().symbolEnv().enter(((Arm) node.parent()).consequence());
-            node.ast().symbolEnv().defineSymbol(node.c().name(),b,false,node.c());
-            node.ast().symbolEnv().exit();;
-        }
+        //if(node.parent() instanceof Arm){
+        //node.ast().symbolEnv().enter(((Arm) node.parent()).consequence());
+        node.ast().symbolEnv().defineSymbol(node.c().name(), b, false, node.c());
+        node.c().infer(inferences);
+        //node.ast().symbolEnv().exit();;
+        //}
         return node.ast().Boolean;
     }
 }

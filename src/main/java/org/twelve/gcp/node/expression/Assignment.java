@@ -1,10 +1,7 @@
-package org.twelve.gcp.node.statement;
+package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.inference.operator.AssignableOperator;
-import org.twelve.gcp.node.expression.Assignable;
 import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.node.expression.body.Body;
 import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.outline.Outline;
 

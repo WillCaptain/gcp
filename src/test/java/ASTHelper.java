@@ -4,6 +4,7 @@ import org.twelve.gcp.builder.FunctionNodeBuilder;
 import org.twelve.gcp.builder.VariableDeclaratorBuilder;
 import org.twelve.gcp.common.*;
 import org.twelve.gcp.inference.operator.BinaryOperator;
+import org.twelve.gcp.node.expression.conditions.*;
 import org.twelve.gcp.node.expression.typeable.OptionTypeNode;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
@@ -11,9 +12,6 @@ import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.Block;
 import org.twelve.gcp.node.expression.body.Body;
 import org.twelve.gcp.node.expression.body.FunctionBody;
-import org.twelve.gcp.node.expression.conditions.Arm;
-import org.twelve.gcp.node.expression.conditions.Consequence;
-import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.node.expression.referable.ReferenceCallNode;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.node.expression.typeable.*;
@@ -610,7 +608,7 @@ public class ASTHelper {
         return builder.ast();
     }
 
-    public static AST mockIf(SELECTION_TYPE selectionType) {
+    public static AST mockIf(boolean isIf) {
         ASF asf = new ASF();
         AST ast = asf.newAST();
 //        VariableDeclarator declarator = new VariableDeclarator(ast,VariableKind.LET);
@@ -621,13 +619,17 @@ public class ASTHelper {
         c1.addStatement(new ReturnStatement(name));
         Consequence c2 = new Consequence(ast);
         c2.addStatement(new ReturnStatement(LiteralNode.parse(ast, new Token<>("Someone"))));
-        Arm arm1 = new Arm(new BinaryExpression(name,
+        IfArm arm1 = new IfArm(new BinaryExpression(name,
                 LiteralNode.parse(ast, new Token<>("Will")),
                 new OperatorNode<>(ast, BinaryOperator.EQUALS)), c1);
-        Arm arm2 = new Arm(c2);
+        IfArm arm2 = new IfArm(c2);
 
-        Selections ifs = new Selections(selectionType, arm1, arm2);
-
+        Selections ifs = null;
+        if(isIf) {
+               ifs =new IfExpression(arm1, arm2);
+        }else{
+            ifs =new TernaryExpression(arm1, arm2);
+        }
         ast.addStatement(new ExpressionStatement(ifs));
         return ast;
     }
@@ -652,13 +654,14 @@ public class ASTHelper {
         c2.addStatement(new ReturnStatement(call));
 
         FunctionBody body = new FunctionBody(ast);
-        Arm arm1 = new Arm(new BinaryExpression(new Identifier(ast, new Token<>("n")),
+        IfArm arm1 = new IfArm(new BinaryExpression(new Identifier(ast, new Token<>("n")),
                 LiteralNode.parse(ast, new Token<>(0)),
                 new OperatorNode<>(ast, BinaryOperator.EQUALS)), c1);
 
-        Arm arm2 = new Arm(c2);
+        IfArm arm2 = new IfArm(c2);
 
-        Selections ifs = new Selections(SELECTION_TYPE.TERNARY, arm1, arm2);
+//        Selections ifs = new Selections(SELECTION_TYPE.TERNARY, arm1, arm2);
+        Selections ifs = new TernaryExpression(arm1, arm2);
         body.addStatement(new ReturnStatement(ifs));
 
         FunctionNode factorial = FunctionNode.from(body, new Argument(new Identifier(ast, new Token<>("n"))));
@@ -711,16 +714,17 @@ public class ASTHelper {
         IsAs isInt = new IsAs(new Identifier(ast, some),new IdentifierTypeNode(new Identifier(ast,new Token<>("Integer"))));
         Consequence consequence = new Consequence(ast);
         consequence.addStatement(new ReturnStatement(new Identifier(ast, some)));
-        Arm arm1 = new Arm(isInt, consequence);
+        IfArm arm1 = new IfArm(isInt, consequence);
         Token<String> str = new Token<>("str");
         IsAs isStr = new IsAs(new Identifier(ast, some), new IdentifierTypeNode(new Identifier(ast,new Token<>("String"))), new Identifier(ast, str));
         consequence = new Consequence(ast);
         consequence.addStatement(new ReturnStatement(new Identifier(ast, str)));
-        Arm arm2 = new Arm(isStr, consequence);
+        IfArm arm2 = new IfArm(isStr, consequence);
         consequence = new Consequence(ast);
         consequence.addStatement(new ReturnStatement(LiteralNode.parse(ast, new Token<>(100))));
-        Arm arm3 = new Arm(consequence);
-        Selections ifs = new Selections(SELECTION_TYPE.IF, arm1, arm2, arm3);
+        IfArm arm3 = new IfArm(consequence);
+//        Selections ifs = new Selections(SELECTION_TYPE.IF, arm1, arm2, arm3);
+        Selections ifs = new IfExpression(arm1, arm2, arm3);
         body.addStatement(new ReturnStatement(ifs));
     }
 

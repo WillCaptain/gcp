@@ -4,6 +4,7 @@ import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Assignable;
+import org.twelve.gcp.node.expression.Assignment;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.Identifier;

@@ -3,6 +3,7 @@ package org.twelve.gcp.inference;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.conditions.Arm;
+import org.twelve.gcp.node.expression.conditions.IfArm;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.primitive.BOOL;
 

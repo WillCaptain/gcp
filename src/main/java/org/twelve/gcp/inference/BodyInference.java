@@ -37,7 +37,8 @@ public abstract class BodyInference<T extends Body> implements Inference<T> {
                 continue;
             }
             //half return can have more return
-            if(halfReturned(returns)){
+//            if(halfReturned(returns)){
+            if(returns.containsIgnore()){
                 removeIgnore(returns);
                 returns = Option.from(node, returns, outline);
             }else{
@@ -59,8 +60,8 @@ public abstract class BodyInference<T extends Body> implements Inference<T> {
         }
     }
 
-    private boolean halfReturned(Outline outline) {
-        return outline instanceof Option && ((Option) outline).options()
-                .stream().anyMatch(o -> o instanceof IGNORE);
-    }
+//    private boolean halfReturned(Outline outline) {
+//        return outline instanceof Option && ((Option) outline).options()
+//                .stream().anyMatch(o -> o instanceof IGNORE);
+//    }
 }

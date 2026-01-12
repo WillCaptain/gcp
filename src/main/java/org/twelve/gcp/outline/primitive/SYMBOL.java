@@ -26,6 +26,6 @@ public class SYMBOL extends Primitive {
 
     @Override
     public String toString() {
-        return this.buildIn.toString();
+        return this.buildIn.name();
     }
 }

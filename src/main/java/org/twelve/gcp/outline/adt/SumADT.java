@@ -221,4 +221,9 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
     public boolean containsUnknown() {
         return super.containsUnknown() || this.options.stream().anyMatch(Outline::containsUnknown);
     }
+
+    @Override
+    public boolean containsIgnore() {
+        return super.containsIgnore() || this.options.stream().anyMatch(Outline::containsIgnore);
+    }
 }

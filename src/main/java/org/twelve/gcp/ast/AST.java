@@ -62,15 +62,16 @@ public class AST {
     public final BOOL Boolean;
     public final NUMBER Number;
     public final Option StringOrNumber;
+    private List<Node> missInferred = new ArrayList<>();
     public Option stringOrNumber(Node node){
         return new Option(node, this,this.String, this.Number);
     }
     // Constructors
 
+
     public AST(ASF asf) {
         this(new OutlineInferences(), asf);  // Default inference rules
     }
-
     public AST(Inferences inference, ASF asf) {
         this.inference = inference;
         this.id = nodeIndexer.incrementAndGet();  // Assign unique ID
@@ -98,6 +99,7 @@ public class AST {
         this.program = new Program(this);  // Initialize root Program node
         this.symbolEnv = new LocalSymbolEnvironment(this);
     }
+
     private void initialize(){
         this.String.loadMethods();
         this.Decimal.loadMethods();
@@ -108,18 +110,19 @@ public class AST {
         this.Boolean.loadMethods();
         this.Number.loadMethods();
     }
-
     // Core Methods
+
     public Module infer() {
         this.program.infer(this.inference);  // Trigger type inference
         return this.symbolEnv.module();  // Expose inferred module interface
     }
 
     public boolean inferred() {
+        this.missInferred.clear();
         return this.program.inferred();  // Checks if all types are resolved
     }
-
     // Error Handling
+
     public GCPError addError(GCPError error) {
         if(error.node()==null) return error;
         // Deduplicate errors by node ID and error code
@@ -131,8 +134,8 @@ public class AST {
         }
         return null;
     }
-
     // Program Structure Manipulation
+
     public <T extends Statement> T addStatement(T statement) {
         return this.program.body().addStatement(statement);
     }
@@ -144,8 +147,8 @@ public class AST {
     public Export addExport(Export export) {
         return this.program().body().addExport(export);
     }
-
     // Getters
+
     public Program program() {
         return this.program;
     }
@@ -173,8 +176,8 @@ public class AST {
     public List<GCPError> errors() {
         return this.errors;
     }
-
     // Metadata
+
     public NamespaceNode namespace() {
         return this.program.namespace();
     }
@@ -191,8 +194,8 @@ public class AST {
     public String toString() {
         return this.lexeme();  // Human-readable identifier
     }
-
     // Utility
+
     public void markUnknowns() {
         this.program.markUnknowns();  // Flag unresolved nodes as errors
     }
@@ -203,5 +206,8 @@ public class AST {
 
     public void setNamespace(List<Identifier> names) {
         this.program.setNamespace(names);
+    }
+    public List<Node> missInferred() {
+        return this.missInferred;
     }
 }

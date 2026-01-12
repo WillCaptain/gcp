@@ -136,11 +136,19 @@ public interface Outline extends Serializable {
         return false;
     }
 
+    default boolean containsIgnore() {
+        return false;
+    }
+
     default boolean beAssignable() {
         return true;
     }
 
     default Outline alternative() {
         return this;
+    }
+
+    default String type(){
+        return this.getClass().getSimpleName();
     }
 }

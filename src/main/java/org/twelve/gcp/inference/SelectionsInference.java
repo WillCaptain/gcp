@@ -11,9 +11,9 @@ import org.twelve.gcp.outline.builtin.UNIT;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SelectionsInference implements Inference<Selections>{
+public class SelectionsInference implements Inference<Selections<?>>{
     @Override
-    public Outline infer(Selections node, Inferences inferences) {
+    public Outline infer(Selections<?> node, Inferences inferences) {
         List<Outline> inferred = new ArrayList<>();
         for (Arm arm : node.arms()) {
             inferred.add(arm.infer(inferences));

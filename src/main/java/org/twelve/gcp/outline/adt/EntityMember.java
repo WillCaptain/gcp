@@ -50,8 +50,8 @@ public class EntityMember {
         return this.outline;
     }
 
-    public Variable node() {
-        return cast(this.node);
+    public Identifier node() {
+        return this.node;
     }
 
     public Modifier modifier() {

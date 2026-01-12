@@ -30,6 +30,11 @@ public class IGNORE extends BuildInOutline {
     }
 
     @Override
+    public boolean containsIgnore() {
+        return true;
+    }
+
+    @Override
     public String toString() {
         return "-";
     }

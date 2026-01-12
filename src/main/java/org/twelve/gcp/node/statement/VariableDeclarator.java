@@ -3,11 +3,8 @@ package org.twelve.gcp.node.statement;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.node.expression.Assignable;
+import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
-import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.node.expression.Identifier;
-import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.ArrayList;
@@ -21,39 +18,6 @@ public class VariableDeclarator extends Statement {
         super(ast);
         this.kind = kind;
     }
-
-    //let a:B;
-//    public Assignment declare(Token<String> varToken, Outline declareOutline) {
-//        return this.declare(varToken, declareOutline, null);
-//    }
-
-    //let a:B = c;
-//    public Assignment declare(Token<String> varToken, Outline declareOutline, Expression value) {
-//        VariableDeclarator me = this;
-//        Identifier name = new Identifier(this.ast(), varToken, declareOutline);
-//        Variable var = new Variable(name, this.kind.mutable(), new Expression(this.ast(),null){
-//            @Override
-//            public Outline outline() {
-//                return declareOutline;
-//            }
-//
-//            @Override
-//            public Outline infer(Inferences inferences) {
-//                return declareOutline;
-//            }
-//
-//            @Override
-//            public Node parent() {
-//                return me;
-//            }
-//        });
-//        Assignment assignment = this.addNode(new Assignment(var, value));
-//        this.assignments.add(assignment);
-//        return assignment;
-//    }
-//    public Assignment declare(Token<String> varToken, Expression value) {
-//        return this.declare(varToken, ProductADT.Unknown, value);
-//    }
 
     public Assignment declare(Assignable name, TypeNode declared, Expression value){
         Assignment assignment = this.addNode(new Assignment(new Variable(name,this.kind.mutable(),declared), value));

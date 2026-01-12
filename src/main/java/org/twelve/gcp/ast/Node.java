@@ -92,4 +92,5 @@ public interface Node extends Serializable {
     void setParent(Node parent);
 
     Node invalidate();
+
 }

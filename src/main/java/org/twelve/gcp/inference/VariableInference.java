@@ -6,7 +6,6 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Variable;
-import org.twelve.gcp.node.unpack.TupleUnpackNode;
 import org.twelve.gcp.node.unpack.UnpackNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.unpack.Unpack;
@@ -22,10 +21,13 @@ public class VariableInference implements Inference<Variable> {
         EnvSymbol symbol = oEnv.current().lookupSymbol(node.name());//only check my scope
         if (symbol == null) {
             if(node.identifier() instanceof UnpackNode){
+//                return node.identifier().infer(inferences);
                 for (Identifier id : ((UnpackNode) node.identifier()).identifiers()) {
                     oEnv.defineSymbol(id.name(), node.ast().Unknown, false, id);
                 }
-                return new Unpack(cast(node.identifier()));
+                node.addNode(node.identifier());
+                return node.identifier().infer(inferences);
+//                return node.identifier().outline();//new Unpack(cast(node.identifier()));
             }else {
                 Outline outline = inferDeclared(node.declared(), inferences, node.ast());
                 oEnv.defineSymbol(node.name(), outline, node.mutable(), node);

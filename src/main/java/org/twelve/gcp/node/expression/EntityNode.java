@@ -23,7 +23,7 @@ import static org.twelve.gcp.common.Tool.cast;
  */
 public class EntityNode extends ValueNode<EntityNode>{
     //    private final Map<String, MemberNode> members = new HashMap<>();
-    private final Node base;
+    protected Node base;
     protected final Long scope;
 
     public EntityNode(List<MemberNode> members, Node base, Location loc) {

@@ -162,6 +162,7 @@ public abstract class AbstractNode implements Node {
     @Override
     public boolean inferred() {
         if (!this.outline.inferred()) {
+            ast.missInferred().add(this);
             return false;
         }
         return this.nodes.stream().allMatch(Node::inferred);

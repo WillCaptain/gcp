@@ -12,12 +12,16 @@ import java.util.List;
 public class EntityTypeNodeInference implements Inference<EntityTypeNode>{
     @Override
     public Outline infer(EntityTypeNode node, Inferences inferences) {
+        return this.infer(node,inferences, node.ast().Any);
+    }
+
+    public Outline infer(EntityTypeNode node, Inferences inferences, Outline base) {
         List<EntityMember> members = new ArrayList<>();
         for (Variable m : node.members()) {
             Outline declared = m.declared()==null?node.ast().Any:m.declared().infer(inferences);
             EntityMember member = EntityMember.from(m.name(),declared,m.modifier(),m.mutable());
             members.add(member);
         }
-        return Entity.from(node,members);
+        return Entity.from(node,base,members);
     }
 }

@@ -11,14 +11,10 @@ public class ReturnStatement extends Statement {
 
     public ReturnStatement(Expression expression) {
         this(expression.ast(), expression);
-//        super(expression.ast());
-//        this.expression = this.addNode(expression);
     }
 
     public ReturnStatement(AST ast) {
         this(ast, null);
-//        super(ast);
-//        this.expression = null;
     }
 
     private ReturnStatement(AST ast, Expression expression) {
@@ -30,12 +26,6 @@ public class ReturnStatement extends Statement {
             this.expression = this.addNode(expression);
         }
     }
-
-//    @Override
-//    public Outline outline() {
-//        return this.expression.outline();
-//    }
-
     public Expression expression() {
         return this.expression;
     }

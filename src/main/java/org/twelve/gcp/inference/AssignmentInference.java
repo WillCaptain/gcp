@@ -3,8 +3,10 @@ package org.twelve.gcp.inference;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
-import org.twelve.gcp.node.statement.Assignment;
+import org.twelve.gcp.node.expression.Assignment;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.SumADT;
+import org.twelve.gcp.outline.builtin.IGNORE;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 /**
@@ -37,6 +39,13 @@ public class AssignmentInference implements Inference<Assignment> {
         if (varOutline == ast.Nothing) {
             GCPErrorReporter.report(node.lhs(), GCPErrCode.VARIABLE_NOT_DEFINED);
             return ast.Ignore;
+        }
+        if(valueOutline.containsIgnore()){//option with ignore
+            ((SumADT) valueOutline).options().removeIf(o -> o instanceof IGNORE);
+            if(((SumADT) valueOutline).options().size()==1){
+                valueOutline = ((SumADT) valueOutline).options().getFirst();
+            }
+            GCPErrorReporter.report(node, GCPErrCode.AMBIGUOUS_RETURN, "return type is expected");
         }
         node.lhs().assign(node.ast().symbolEnv(), valueOutline);
         return ast.Ignore;

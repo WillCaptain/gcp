@@ -65,6 +65,11 @@ public abstract class ADT implements Outline {
     }
 
     @Override
+    public boolean containsIgnore() {
+        return this.members().stream().anyMatch(m -> m.outline.containsIgnore());
+    }
+
+    @Override
     public boolean tryIamYou(Outline another) {
         if (!(another instanceof ProductADT)) return false;//若对方不是product adt，交由对方的tryYouAreMe去判定
         if (another instanceof Literal) return false;

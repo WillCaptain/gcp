@@ -71,7 +71,8 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
         if(member.isPresent()){
             return member.get().outline();
         }else {
-            Entity entity = cast(generic.definedToBe());
+//            Entity entity = cast(generic.definedToBe());
+            Entity entity = cast(generic.min());
             AccessorGeneric g = new AccessorGeneric(node);
             entity.addMember(node.member().name(), g, Modifier.PUBLIC, false, new Variable(node.member(),false,null));
             return g;
