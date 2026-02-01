@@ -1,13 +1,14 @@
 package org.twelve.gcp.node.unpack;
 
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 import java.util.List;
 
-abstract class Field {
+public abstract class Field {
     private final Identifier field;
 
     Field(Identifier field) {
@@ -22,5 +23,6 @@ abstract class Field {
 
     public abstract void assign(LocalSymbolEnvironment env, Outline outline);
 
-    abstract Outline outline();
+    abstract public Outline infer(Inferences inferences);
+    //abstract Outline outline();
 }

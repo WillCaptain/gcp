@@ -18,7 +18,7 @@ public class BaseInference implements Inference<BaseNode> {
             next = next.parent();
         }
         if (next == null) {
-            return node.ast().Unknown;
+            return node.ast().unknown(node);
         } else {
             return ((Entity)next.outline()).base();
         }

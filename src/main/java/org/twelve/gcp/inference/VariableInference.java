@@ -8,11 +8,8 @@ import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.unpack.UnpackNode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.unpack.Unpack;
 import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
-
-import static org.twelve.gcp.common.Tool.cast;
 
 public class VariableInference implements Inference<Variable> {
     @Override
@@ -23,7 +20,7 @@ public class VariableInference implements Inference<Variable> {
             if(node.identifier() instanceof UnpackNode){
 //                return node.identifier().infer(inferences);
                 for (Identifier id : ((UnpackNode) node.identifier()).identifiers()) {
-                    oEnv.defineSymbol(id.name(), node.ast().Unknown, false, id);
+                    oEnv.defineSymbol(id.name(), node.ast().unknown(node), false, id);
                 }
                 node.addNode(node.identifier());
                 return node.identifier().infer(inferences);
@@ -44,7 +41,7 @@ public class VariableInference implements Inference<Variable> {
     }
 
     private Outline inferDeclared(TypeNode declared, Inferences inferences, AST ast) {
-        if (declared == null) return ast.Unknown;
+        if (declared == null) return ast.unknown();
         return declared.infer(inferences);
     }
 }

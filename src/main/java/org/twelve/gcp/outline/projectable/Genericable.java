@@ -50,10 +50,11 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         this.declaredToBe = (declaredToBe == null || (declaredToBe instanceof UNKNOWN)) ? ast.Any : declaredToBe;
         if (this.declaredToBe instanceof Poly) {
             this.extendToBe = this.declaredToBe;//.copy();//poly is declared确定了poly必须得到所有可能类型
-            this.hasToBe = Poly.create(this.ast());//declared is poly确定了空Poly为最泛化基类
+//            this.hasToBe = Poly.create(this.ast());//declared is poly确定了空Poly为最泛化基类
+            this.hasToBe = Poly.from(node);//declared is poly确定了空Poly为最泛化基类
         }
         if (this.declaredToBe instanceof Option) {
-            this.extendToBe = Option.from(this.node(), this.ast());//option is declared确定了空option为最泛化子类
+            this.extendToBe = Option.from(this.node(),this.ast());//option is declared确定了空option为最泛化子类
             this.hasToBe = this.declaredToBe;//.copy();//declared is option确定了poly必须得到所有可能类型
         }
     }
@@ -108,13 +109,15 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (target instanceof Constraints) {
             ((Constraints) target).merge(constraint);
         } else {
-            if (constraint.is(target)) {
-                return constraint;
-            }
-            if (target.is(constraint)) {
-                return target;
-            }
-            GCPErrorReporter.report(this.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, constraint.toString() + " doesn't match constraints");
+//            if (constraint.is(target)) {
+//                return constraint;
+//            }
+//            if (target.is(constraint)) {
+//                return target;
+//            }
+//            return new Option(this.node,this.node.ast(),constraint,target);
+            return Option.from(this.node,constraint,target);
+//            GCPErrorReporter.report(this.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, constraint.toString() + " doesn't match constraints");
         }
         return target;
     }
@@ -337,6 +340,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             return this.projectFunction(cast(projection), session);
         }
         if (projection instanceof Entity) {
+            //this.toString();
             return this.projectEntity(cast(projection), session);
         }
         if (projection instanceof DictOrArray<?>) {

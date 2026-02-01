@@ -27,7 +27,7 @@ public class Return extends Genericable<Return, Node> implements Returnable {
 
     private Return(Node node, AST ast, Outline declared) {
         super(node, ast, declared);
-        this.supposed = ast.Unknown;
+        this.supposed = ast.unknown();
     }
 
     public static Returnable from(Node node, AST ast, Outline declared) {
@@ -62,7 +62,7 @@ public class Return extends Genericable<Return, Node> implements Returnable {
             supposed = returns;
         } else {
             if(!(returns instanceof NOTHING)) {
-                supposed = Option.from(this.node, this.ast(), supposed, returns);
+                supposed = Option.from(this.node, supposed, returns);
             }
         }
         return true;

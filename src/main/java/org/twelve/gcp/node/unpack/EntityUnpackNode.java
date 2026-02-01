@@ -1,7 +1,6 @@
 package org.twelve.gcp.node.unpack;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.inference.Inferences;
@@ -9,6 +8,7 @@ import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
+import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 import java.util.ArrayList;
@@ -23,10 +23,11 @@ public class  EntityUnpackNode extends UnpackNode {
 
     public EntityUnpackNode(AST ast) {
         super(ast, null);
+        this.outline = ast.unknown(this);
     }
 
     public void addField(Identifier id, Identifier as) {
-        this.fields.add(new EntityField(id, this.addNode(as)));
+        this.fields.add(new EntityField(this.addNode(id), this.addNode(as)));
     }
 
     public void addField(Identifier id, UnpackNode nest) {
@@ -37,14 +38,24 @@ public class  EntityUnpackNode extends UnpackNode {
         this.fields.add(new EntityField(this.addNode(id), null));
     }
 
+    public List<Field> fields(){
+        return this.fields;
+    }
+
     @Override
+    public Outline accept(Inferences inferences) {
+        super.accept(inferences);
+        return inferences.visit(this);
+    }
+
+    /*@Override
     public Entity outline() {
         Entity entity = Entity.from(this);
         for (Field field : this.fields) {
             entity.addMember(field.field().name(),field.outline(), Modifier.PUBLIC, false, field.field());
         }
         return entity;
-    }
+    }*/
 
     @Override
     public String toString() {
@@ -62,6 +73,12 @@ public class  EntityUnpackNode extends UnpackNode {
                 } else {
                     GCPErrorReporter.report(field.field(), GCPErrCode.OUTLINE_MISMATCH, field.field().name() + " doesn't exist in entity");
                 }
+            }
+            return;
+        }
+        if(inferred instanceof Generic){
+            for (Identifier id : this.identifiers()) {
+                id.assign(env,Generic.from(id,null));
             }
             return;
         }

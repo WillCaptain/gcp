@@ -29,7 +29,7 @@ public class IdentifierInference implements Inference<Identifier> {
         }
         if (supposed == null) {
             GCPErrorReporter.report(node, GCPErrCode.VARIABLE_NOT_DEFINED);
-            return node.ast().Unknown;
+            return node.ast().unknown(node);
         }
         if(supposed.outline() instanceof UNKNOWN){
             if(this.confirmRecursive(node,supposed.node())){

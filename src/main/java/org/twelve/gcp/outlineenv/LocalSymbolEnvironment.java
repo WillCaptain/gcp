@@ -40,7 +40,7 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         defineOutline(root,this.ast().Long);
         defineOutline(root,this.ast().Unit);
         defineOutline(root,this.ast().Number);
-        defineOutline(root,this.ast().Unknown);
+        defineOutline(root,this.ast().unknown());
     }
     private void defineOutline(AstScope root, Outline outline){
         root.defineOutline(outline.name(),outline,null);

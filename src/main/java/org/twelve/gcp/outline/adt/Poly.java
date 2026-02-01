@@ -66,7 +66,8 @@ public class Poly extends SumADT {
 
     @Override
     public Poly copy() {
-        Poly copied = Poly.from(this.node());
+//        Poly copied = Poly.from(this.node());
+        Poly copied = this.node()==null?Poly.create(this.ast()):Poly.from(this.node());
         copied.id = this.id;
         copied.declared.addAll(this.declared);
         copied.options.addAll(this.options);
@@ -78,7 +79,8 @@ public class Poly extends SumADT {
     public Poly copy(Map<Outline, Outline> cache) {
         Poly copied = cast(cache.get(this));
         if (copied == null) {
-            copied = Poly.from(this.node());
+//            copied = Poly.from(this.node());
+            copied = Poly.create(this.ast());
             for (Outline option : this.options) {
                 copied.options.add(option.copy(cache));
             }

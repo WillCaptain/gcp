@@ -6,14 +6,13 @@ import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Assignable;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.unpack.Unpack;
 
 import java.util.List;
 
 public abstract class UnpackNode extends Assignable {
     public UnpackNode(AST ast, Location loc) {
         super(ast, loc);
-        this.outline = new Unpack(this);
+//        this.outline = new Unpack(this);
     }
     @Override
     public String lexeme() {

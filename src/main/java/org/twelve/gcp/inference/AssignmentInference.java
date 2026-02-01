@@ -18,7 +18,7 @@ public class AssignmentInference implements Inference<Assignment> {
     @Override
     public Outline infer(Assignment node, Inferences inferences) {
         AST ast = node.ast();
-        Outline valueOutline = node.rhs() == null?ast.Unknown:node.rhs().infer(inferences);
+        Outline valueOutline = node.rhs() == null?ast.unknown(node):node.rhs().infer(inferences);
         Outline varOutline = node.lhs().infer(inferences);
         if (node.rhs() == null) {
             GCPErrorReporter.report(node.lhs(), GCPErrCode.NOT_INITIALIZED);

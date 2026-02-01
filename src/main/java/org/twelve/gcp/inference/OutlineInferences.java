@@ -1,5 +1,6 @@
 package org.twelve.gcp.inference;
 
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.expression.body.WithExpression;
 import org.twelve.gcp.node.expression.conditions.*;
 import org.twelve.gcp.node.expression.typeable.OptionTypeNode;
@@ -23,9 +24,7 @@ import org.twelve.gcp.node.expression.Assignment;
 import org.twelve.gcp.node.statement.ExpressionStatement;
 import org.twelve.gcp.node.statement.ReturnStatement;
 import org.twelve.gcp.node.statement.VariableDeclarator;
-import org.twelve.gcp.node.unpack.SymbolEntityUnpackNode;
-import org.twelve.gcp.node.unpack.TupleUnpackNode;
-import org.twelve.gcp.node.unpack.UnpackNode;
+import org.twelve.gcp.node.unpack.*;
 import org.twelve.gcp.outline.Outline;
 
 
@@ -257,6 +256,23 @@ public class OutlineInferences implements Inferences {
     }
 
     @Override
+    public Outline visit(EntityUnpackNode entityUnpackNode) {
+        return new EntityUnpackNodeInference().infer(entityUnpackNode,this);
+    }
+
+    @Override
+    public Outline visit(SymbolTupleUnpackNode unpack) {
+        return new SymbolTupleUnPackNodeInference().infer(unpack,this);
+    }
+
+
+    @Override
+    public Outline visit(SymbolEntityUnpackNode unpack) {
+        return new SymbolEntityUnpackNodeInference().infer(unpack,this);
+
+    }
+
+    @Override
     public Outline visit(SymbolIdentifier symbolNode){
         return new SymbolIdentifierInference().infer(symbolNode,this);
     }
@@ -274,11 +290,5 @@ public class OutlineInferences implements Inferences {
     @Override
     public Outline visit(SymbolTupleTypeTypeNode symbolTupleTypeNode) {
         return new SymbolTupleTypeNodeInference().infer(symbolTupleTypeNode,this);
-    }
-
-    @Override
-    public Outline visit(SymbolEntityUnpackNode unpack) {
-        //return new SymbolEntityUnpackNodeInference().infer(unpack,this);
-        return null;
     }
 }

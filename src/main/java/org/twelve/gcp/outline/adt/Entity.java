@@ -16,6 +16,7 @@ import org.twelve.gcp.outline.projectable.Projectable;
 import org.twelve.gcp.outline.projectable.Reference;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -72,15 +73,10 @@ public class Entity extends ProductADT implements Projectable {
         return new Entity(node, node.ast(), node.ast().Any, members);
     }
 
-    /**
-     * no node bind entity is for entity declare
-     *
-     * @param members
-     * @return
-     */
-    public static Entity from(AST ast, List<EntityMember> members) {
-        return new Entity(null, ast, ast.Any, members);
-    }
+
+//    public static Entity from(AST ast, List<EntityMember> members) {
+//        return new Entity(null, ast, ast.Any, members);
+//    }
 
     @Override
     public long id() {
@@ -236,5 +232,17 @@ public class Entity extends ProductADT implements Projectable {
         } else {
             return super.tryIamYou(another);
         }
+    }
+
+    @Override
+    public boolean equals(Outline another) {
+        if(!(another instanceof Entity)) return false;
+        Entity you = cast(another);
+        if(this.members.size()!=you.members.size()) return false;
+        for (String k : this.members.keySet()) {
+            if(you.members.get(k)==null) return false;
+            if(!this.members.get(k).outline().equals(you.members.get(k).outline())) return false;
+        }
+        return true;
     }
 }

@@ -15,10 +15,11 @@ import java.util.List;
 public class TupleUnpackNodeInference implements Inference<TupleUnpackNode>{
     @Override
     public Outline infer(TupleUnpackNode node, Inferences inferences) {
-        return new Tuple(convertEntity(node.begins(),node.ends(),inferences));
+        return new Tuple(convertEntity(node, inferences));
     }
-    private static Entity convertEntity(List<Node> begins, List<Node> ends, Inferences inferences) {
-        AST ast = begins.isEmpty()?ends.getFirst().ast() : begins.getFirst().ast();;
+    private static Entity convertEntity(TupleUnpackNode node, Inferences inferences) {
+        List<Node> begins = node.begins();
+        List<Node> ends = node.ends();
         List<EntityMember> members = new ArrayList<>();
 //        if(!begins.isEmpty()){
             for (int i = 0; i < begins.size(); i++) {
@@ -30,6 +31,6 @@ public class TupleUnpackNodeInference implements Inference<TupleUnpackNode>{
                 members.add(EntityMember.from(String.valueOf(i-ends.size()),ends.get(i).infer(inferences), Modifier.PUBLIC,false));
             }
 //        }
-        return Entity.from(ast,members);
+        return Entity.from(node,members);
     }
 }

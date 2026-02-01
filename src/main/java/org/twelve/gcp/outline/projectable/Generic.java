@@ -31,4 +31,13 @@ public class Generic extends Genericable<Generic, Node> {
     protected Generic createNew() {
         return new Generic(this.node, this.ast(), this.declaredToBe);
     }
+
+    @Override
+    public boolean equals(Outline another) {
+        if(another instanceof Generic) {
+            return this == another;
+        }else{
+            return super.equals(another);
+        }
+    }
 }

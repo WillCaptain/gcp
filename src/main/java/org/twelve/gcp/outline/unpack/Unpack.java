@@ -40,4 +40,9 @@ public class Unpack implements Outline {
     public long id() {
         return -1;
     }
+
+    @Override
+    public String toString() {
+        return node.toString();
+    }
 }

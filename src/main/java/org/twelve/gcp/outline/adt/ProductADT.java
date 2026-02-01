@@ -148,7 +148,7 @@ public abstract class ProductADT extends ADT {
                 this.members.put(member.name(), member);
                 return true;
             }
-            Poly overwrite = Poly.create(this.ast());
+            Poly overwrite = Poly.from(m.node());
             overwrite.sum(m.outline(), m.mutable().toBool());
 //            overwrite.sum(member.outline(), member.mutable().toBool());
             if (overwrite.sum(member.outline(), member.mutable().toBool())) {
@@ -184,6 +184,7 @@ public abstract class ProductADT extends ADT {
             if (found.isPresent()) {
                 if (!found.get().outline().equals(member.outline())) {
                     members.remove(found.get());
+//                    Poly overwrite = Poly.from(found.get().node());
                     Poly overwrite = Poly.create(this.ast());
 
                     overwrite.sum(member.outline(), member.mutable().toBool());

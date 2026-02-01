@@ -1,12 +1,13 @@
 package org.twelve.gcp.outline.primitive;
 
 import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.node.expression.SymbolIdentifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.Symbol_;
 
 public class SYMBOL extends Primitive {
-    public SYMBOL(String name, AST ast) {
-        super(new Symbol_(name), null, ast);
+    public SYMBOL(SymbolIdentifier symbol) {
+        super(new Symbol_(symbol.name()), symbol, symbol.ast());
     }
 
     @Override
@@ -27,5 +28,14 @@ public class SYMBOL extends Primitive {
     @Override
     public String toString() {
         return this.buildIn.name();
+    }
+
+    @Override
+    public boolean equals(Outline another) {
+        if(another instanceof SYMBOL) {
+            return this.buildIn.name().equals(((SYMBOL) another).buildIn.name());
+        }else{
+            return false;
+        }
     }
 }

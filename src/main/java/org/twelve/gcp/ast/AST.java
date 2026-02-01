@@ -47,7 +47,6 @@ public class AST {
 
     public final AtomicLong Counter;
     public final UNIT Unit;
-    public final UNKNOWN Unknown;
     public final UNKNOWN Pending;
     public final NOTHING Nothing;
     public final ANY Any;
@@ -63,8 +62,14 @@ public class AST {
     public final NUMBER Number;
     public final Option StringOrNumber;
     private List<Node> missInferred = new ArrayList<>();
+    public final UNKNOWN unknown(Node node){
+        return new UNKNOWN((AbstractNode) node);
+    }
+    public final UNKNOWN unknown(){
+        return new UNKNOWN(this);
+    }
     public Option stringOrNumber(Node node){
-        return new Option(node, this,this.String, this.Number);
+        return (Option) Option.from(node,this.String, this.Number);
     }
     // Constructors
 
@@ -79,7 +84,7 @@ public class AST {
 
         this.Counter = new AtomicLong(100);
         this.Unit = new UNIT(this);
-        this.Unknown = new UNKNOWN(this);
+        //this.Unknown = new UNKNOWN(this);
         this.Pending = new UNKNOWN(this);
         this.Nothing = new NOTHING(this);
         this.Any = new ANY(this);
@@ -93,11 +98,12 @@ public class AST {
         this.Long = new LONG(this);
         this.Boolean = new BOOL(this);
         this.Number = new NUMBER(this);
-        this.StringOrNumber = new Option(null, this,this.String, this.Number);
+//                new Option(null, this,this.String, this.Number);
         initialize();
 
         this.program = new Program(this);  // Initialize root Program node
         this.symbolEnv = new LocalSymbolEnvironment(this);
+        this.StringOrNumber = stringOrNumber(this.program());
     }
 
     private void initialize(){

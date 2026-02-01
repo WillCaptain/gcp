@@ -24,9 +24,7 @@ import org.twelve.gcp.node.expression.Assignment;
 import org.twelve.gcp.node.statement.ExpressionStatement;
 import org.twelve.gcp.node.statement.ReturnStatement;
 import org.twelve.gcp.node.statement.VariableDeclarator;
-import org.twelve.gcp.node.unpack.SymbolEntityUnpackNode;
-import org.twelve.gcp.node.unpack.TupleUnpackNode;
-import org.twelve.gcp.node.unpack.UnpackNode;
+import org.twelve.gcp.node.unpack.*;
 import org.twelve.gcp.outline.Outline;
 
 public interface Inferences {
@@ -88,11 +86,14 @@ public interface Inferences {
     Outline visit(UnpackNode unpackNode);
 
     Outline visit(TupleUnpackNode tupleUnpackNode);
+    Outline visit(EntityUnpackNode entityUnpackNode);
+
+    Outline visit(SymbolTupleUnpackNode unpack);
+    Outline visit(SymbolEntityUnpackNode unpack);
 
     Outline visit(SymbolIdentifier symbolNode);
-    Outline visit(OutlineDefinition outlineDefinition);
 
+    Outline visit(OutlineDefinition outlineDefinition);
     Outline visit(SymbolEntityTypeTypeNode symbolEntityTypeNode);
     Outline visit(SymbolTupleTypeTypeNode symbolTupleTypeNode);
-    Outline visit(SymbolEntityUnpackNode unpack);
 }

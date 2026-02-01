@@ -4,7 +4,6 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.projectable.Return;
 
 public class ReturnStatement extends Statement {
     private final Expression expression;
@@ -19,7 +18,7 @@ public class ReturnStatement extends Statement {
 
     private ReturnStatement(AST ast, Expression expression) {
         super(ast);
-        this.outline = ast.Unknown;
+        this.outline = ast.unknown(this);
         if (expression == null) {
             this.expression = null;
         } else {

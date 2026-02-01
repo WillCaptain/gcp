@@ -71,7 +71,7 @@ public class ArrayAccessorInference implements Inference<ArrayAccessor> {
             return value;
         } else {
             GCPErrorReporter.report(node, GCPErrCode.NOT_AN_ARRAY_OR_DICT);
-            return node.ast().Unknown;
+            return node.ast().unknown(node);
         }
     }
 

@@ -12,7 +12,7 @@ public class SymbolIdentifierInference implements Inference<SymbolIdentifier> {
         LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
         EnvSymbol supposed = oEnv.lookupSymbol(node.name());
         if (supposed == null) {
-            Outline outline = new SYMBOL(node.name(), node.ast());
+            Outline outline = new SYMBOL(node);
             oEnv.defineSymbol(node.name(), outline, false, node);
             return outline;
         } else {

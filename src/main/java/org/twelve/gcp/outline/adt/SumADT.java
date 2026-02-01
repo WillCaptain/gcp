@@ -80,8 +80,9 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
 
     protected boolean sum(List<Outline> list, Outline outline) {
         for (Outline o : list) {
-            if (outline instanceof Projectable) {
+            if (outline instanceof Projectable || o instanceof Projectable) {
                 if (outline.equals(o)) return false;//已经有了完全一致的projectable
+//                if (outline.id()==o.id()) return false;//已经有了完全一致的projectable
             } else {
                 if (outline.is(o)) return false;//已经有基类了，忽略新outline
                 if (o.is(outline)) {//outline是基类，去掉已有的，把基类加进来

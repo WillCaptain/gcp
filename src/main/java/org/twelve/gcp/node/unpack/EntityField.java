@@ -1,6 +1,7 @@
 package org.twelve.gcp.node.unpack;
 
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.projectable.Generic;
@@ -43,7 +44,12 @@ class EntityField extends Field {
     }
 
     @Override
-    Outline outline() {
-        return Generic.from(this.field(),null);
+    public Outline infer(Inferences inferences) {
+        return this.field().infer(inferences);
     }
+
+//    @Override
+//    Outline outline() {
+//        return Generic.from(this.field(),null);
+//    }
 }

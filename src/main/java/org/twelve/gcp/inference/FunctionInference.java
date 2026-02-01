@@ -17,7 +17,6 @@ public class FunctionInference implements Inference<FunctionNode> {
         List<Reference> refs = node.refs().stream().map(r->(Reference)r.infer(inferences)).toList();
         Genericable<?,?> argument = cast(node.argument().infer(inferences));
         Returnable returns = cast(node.body().infer(inferences));
-        FirstOrderFunction function = FirstOrderFunction.from(node,argument,returns,refs);
-        return function;
+        return FirstOrderFunction.from(node,argument,returns,refs);
     }
 }

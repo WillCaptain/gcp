@@ -21,7 +21,14 @@ public class MatchTestInference implements Inference<MatchTest> {
         Outline subject = node.subject().infer(inferences);//match a{}, this is outline of a
         Expression pattern = node.pattern();//match a{ b ->}, this is outline of b. b could be literal, id, unpack
         Outline outline = pattern.infer(inferences);
-        tryGeneric(subject,outline);
+//        if(tryGeneric(subject,outline)){
+//            if (pattern instanceof UnpackNode) {
+//                for (Identifier id : ((UnpackNode)pattern).identifiers()) {
+//                    node.ast().symbolEnv().defineSymbol(id.name(), Generic.from(id,null), false, id);
+//                }
+//            }
+//            return node.ast().Boolean;
+//        }
         if (pattern instanceof LiteralNode<?>) {
             if (!outline.is(subject)) {
                 GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH, "expected outline is " + subject + ", but now is " + outline);
@@ -33,6 +40,9 @@ public class MatchTestInference implements Inference<MatchTest> {
         }
         if (pattern instanceof UnpackNode) {
             ((UnpackNode)pattern).assign(node.ast().symbolEnv(),subject);
+            if(subject instanceof Generic){
+                ((Generic) subject).addHasToBe(pattern.infer(inferences));
+            }
         }
         pattern.infer(inferences);
         if(node.condition()!=null) {
@@ -44,12 +54,11 @@ public class MatchTestInference implements Inference<MatchTest> {
         return node.ast().Boolean;
     }
 
-    private void tryGeneric(Outline target, Outline hasTo){
-        if(hasTo instanceof UNKNOWN) return;
-        if(!(target instanceof Generic)) return;
+    private boolean tryGeneric(Outline target, Outline pattern){
+        if(!(target instanceof Generic)) return false;
+        if(pattern instanceof UNKNOWN) return true;
         Generic generic = cast(target);
-        if(generic.hasToBe() instanceof ANY) generic.addHasToBe(hasTo);
-
-
+        if(generic.hasToBe() instanceof ANY) generic.addHasToBe(pattern);
+        return true;
     }
 }

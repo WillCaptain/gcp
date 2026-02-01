@@ -1,9 +1,14 @@
 package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.Modifier;
+import org.twelve.gcp.common.Mutable;
+import org.twelve.gcp.common.TupleMatcher;
+import org.twelve.gcp.node.expression.Assignable;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.projectable.Generic;
 import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 import org.twelve.gcp.outline.projectable.Projectable;
@@ -18,27 +23,6 @@ public class Tuple extends Entity {
     public Tuple(Entity entity) {
         super(entity.node(), entity.ast(), entity.ast().Any, entity.members());
     }
-
-    /*public Tuple(List<Outline> begins, List<Outline> ends) {
-        this(convertEntity(begins, ends));
-    }
-
-    private static Entity convertEntity(List<Outline> begins, List<Outline> ends) {
-        AST ast = begins.isEmpty() ? ends.getFirst().ast() : begins.getFirst().ast();
-        ;
-        List<EntityMember> members = new ArrayList<>();
-        if (!begins.isEmpty()) {
-            for (int i = 0; i < begins.size(); i++) {
-                members.add(EntityMember.from(String.valueOf(i), begins.get(i), Modifier.PUBLIC, false));
-            }
-        }
-        if (!ends.isEmpty()) {
-            for (int i = 0; i < ends.size(); i++) {
-                members.add(EntityMember.from(String.valueOf(i - ends.size()), begins.get(i), Modifier.PUBLIC, false));
-            }
-        }
-        return Entity.from(ast, members);
-    }*/
 
     @Override
     public boolean tryIamYou(Outline another) {
@@ -98,7 +82,40 @@ public class Tuple extends Entity {
 
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
-        return new Tuple(cast(super.doProject(projected, projection, session)));
+        Outline base = this.base;
+        if (this.base != null && this.base instanceof Projectable) {
+            base = ((Projectable) this.base).project(projected, projection, session);
+        }
+
+        Entity ent = Entity.from(this.node(), base, new ArrayList<>());
+        if (this.id() == projected.id()) {
+            TupleMatcher matcher = new TupleMatcher(cast(projection));
+            for (EntityMember member : this.members()) {
+                Outline me = member.outline();
+                Outline you = matcher.match(Integer.valueOf(member.name()));
+                if (me instanceof Projectable) {
+                    ent.addMember(member.name(), ((Projectable) me).project(cast(me), you, session), member.modifier(),
+                            member.mutable() == Mutable.True, member.node());
+                } else {
+                    if (you instanceof Genericable<?, ?>) {
+                        ((Genericable<?, ?>) you).addHasToBe(me);
+                    }
+                    ent.addMember(member.name(), you, member.modifier(), member.mutable() == Mutable.True, member.node());
+                }
+            }
+//            return new Tuple(ent);
+        } else {
+            for (EntityMember member : this.members()) {
+                Outline me = member.outline();
+                if (me instanceof Projectable) {
+                    ent.addMember(member.name(), ((Projectable) me).project(projected, projection, session), member.modifier(),
+                            member.mutable() == Mutable.True, member.node());
+                } else {
+                    ent.addMember(member.name(), me, member.modifier(), member.mutable() == Mutable.True, member.node());
+                }
+            }
+        }
+        return new Tuple(ent);
     }
 
     public Outline get(Integer index) {
@@ -114,7 +131,7 @@ public class Tuple extends Entity {
         this.members.forEach((k, v) -> {
             try {
                 structure.put(Integer.valueOf(k), v.outline());
-            }catch(Exception ex){
+            } catch (Exception ex) {
 
             }
         });

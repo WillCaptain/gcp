@@ -3,10 +3,9 @@ package org.twelve.gcp.node.unpack;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.exception.GCPErrorReporter;
+import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.SymbolIdentifier;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.primitive.SYMBOL;
-import org.twelve.gcp.outline.unpack.Unpack;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 public class SymbolTupleUnpackNode extends TupleUnpackNode implements SymbolUnpackNode<TupleUnpackNode> {
@@ -14,8 +13,8 @@ public class SymbolTupleUnpackNode extends TupleUnpackNode implements SymbolUnpa
 
     public SymbolTupleUnpackNode(AST ast, SymbolIdentifier symbol, TupleUnpackNode tupleUnpackNode) {
         super(ast, tupleUnpackNode.begins, tupleUnpackNode.ends);
-        this.symbol = symbol;
-        this.outline = new Unpack(this, new SYMBOL(symbol.name(), ast));
+        this.symbol = this.addNode(symbol);
+//        this.outline = new Unpack(this, new SYMBOL(symbol));
     }
 
     @Override
@@ -33,11 +32,17 @@ public class SymbolTupleUnpackNode extends TupleUnpackNode implements SymbolUnpa
         return this.symbol.toString() + super.toString();
     }
 
+//    @Override
+//    public void assign(LocalSymbolEnvironment env, Outline inferred) {
+////        if (!outline.is(inferred)) {
+////            GCPErrorReporter.report(symbol, GCPErrCode.OUTLINE_MISMATCH, "expected outline is " + inferred + ", but now is " + outline);
+////        }
+//        super.assign(env, inferred);
+//    }
+
     @Override
-    public void assign(LocalSymbolEnvironment env, Outline inferred) {
-        if (!outline.is(inferred)) {
-            GCPErrorReporter.report(symbol, GCPErrCode.OUTLINE_MISMATCH, "expected outline is " + inferred + ", but now is " + outline);
-        }
-        super.assign(env, inferred);
+    public Outline accept(Inferences inferences) {
+        this.outline = super.accept(inferences);
+        return inferences.visit(this);
     }
 }

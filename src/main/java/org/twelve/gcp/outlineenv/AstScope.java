@@ -86,6 +86,7 @@ public class AstScope implements Scope {
                         EntityMember m = member.get();
                         return new EnvSymbol(key, m.mutable().toBool(), m.outline(), m.node().scope(), m.node());
                     } else {
+//                        Poly poly = Poly.from(this.node());
                         Poly poly = Poly.create(this.node().ast());
                         poly.sum(symbol.outline(), symbol.mutable());
                         poly.sum(member.get().outline(), member.get().mutable().toBool());

@@ -7,6 +7,7 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.projectable.*;
 
@@ -30,7 +31,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             return func;
         }
 
-        Outline result = ast.Unknown;
+        Outline result = ast.unknown(node);
         //如果有重载方法
         if (func instanceof Poly) {
             result = targetOverride(cast(func), node.arguments(), inferences, node);
@@ -43,7 +44,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
 
         }
 //        if (result == Outline.Unknown && !node.ast().asf().isLastInfer()) {
-        if (result == ast.Unknown) {
+        if (result == ast.unknown(node)) {
             GCPErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_FOUND);
             return result;
         }
@@ -68,7 +69,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
                 return f;
             }
         }
-        return node.ast().Unknown;
+        return node.ast().unknown(node);
     }
 
     private boolean matchFunction(Function<?, ?> function, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {
@@ -181,6 +182,13 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         Outline result = function.returns().project(function.argument(), projectedArg, session);
         if (result instanceof FirstOrderFunction) {
             ((FirstOrderFunction) result).setSession(session);
+        }
+        //if this is the final projected, remove generics
+        if(result instanceof Option){
+            ((Option) result).options().removeIf(o->o instanceof Generic);
+            if(((Option) result).options().size()==1){
+                result = ((Option) result).options().getFirst();
+            }
         }
         return result;
 

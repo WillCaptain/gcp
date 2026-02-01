@@ -7,6 +7,7 @@ import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.projectable.ProjectSession;
+import org.twelve.gcp.outline.projectable.Projectable;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,16 +22,18 @@ public class Option extends SumADT {
         Outline[] os =
                 Arrays.stream(outlines).filter(o -> !(o == ast.Pending)).toArray(Outline[]::new);
         if (os.length == 1) return os[0];
-        return new Option(node, ast, os);
+        Option option =  new Option(node, ast, os);
+        if(option.options.size()==1) return option.options.getFirst();
+        else return option;
     }
 
     public static Outline from(Node node, Outline... outlines) {
         return from(node, node.ast(), outlines);
     }
 
-    public static Outline from(AST ast, Outline... outlines) {
-        return from(null, ast, outlines);
-    }
+//    public static Outline from(AST ast, Outline... outlines) {
+//        return from(null, ast, outlines);
+//    }
 
     public Option(Node node, AST ast, Outline... outlines) {
         super(node, ast, outlines);
@@ -49,6 +52,8 @@ public class Option extends SumADT {
         }
 
         for (Outline o : os) {
+            super.sum(o);
+            /*
             if (o.canBe(this)) continue;//自己是对方的基类，略过
             //对方是自己的基类，去掉自己，加自己的基类
             Optional<Outline> son = options.stream().filter(m -> m.canBe(o)).findFirst();
@@ -56,6 +61,7 @@ public class Option extends SumADT {
                 this.options.remove(son.get());
             }
             this.options.add(o);
+             */
         }
         return this;
     }
@@ -67,7 +73,7 @@ public class Option extends SumADT {
 
     @Override
     public Option copy() {
-        Option copies = new Option(this.node(),this.ast());
+        Option copies = new Option(this.node(), this.ast());
         copies.id = this.id;
         copies.options.addAll(this.options);
         return copies;
@@ -77,7 +83,7 @@ public class Option extends SumADT {
     public Option copy(Map<Outline, Outline> cache) {
         Option copied = cast(cache.get(this));
         if (copied == null) {
-            copied = new Option(this.node(),this.ast());
+            copied = new Option(this.node(), this.ast());
             for (Outline option : this.options) {
                 copied.options.add(option.copy(cache));
             }
@@ -163,23 +169,9 @@ public class Option extends SumADT {
         if (outline2.is(outline1)) return outline1;
 
         if (outline1 instanceof ProductADT && outline2 instanceof ProductADT) {
-            /*BuildInOutline buildIn;
-            if (outline1.maybe(outline2)) {
-                buildIn = ((ProductADT) outline2).buildIn();
-            } else if (outline2.maybe(outline1)) {
-                buildIn = ((ProductADT) outline1).buildIn();
-            } else {
-                buildIn = this.ast().Any.buildIn();
-            }*/
-            //Entity entity = Entity.from(this.node(), buildIn);
             List<EntityMember> members = interactMembers(
                     ((ProductADT) outline1).members(), ((ProductADT) outline2).members());
-            //entity.addMembers(members);
-            if(this.node()==null){
-                return Entity.from(this.ast(),members);
-            }else {
-                return Entity.from(this.node(), members);
-            }
+            return Entity.from(this.node(), members);
         }
 
         return this.ast().Nothing;
@@ -198,12 +190,22 @@ public class Option extends SumADT {
 
     @Override
     public Outline projectMySelf(Outline projection, ProjectSession session) {
-        if(projection.is(this)){
-            return projection;
-        }else{
-            GCPErrorReporter.report(this.ast(),this.node(), GCPErrCode.PROJECT_FAIL, projection +" is not "+ this);
-            return this.guess();
+        for (Outline option : this.options) {
+            if (projection.is(option)) {
+                if (option instanceof Projectable) {
+                    return ((Projectable) option).project(cast(option), projection, session);
+                }else {
+                    return projection;
+                }
+            }
         }
+
+//        if (projection.is(this)) {
+//            return projection;
+//        } else {
+        GCPErrorReporter.report(this.ast(), this.node(), GCPErrCode.PROJECT_FAIL, projection + " is not " + this);
+        return this.guess();
+//        }
 //        Option copied = this.copy();
 //        copied.options.clear();
 //        for (Outline outline : this.projectList(this.options, this, projection, session)) {

@@ -42,7 +42,7 @@ public class ArgumentInference implements Inference<Argument> {
     }
 
     private Outline inferDeclared(TypeNode declared, Inferences inferences, AST ast) {
-        if (declared == null) return ast.Unknown;
+        if (declared == null) return ast.unknown();
         return declared.infer(inferences);
     }
 }

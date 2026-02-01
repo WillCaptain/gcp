@@ -693,8 +693,8 @@ public class ASTHelper {
         //var some:String|Integer = 100;
         Token<String> some = new Token<>("some");
         VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.VAR);
-
-        declarator.declare(new Identifier(ast, some), new WrapperTypeNode(ast, Option.from(ast,ast.String, ast.Integer)), LiteralNode.parse(ast, new Token<>("string")));
+        Identifier id = new Identifier(ast, some);
+        declarator.declare(id, new WrapperTypeNode(ast, Option.from(id,ast.String, ast.Integer)), LiteralNode.parse(ast, new Token<>("string")));
         block.addStatement(declarator);
         mockIsAs(ast, some, block);
         //let result = {...}

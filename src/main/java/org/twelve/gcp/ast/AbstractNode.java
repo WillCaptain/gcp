@@ -12,7 +12,6 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.ERROR;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +53,8 @@ public abstract class AbstractNode implements Node {
     }
 
     public AbstractNode(AST ast, Location loc) {
-        this(ast, loc, ast.Unknown);
+        this(ast, loc, null);
+        this.outline = ast.unknown(this);
     }
 
     public AbstractNode(AST ast) {
@@ -121,7 +121,7 @@ public abstract class AbstractNode implements Node {
                     if (this.ast().asf().isLastInfer()) {
                         throw ex;
                     } else {
-                        this.outline = this.ast().Unknown;
+                        this.outline = this.ast().unknown(this);
                     }
                 }
                 this.ast().symbolEnv().exit();
@@ -130,7 +130,7 @@ public abstract class AbstractNode implements Node {
             GCPErrorReporter.report(this, e.errCode(), "unexpected exception occurs in outline inference");
         }
         if (outline instanceof ERROR && !this.ast().asf().isLastInfer()) {
-            this.outline = this.ast().Unknown;
+            this.outline = this.ast().unknown(this);
         }
         return outline;
     }
@@ -245,7 +245,7 @@ public abstract class AbstractNode implements Node {
 
     @Override
     public Node invalidate() {
-        this.outline = this.ast().Unknown;//ensure it is going to infer again
+        this.outline = this.ast().unknown(this);//ensure it is going to infer again
         return this;
     }
 }

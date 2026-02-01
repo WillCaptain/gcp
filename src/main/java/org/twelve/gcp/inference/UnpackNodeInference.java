@@ -8,7 +8,7 @@ public class UnpackNodeInference implements Inference<UnpackNode>{
     @Override
     public Outline infer(UnpackNode node, Inferences inferences) {
         for (Identifier id : node.identifiers()) {
-            node.ast().symbolEnv().defineSymbol(id.name(), node.ast().Unknown, false, id);
+            node.ast().symbolEnv().defineSymbol(id.name(), node.ast().unknown(id), false, id);
             id.infer(inferences);
         }
 
