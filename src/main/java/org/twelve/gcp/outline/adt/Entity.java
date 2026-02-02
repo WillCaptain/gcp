@@ -84,8 +84,7 @@ public class Entity extends ProductADT implements Projectable {
 
     @Override
     public Entity copy() {
-        Entity copied = new Entity(this.node)
-        return new Entity(this.node, this.ast(), this.base, this.members());
+        return new Entity(this.node, this.ast(), this.base, this.members());//TODO
     }
 
     @Override

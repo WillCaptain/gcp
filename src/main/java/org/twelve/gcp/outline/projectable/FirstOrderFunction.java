@@ -8,7 +8,9 @@ import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.decorators.OutlineWrapper;
+import org.twelve.gcp.outline.decorators.This;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -163,6 +165,21 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?, ?>
         }
 
         return f.eventual();
+    }
+
+    public This getThis(){
+        Outline ret = this.returns().supposedToBe();
+        if(ret instanceof This){
+            return ((This) ret);
+        }
+        if(ret instanceof Option){
+            for (Outline option : ((Option) ret).options()) {
+                if(option instanceof This){
+                    return ((This) option);
+                }
+            }
+        }
+        return null;
     }
 
 }
