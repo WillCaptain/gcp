@@ -9,14 +9,13 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.expression.typeable.WrapperTypeNode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.OutlineWrapper;
+import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 import org.twelve.gcp.outline.projectable.Projectable;
 import org.twelve.gcp.outline.projectable.Reference;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -85,6 +84,7 @@ public class Entity extends ProductADT implements Projectable {
 
     @Override
     public Entity copy() {
+        Entity copied = new Entity(this.node)
         return new Entity(this.node, this.ast(), this.base, this.members());
     }
 

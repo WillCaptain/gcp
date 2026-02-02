@@ -9,7 +9,7 @@ public class INTEGER extends LONG {
 
     public INTEGER(Node node) {
         super(int_, node, node.ast());
-       this.loadMethods();
+       this.loadBuiltInMethods();
     }
 
     public INTEGER(AST ast) {

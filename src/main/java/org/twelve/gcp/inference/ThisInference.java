@@ -6,7 +6,11 @@ import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.ThisNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.Entity;
+import org.twelve.gcp.outline.decorators.This;
 import org.twelve.gcp.outlineenv.AstScope;
+
+import static org.twelve.gcp.common.Tool.cast;
 
 public class ThisInference implements Inference<ThisNode> {
     @Override
@@ -22,7 +26,11 @@ public class ThisInference implements Inference<ThisNode> {
                 GCPErrorReporter.report(node, GCPErrCode.UNAVAILABLE_THIS);
             }
         }
-        return scope.node().outline();
+        if(scope.outline() instanceof Entity) {
+            return new This(cast(scope.outline()));
+        }else{
+            return scope.outline();
+        }
 //        while (node != null && !(node.outline() instanceof ProductADT)) {
 //            node = node.parent();
 //        }

@@ -14,7 +14,7 @@ public class LONG extends FLOAT {
 
     public LONG(Node node) {
         this(long_, node, node.ast());
-        this.loadMethods();
+        this.loadBuiltInMethods();
     }
 
     public LONG(AST ast) {

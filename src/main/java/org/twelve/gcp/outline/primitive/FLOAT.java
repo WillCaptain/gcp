@@ -13,7 +13,7 @@ public class FLOAT extends DECIMAL{
 
     public FLOAT(Node node){
         super(float_,node,node.ast());
-        this.loadMethods();
+        this.loadBuiltInMethods();
     }
     public FLOAT(AST ast){
         super(float_,null,ast);

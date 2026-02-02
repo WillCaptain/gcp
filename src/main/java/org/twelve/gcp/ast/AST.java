@@ -107,14 +107,14 @@ public class AST {
     }
 
     private void initialize(){
-        this.String.loadMethods();
-        this.Decimal.loadMethods();
-        this.Double.loadMethods();
-        this.Float.loadMethods();
-        this.Integer.loadMethods();
-        this.Long.loadMethods();
-        this.Boolean.loadMethods();
-        this.Number.loadMethods();
+        this.String.loadBuiltInMethods();
+        this.Decimal.loadBuiltInMethods();
+        this.Double.loadBuiltInMethods();
+        this.Float.loadBuiltInMethods();
+        this.Integer.loadBuiltInMethods();
+        this.Long.loadBuiltInMethods();
+        this.Boolean.loadBuiltInMethods();
+        this.Number.loadBuiltInMethods();
     }
     // Core Methods
 

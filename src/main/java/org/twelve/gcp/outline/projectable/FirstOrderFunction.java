@@ -8,7 +8,7 @@ import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.OutlineWrapper;
+import org.twelve.gcp.outline.decorators.OutlineWrapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;

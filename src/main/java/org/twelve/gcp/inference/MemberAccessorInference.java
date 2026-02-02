@@ -10,6 +10,7 @@ import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.adt.ProductADT;
+import org.twelve.gcp.outline.decorators.This;
 import org.twelve.gcp.outline.primitive.ANY;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.AccessorGeneric;
@@ -56,7 +57,11 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
             return node.ast().Error;
         }
         ProductADT host = cast(outline);
-        host.loadMethods();//load methods when access member to avoid recursive call
+        host.loadBuiltInMethods();//load methods when access member to avoid recursive call
+        if(host instanceof This){
+            host = ((This) host).real();
+//            host = ((This) host).reflect();
+        }
         List<EntityMember> found = host.members().stream().filter(m -> m.name().equals(node.member().name())).collect(Collectors.toList());
         if (found.isEmpty()) {
             GCPErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);

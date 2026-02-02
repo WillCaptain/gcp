@@ -7,7 +7,7 @@ import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.OutlineWrapper;
+import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.primitive.ANY;
 import org.twelve.gcp.outline.builtin.IGNORE;

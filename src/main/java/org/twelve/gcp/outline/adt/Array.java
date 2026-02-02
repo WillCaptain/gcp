@@ -9,7 +9,7 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Identifier;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.OutlineWrapper;
+import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.builtin.Array_;
 import org.twelve.gcp.outline.primitive.INTEGER;
 import org.twelve.gcp.outline.primitive.NOTHING;
@@ -40,8 +40,8 @@ public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer
     }
 
     @Override
-    public boolean loadMethods() {
-        if (!super.loadMethods()) return false;
+    public boolean loadBuiltInMethods() {
+        if (!super.loadBuiltInMethods()) return false;
         this.createMapper(this.members);
         this.createReducer(this.members);
         return true;

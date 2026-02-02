@@ -54,6 +54,7 @@ public class EntityInference implements Inference<EntityNode> {
         } else {//第n次infer
             entity = cast(node.outline());
         }
+        node.ast().symbolEnv().current().setOutline(entity);
         //infer my members
         node.members().forEach((k, v) -> {
 //            for (MemberNode v : vs) {

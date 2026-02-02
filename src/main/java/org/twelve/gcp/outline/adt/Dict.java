@@ -5,7 +5,7 @@ import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.OutlineWrapper;
+import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.builtin.Dict_;
 import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.projectable.ProjectSession;

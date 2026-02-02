@@ -8,7 +8,7 @@ public class STRING extends Primitive{
     private final static String_ string_ = new String_();
     public STRING(AbstractNode node){
         super(string_,node,node.ast());
-        this.loadMethods();
+        this.loadBuiltInMethods();
     }
     public STRING(AST ast){
         super(string_,null,ast);

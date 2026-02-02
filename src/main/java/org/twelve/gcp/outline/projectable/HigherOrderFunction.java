@@ -1,11 +1,10 @@
 package org.twelve.gcp.outline.projectable;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.expression.typeable.FunctionTypeNode;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.OutlineWrapper;
+import org.twelve.gcp.outline.decorators.OutlineWrapper;
 
 import static org.twelve.gcp.common.Tool.cast;
 

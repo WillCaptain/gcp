@@ -22,20 +22,23 @@ public class AstScope implements Scope {
     private Map<String, EnvSymbol> outlines = new HashMap<>();
     private final AstScope parent;
     @Setter
+    private Outline outline;
+    @Setter
     private SCOPE_TYPE scopeType = SCOPE_TYPE.IN_BLOCK;
 
     AstScope(Long scopeId, AstScope parent, AbstractNode node) {
         this.scopeId = scopeId;
         this.parent = parent;
         this.node = node;
+        this.outline = node.ast().Ignore;
     }
 
     public Long id() {
         return this.scopeId;
     }
 
-    public AbstractNode node() {
-        return this.node;
+    public Outline outline() {
+        return this.outline;
     }
 
 //    public AstScope addScope(Long scopeId) {
@@ -87,7 +90,7 @@ public class AstScope implements Scope {
                         return new EnvSymbol(key, m.mutable().toBool(), m.outline(), m.node().scope(), m.node());
                     } else {
 //                        Poly poly = Poly.from(this.node());
-                        Poly poly = Poly.create(this.node().ast());
+                        Poly poly = Poly.create(this.node.ast());
                         poly.sum(symbol.outline(), symbol.mutable());
                         poly.sum(member.get().outline(), member.get().mutable().toBool());
                         return new EnvSymbol(key, symbol.mutable(), poly, symbol.node().scope(), symbol.node());

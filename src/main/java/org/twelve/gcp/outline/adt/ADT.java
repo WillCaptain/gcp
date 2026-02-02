@@ -3,14 +3,9 @@ package org.twelve.gcp.outline.adt;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.common.Modifier;
-import org.twelve.gcp.exception.GCPErrCode;
-import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.primitive.Literal;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
-import org.twelve.gcp.outline.projectable.ProjectSession;
-import org.twelve.gcp.outline.projectable.Projectable;
-import org.twelve.gcp.outlineenv.AstScope;
 
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +32,7 @@ public abstract class ADT implements Outline {
         return this.ast;
     }
 
-    public boolean loadMethods() {
+    public boolean loadBuiltInMethods() {
         if (this.members.containsKey(CONSTANTS.TO_STR)) return false;
         EntityMember toString = EntityMember.from(CONSTANTS.TO_STR, FirstOrderFunction.from(this.ast(), this.ast().String, this.ast().Unit),
                 Modifier.PUBLIC, false, null, true);

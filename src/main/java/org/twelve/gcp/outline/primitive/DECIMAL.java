@@ -10,7 +10,7 @@ public class DECIMAL extends DOUBLE {
 
     public DECIMAL(Node node){
         super(decimal_,node,node.ast());
-        this.loadMethods();;
+        this.loadBuiltInMethods();;
     }
     protected DECIMAL(BuildInOutline buildInOutline, Node node, AST ast) {
         super(buildInOutline,node,ast);
