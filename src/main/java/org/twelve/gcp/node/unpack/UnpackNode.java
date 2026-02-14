@@ -4,7 +4,7 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Assignable;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.List;

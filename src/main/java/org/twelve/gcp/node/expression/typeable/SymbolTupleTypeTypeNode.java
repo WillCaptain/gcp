@@ -1,18 +1,23 @@
-package org.twelve.gcp.node.expression;
+package org.twelve.gcp.node.expression.typeable;
 
 import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.node.expression.typeable.TupleTypeNode;
-import org.twelve.gcp.node.expression.typeable.TypeNode;
+import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
+import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.outline.Outline;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class SymbolTupleTypeTypeNode extends TupleTypeNode implements SymbolTypeNode<TupleTypeNode> {
     private final SymbolIdentifier symbol;
 
-    public SymbolTupleTypeTypeNode(SymbolIdentifier symbol, List<TypeNode> members) {
-        super(members);
+    public SymbolTupleTypeTypeNode(SymbolIdentifier symbol, List<ReferenceNode> refs, List<TypeNode> members) {
+        super(refs,members);
         this.symbol = this.addNode(0,symbol);
+    }
+
+    public SymbolTupleTypeTypeNode(SymbolIdentifier symbol, List<TypeNode> members) {
+        this(symbol,new ArrayList<>(),members);
     }
 
     public SymbolTupleTypeTypeNode(SymbolIdentifier symbol) {

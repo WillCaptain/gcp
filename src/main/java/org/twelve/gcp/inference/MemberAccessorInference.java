@@ -58,16 +58,17 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
         }
         ProductADT host = cast(outline);
         host.loadBuiltInMethods();//load methods when access member to avoid recursive call
-        if(host instanceof This){
-            host = ((This) host).real();
-//            host = ((This) host).reflect();
-        }
+        host = cast(host.eventual());
+//        if(host instanceof This){
+//            host = ((This) host).real();
+////            host = ((This) host).reflect();
+//        }
         List<EntityMember> found = host.members().stream().filter(m -> m.name().equals(node.member().name())).collect(Collectors.toList());
         if (found.isEmpty()) {
             GCPErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
             return node.ast().Error;
         } else {
-            return found.getFirst().outline();
+            return found.getFirst().outline().eventual();
         }
     }
 

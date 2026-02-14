@@ -2,6 +2,7 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.referable.ReferenceCallNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.decorators.OutlineWrapper;
@@ -12,6 +13,10 @@ import static org.twelve.gcp.common.Tool.cast;
 public class ReferenceCallInference implements Inference<ReferenceCallNode>{
     @Override
     public Outline infer(ReferenceCallNode node, Inferences inferences) {
+        Expression host = node.host();
+        if(host.lexeme().startsWith("__") && host.lexeme().endsWith("__")){
+            return handleExternal(node,inferences);
+        }
         Outline func = cast(node.host().infer(inferences));
         if(func instanceof ReferAble){
             ReferAble referAble = cast(((ReferAble)func).copy());
@@ -21,5 +26,9 @@ public class ReferenceCallInference implements Inference<ReferenceCallNode>{
             GCPErrorReporter.report(node, GCPErrCode.NOT_REFER_ABLE);
             return func;
         }
+    }
+
+    private Outline handleExternal(ReferenceCallNode node, Inferences inferences) {
+        return node.types().getFirst().infer(inferences);
     }
 }

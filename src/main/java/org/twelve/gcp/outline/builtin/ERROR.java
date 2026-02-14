@@ -12,4 +12,9 @@ public class ERROR extends BuildInOutline{
     public long id() {
         return CONSTANTS.ERROR_INDEX;
     }
+
+    @Override
+    public String toString() {
+        return "Error";
+    }
 }

@@ -1,4 +1,4 @@
-package org.twelve.gcp.node.expression;
+package org.twelve.gcp.node.expression.identifier;
 
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.AST;
@@ -8,6 +8,7 @@ import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.node.expression.Assignable;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outlineenv.EnvSymbol;
@@ -63,6 +64,8 @@ public class Identifier extends Assignable implements UnpackAble {
                 GCPErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
                 return;
             }
+            Outline ref = inferred;
+           //inferred = symbol.outline().melt(inferred);
             if(!symbol.update(inferred)){
                 inferred = inferred.alternative();
                if(!symbol.update(inferred)) {

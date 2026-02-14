@@ -591,26 +591,15 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         return guessed instanceof Projectable ? ((Projectable) guessed).guess() : guessed;
     }
 
-    /*@Override
-    public Outline project(Projectable projected, Outline projection, ProjectSession session) {
-        if (this.node() == null && !(this.declaredToBe() instanceof ANY)) {//this is outline definition
-            if (this.id() == projected.id()) {
-                if (projection instanceof Genericable) {
-                    ((Genericable<?, ?>) projection).addDeclaredToBe(this.declaredToBe());
-                }
-                if (!projection.is(this.declaredToBe())) {
-                    ErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.declaredToBe());
-                }
-                return this.declaredToBe();
-            }
-            if (this.declaredToBe() instanceof Projectable) {
-                return ((Projectable) this.declaredToBe()).project(projected, projection, session);
-            } else {
-                return this.declaredToBe();
-            }
-        }
-        return Projectable.super.project(projected, projection, session);
-    }*/
+    @Override
+    public Outline melt(Outline outline) {
+        Genericable other = cast(outline);
+        this.declaredToBe = this.declaredToBe.melt(other.declaredToBe);
+        this.extendToBe = this.extendToBe.melt(other.extendToBe);
+        this.hasToBe = this.hasToBe.melt(other.hasToBe);
+        this.definedToBe = this.definedToBe.melt(other.definedToBe);
+        return this;
+    }
 
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {

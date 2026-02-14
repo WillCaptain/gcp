@@ -1,7 +1,7 @@
 package org.twelve.gcp.inference;
 
 import org.twelve.gcp.common.CONSTANTS;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.imexport.ImportSpecifier;
 import org.twelve.gcp.node.namespace.NamespaceNode;

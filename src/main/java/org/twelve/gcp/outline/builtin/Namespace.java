@@ -2,7 +2,7 @@ package org.twelve.gcp.outline.builtin;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.AbstractNode;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.ArrayList;

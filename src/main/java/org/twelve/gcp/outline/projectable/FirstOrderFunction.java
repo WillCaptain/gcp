@@ -134,25 +134,14 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?, ?>
         return new FirstOrderFunction(this.node, this.ast(), arg, ret, refs);
     }
 
-//    @Override
-//    public Outline eventual() {
-//        Genericable<?,?> arg = cast(this.argument().eventual());
-//        Return ret = cast(this.returns().eventual());
-//        if (arg != this.argument() || ret != this.returns()) {
-//            return new FirstOrderFunction(this.node, arg, ret);
-//        } else {
-//            return this;
-//        }
-//    }
-
     @Override
     public Outline project(List<OutlineWrapper> types) {
         FirstOrderFunction f = this;
-        if (this.references.size() != types.size()) {
+        if (this.references.size() < types.size()) {
             GCPErrorReporter.report(this.node, GCPErrCode.REFERENCE_MIS_MATCH);
         }
 //        List<Pair<Reference, Outline>> projections = new ArrayList<>();
-        for (int i = 0; i < this.references.size(); i++) {
+        for (int i = 0; i < types.size(); i++) {
             Reference me = this.references.get(i);
             OutlineWrapper you = types.get(i);
             if (you == null) break;
@@ -182,4 +171,8 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?, ?>
         return null;
     }
 
+    @Override
+    public boolean containsReference() {
+        return !this.references().isEmpty();
+    }
 }

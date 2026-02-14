@@ -1,12 +1,9 @@
 package org.twelve.gcp.node.unpack;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.exception.GCPErrCode;
-import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.node.expression.SymbolIdentifier;
+import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 public class SymbolTupleUnpackNode extends TupleUnpackNode implements SymbolUnpackNode<TupleUnpackNode> {
     private final SymbolIdentifier symbol;

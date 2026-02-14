@@ -7,7 +7,7 @@ import org.twelve.gcp.node.expression.Assignable;
 import org.twelve.gcp.node.expression.Assignment;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -26,13 +26,11 @@ public class MemberNode extends VariableDeclarator {
     @Override
     public Assignment declare(Assignable name, TypeNode declared, Expression value) {
         if (!this.assignments().isEmpty()) return null;//member node只能有一个赋值
-        //Identifier name,Expression declared, Expression value
         return super.declare(name, declared, value);
     }
 
     @Override
     public Outline outline() {
-//        return this.expression().outline();
         return this.identifier().outline();
     }
 
@@ -45,8 +43,9 @@ public class MemberNode extends VariableDeclarator {
 
     @Override
     public Outline accept(Inferences inferences) {
-        super.accept(inferences);
-        return this.outline();
+       return inferences.visit(this);
+//        super.accept(inferences);
+//        return this.outline();
     }
 
     public Identifier identifier() {

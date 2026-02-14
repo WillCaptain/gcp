@@ -5,8 +5,9 @@ import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.Variable;
+import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.ArrayList;
@@ -32,8 +33,8 @@ public class TupleTypeNode extends EntityTypeNode {
         return vs;
     }
 
-    public TupleTypeNode(List<TypeNode> members) {
-        super(createMembers(members));
+    public TupleTypeNode(List<ReferenceNode> refs, List<TypeNode> members) {
+        super(refs,createMembers(members));
     }
 
     public TupleTypeNode(AST ast) {

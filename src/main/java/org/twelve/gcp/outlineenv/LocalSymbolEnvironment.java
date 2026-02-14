@@ -3,7 +3,7 @@ package org.twelve.gcp.outlineenv;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.common.SCOPE_TYPE;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.*;
 import org.twelve.gcp.outline.builtin.Module;
@@ -52,7 +52,6 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
             this.scopes.put(scope.id(), scope);
         }
         this.current = scope;
-//        this.previous = scope.parent();
     }
 
     public AstScope root() {
@@ -60,16 +59,16 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
     }
 
     public AstScope enter(AbstractNode node) {
-//        if(this.current.id()==scopeId){
-//            this.previous = this.current;
-//            return this.current;
-//        }
         AstScope me = this.scopes.get(node.scope());
         AstScope parent = this.scopes.get(node.parentScope());
         if (me == null) {
             me = new AstScope(node.scope(),parent,node);
         }
         setCurrent(me);
+        return this.current;
+    }
+    public AstScope enter(AstScope scope) {
+        setCurrent(scope);
         return this.current;
     }
 

@@ -3,6 +3,8 @@ package org.twelve.gcp.inference;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.expression.body.WithExpression;
 import org.twelve.gcp.node.expression.conditions.*;
+import org.twelve.gcp.node.expression.identifier.Identifier;
+import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
 import org.twelve.gcp.node.expression.typeable.OptionTypeNode;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
@@ -22,12 +24,14 @@ import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.imexport.ImportSpecifier;
 import org.twelve.gcp.node.expression.Assignment;
 import org.twelve.gcp.node.statement.ExpressionStatement;
+import org.twelve.gcp.node.statement.MemberNode;
 import org.twelve.gcp.node.statement.ReturnStatement;
 import org.twelve.gcp.node.statement.VariableDeclarator;
 import org.twelve.gcp.node.unpack.*;
 import org.twelve.gcp.outline.Outline;
 
 public interface Inferences {
+    Boolean isLazy();
     default Outline visit(Node node){
         for (Node child : node.nodes()) {
             child.infer(this);
@@ -38,6 +42,9 @@ public interface Inferences {
     Outline visit(UnaryExpression ue);
     Outline visit(Assignment assignment);
     Outline visit(VariableDeclarator assignment);
+
+    Outline visit(MemberNode memberNode);
+
     Outline visit(Identifier identifier);
     Outline visit(ReferenceNode ref);
     Outline visit(Variable variable);
@@ -69,15 +76,14 @@ public interface Inferences {
     Outline visit(IdentifierTypeNode identifierTypeNode);
     Outline visit(FunctionTypeNode functionTypeNode);
     Outline visit(EntityTypeNode entityTypeNode);
-
     Outline visit(TupleTypeNode tupleTypeNode);
-
     Outline visit(As asNode);
     Outline visit(ArrayNode arrayNode);
     Outline visit(ArrayTypeNode arrayTypeNode);
     Outline visit(ArrayAccessor arrayAccessor);
     Outline visit(DictNode dictNode);
     Outline visit(DictTypeNode dictTypeNode);
+    Outline visit(ReferenceCallTypeNode referenceCallTypeNode);
 
     Outline visit(MatchTest test);
 
@@ -96,4 +102,8 @@ public interface Inferences {
     Outline visit(OutlineDefinition outlineDefinition);
     Outline visit(SymbolEntityTypeTypeNode symbolEntityTypeNode);
     Outline visit(SymbolTupleTypeTypeNode symbolTupleTypeNode);
+
+    Outline visit(ThisTypeNode thisTypeNode);
+    Outline visit(ExtendTypeNode extendTypeNode);
+
 }

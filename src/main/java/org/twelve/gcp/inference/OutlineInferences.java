@@ -1,8 +1,9 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.node.expression.body.WithExpression;
 import org.twelve.gcp.node.expression.conditions.*;
+import org.twelve.gcp.node.expression.identifier.Identifier;
+import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
 import org.twelve.gcp.node.expression.typeable.OptionTypeNode;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
@@ -22,6 +23,7 @@ import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.imexport.ImportSpecifier;
 import org.twelve.gcp.node.expression.Assignment;
 import org.twelve.gcp.node.statement.ExpressionStatement;
+import org.twelve.gcp.node.statement.MemberNode;
 import org.twelve.gcp.node.statement.ReturnStatement;
 import org.twelve.gcp.node.statement.VariableDeclarator;
 import org.twelve.gcp.node.unpack.*;
@@ -29,6 +31,20 @@ import org.twelve.gcp.outline.Outline;
 
 
 public class OutlineInferences implements Inferences {
+    private final Boolean isLazy;
+
+    public OutlineInferences(Boolean isLazy){
+        this.isLazy = isLazy;
+    }
+    public OutlineInferences(){
+        this(false);
+    }
+
+    @Override
+    public Boolean isLazy(){
+        return this.isLazy;
+    }
+
     @Override
     public Outline visit(BinaryExpression be) {
         return new BinaryExprInference().infer(be, this);
@@ -52,6 +68,11 @@ public class OutlineInferences implements Inferences {
     @Override
     public Outline visit(VariableDeclarator variableDeclarator) {
         return new VariableDeclaratorInference().infer(variableDeclarator, this);
+    }
+
+    @Override
+    public Outline visit(MemberNode memberNode) {
+        return new MemberNodeInference().infer(memberNode, this);
     }
 
     @Override
@@ -107,6 +128,11 @@ public class OutlineInferences implements Inferences {
     @Override
     public Outline visit(DictTypeNode dictTypeNode) {
         return new DictTypeNodeInference().infer(dictTypeNode, this);
+    }
+
+    @Override
+    public Outline visit(ReferenceCallTypeNode referenceCallTypeNode) {
+        return new ReferenceCallTypeNodeInference().infer(referenceCallTypeNode,this);
     }
 
     @Override
@@ -290,5 +316,15 @@ public class OutlineInferences implements Inferences {
     @Override
     public Outline visit(SymbolTupleTypeTypeNode symbolTupleTypeNode) {
         return new SymbolTupleTypeNodeInference().infer(symbolTupleTypeNode,this);
+    }
+
+    @Override
+    public Outline visit(ThisTypeNode thisTypeNode) {
+        return new ThisTypeNodeInference().infer(thisTypeNode,this);
+    }
+
+    @Override
+    public Outline visit(ExtendTypeNode extendTypeNode) {
+        return new ExtendTypeNodeInference().infer(extendTypeNode,this);
     }
 }

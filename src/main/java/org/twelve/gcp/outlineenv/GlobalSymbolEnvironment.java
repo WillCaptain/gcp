@@ -2,7 +2,7 @@ package org.twelve.gcp.outlineenv;
 
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.builtin.Module;
 
 import java.util.concurrent.atomic.AtomicLong;

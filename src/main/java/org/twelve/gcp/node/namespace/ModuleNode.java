@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.namespace;
 
 import org.twelve.gcp.ast.AbstractNode;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.builtin.Module;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 

@@ -4,7 +4,7 @@ import org.twelve.gcp.exception.GCPError;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.inference.OutlineInferences;
 import org.twelve.gcp.node.base.Program;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.namespace.NamespaceNode;
@@ -40,7 +40,7 @@ public class AST {
     private final AtomicLong scopeIndexer = new AtomicLong(-1);
 
     private List<GCPError> errors = new ArrayList<>();  // Compilation errors
-    private final Inferences inference;  // Type inference rules
+    private final Inferences inferences;  // Type inference rules
     private final LocalSymbolEnvironment symbolEnv;  // Local symbol table
     private ASF asf;  // Parent Abstract Syntax Forest
     private Set<Long> cache = new HashSet<>();  // Optional: Inference caching mechanism
@@ -77,8 +77,8 @@ public class AST {
     public AST(ASF asf) {
         this(new OutlineInferences(), asf);  // Default inference rules
     }
-    public AST(Inferences inference, ASF asf) {
-        this.inference = inference;
+    public AST(Inferences inferences, ASF asf) {
+        this.inferences = inferences;
         this.id = nodeIndexer.incrementAndGet();  // Assign unique ID
         this.asf = asf;
 
@@ -117,9 +117,11 @@ public class AST {
         this.Number.loadBuiltInMethods();
     }
     // Core Methods
-
+    public Inferences inferences(){
+        return this.inferences;
+    }
     public Module infer() {
-        this.program.infer(this.inference);  // Trigger type inference
+        this.program.infer(this.inferences);  // Trigger type inference
         return this.symbolEnv.module();  // Expose inferred module interface
     }
 

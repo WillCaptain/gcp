@@ -18,7 +18,7 @@ public class ThisInference implements Inference<ThisNode> {
         return findEntity(node);
     }
 
-    private Outline findEntity(AbstractNode node) {
+    public static Outline findEntity(AbstractNode node) {
         AstScope scope = node.ast().symbolEnv().current();
         while(scope.scopeType()!= SCOPE_TYPE.IN_PRODUCT_ADT){
             scope = scope.parent();
@@ -31,13 +31,5 @@ public class ThisInference implements Inference<ThisNode> {
         }else{
             return scope.outline();
         }
-//        while (node != null && !(node.outline() instanceof ProductADT)) {
-//            node = node.parent();
-//        }
-//        if (node == null) {
-//            return Outline.Unknown;
-//        } else {
-//            return node.outline();
-//        }
     }
 }

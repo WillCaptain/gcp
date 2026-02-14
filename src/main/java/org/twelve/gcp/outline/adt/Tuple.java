@@ -1,14 +1,9 @@
 package org.twelve.gcp.outline.adt;
 
-import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.common.TupleMatcher;
-import org.twelve.gcp.node.expression.Assignable;
-import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.projectable.Generic;
+import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 import org.twelve.gcp.outline.projectable.Projectable;
@@ -21,7 +16,7 @@ public class Tuple extends Entity {
 
 
     public Tuple(Entity entity) {
-        super(entity.node(), entity.ast(), entity.ast().Any, entity.members());
+        super(entity.node(), entity.ast(), entity.ast().Any, entity.members(),entity.references());
     }
 
     @Override
@@ -78,6 +73,10 @@ public class Tuple extends Entity {
     @Override
     public Entity copy(Map<Outline, Outline> cache) {
         return new Tuple(super.copy(cache));
+    }
+    @Override
+    public Outline project(List<OutlineWrapper> types) {
+        return new Tuple(cast(super.project(types)));
     }
 
     @Override

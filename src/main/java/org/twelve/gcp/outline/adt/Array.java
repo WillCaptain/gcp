@@ -6,7 +6,7 @@ import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.decorators.OutlineWrapper;

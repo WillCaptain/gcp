@@ -8,7 +8,7 @@ import org.twelve.gcp.outline.Outline;
 import static org.twelve.gcp.common.Tool.cast;
 
 
-public abstract class Function<T extends Node, A extends Outline> implements Projectable  {
+public abstract class Function<T extends Node, A extends Outline> implements Projectable {
     protected long id;
     protected final T node;
 
@@ -17,11 +17,13 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
     private AST ast;
 
     public Function(@NonNull T node, A argument, Returnable returns) {
-        this(node,node.ast(),argument,returns);
+        this(node, node.ast(), argument, returns);
     }
+
     public Function(AST ast, A argument, Returnable returns) {
-        this(null,ast,argument,returns);
+        this(null, ast, argument, returns);
     }
+
     protected Function(T node, AST ast, A argument, Returnable returns) {
         this.node = node;
         this.ast = ast;
@@ -53,12 +55,13 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
     /**
      * funtion的equals不遵循参数逆变，返回值协变规则
      * 符合参数和返回值皆equals
+     *
      * @param another 目标outline
      * @return
      */
     @Override
     public boolean equals(Outline another) {
-        if(!(another instanceof Function)) return false;
+        if (!(another instanceof Function)) return false;
         Function you = cast(another);
         return this.argument.equals(you.argument) && this.returns.equals(you.returns);
     }
@@ -90,14 +93,25 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
 
     @Override
     public Outline guess() {
-        return new FixFunction(this.node(),this.ast(),
-                this.argument instanceof Projectable?((Projectable) this.argument).guess():this.argument,
+        return new FixFunction(this.node(), this.ast(),
+                this.argument instanceof Projectable ? ((Projectable) this.argument).guess() : this.argument,
                 this.returns.guess());
     }
 
     @Override
+    public Outline melt(Outline outline) {
+//        return outline;
+        if(this==outline) return this;
+        this.inferred();
+        Function func = cast(outline);
+        this.argument = cast(this.argument.melt(func.argument));
+        this.returns = cast(this.returns.melt(func.returns));
+        return this;
+    }
+
+    @Override
     public boolean containsUnknown() {
-        return this.argument.containsUnknown()||this.returns.containsUnknown();
+        return this.argument.containsUnknown() || this.returns.containsUnknown();
     }
 
     @Override

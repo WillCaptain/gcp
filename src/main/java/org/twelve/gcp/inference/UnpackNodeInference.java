@@ -1,6 +1,6 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.unpack.UnpackNode;
 import org.twelve.gcp.outline.Outline;
 

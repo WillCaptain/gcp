@@ -24,9 +24,9 @@ public class GCPErrorReporter {
     public static void report(AST ast, Node node, GCPErrCode errCode, String message) {
 //        if(!node.inferred()) return;
         GCPError err = ast.addError(new GCPError(node, errCode, message));
-        if(err!=null){
-            System.out.println(err);
-        }
+//        if(err!=null){
+//            System.out.println(err);
+//        }
     }
     public static void report(Node node, GCPErrCode errCode, String message) {
         report(node.ast(),node,errCode,message);

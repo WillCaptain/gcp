@@ -2,7 +2,7 @@ package org.twelve.gcp.node.unpack;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.node.expression.SymbolIdentifier;
+import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
 import org.twelve.gcp.outline.Outline;
 
 public class SymbolEntityUnpackNode extends EntityUnpackNode implements SymbolUnpackNode<EntityUnpackNode> {

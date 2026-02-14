@@ -3,7 +3,7 @@ package org.twelve.gcp.inference;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.LiteralNode;
 import org.twelve.gcp.node.expression.conditions.MatchTest;
 import org.twelve.gcp.node.unpack.UnpackNode;

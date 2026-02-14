@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.namespace;
 
 import org.twelve.gcp.ast.*;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.expression.typeable.WrapperTypeNode;
 import org.twelve.gcp.outline.builtin.Namespace;

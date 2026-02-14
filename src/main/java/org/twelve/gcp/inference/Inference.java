@@ -1,6 +1,7 @@
 package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.AbstractNode;
+import org.twelve.gcp.node.expression.EntityNode;
 import org.twelve.gcp.outline.Outline;
 
 public interface Inference<T extends AbstractNode> {

@@ -1,8 +1,10 @@
 package org.twelve.gcp.inference;
 
+import org.twelve.gcp.node.expression.EntityNode;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.decorators.Lazy;
 import org.twelve.gcp.outline.projectable.*;
 
 import java.util.HashMap;

@@ -10,10 +10,7 @@ import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.expression.typeable.WrapperTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.decorators.OutlineWrapper;
-import org.twelve.gcp.outline.projectable.Genericable;
-import org.twelve.gcp.outline.projectable.ProjectSession;
-import org.twelve.gcp.outline.projectable.Projectable;
-import org.twelve.gcp.outline.projectable.Reference;
+import org.twelve.gcp.outline.projectable.*;
 
 import java.util.*;
 
@@ -27,7 +24,8 @@ import static org.twelve.gcp.common.Tool.cast;
  *
  * @author huizi 2024
  */
-public class Entity extends ProductADT implements Projectable {
+public class Entity extends ProductADT implements Projectable, ReferAble {
+    private final List<Reference> references;
     //    private final List<Reference> references;
     private long id;
     /**
@@ -41,11 +39,16 @@ public class Entity extends ProductADT implements Projectable {
      */
     protected final Node node;
 
-    protected Entity(Node node, AST ast, Outline base, List<EntityMember> extended) {
+    protected Entity(Node node, AST ast, Outline base, List<EntityMember> extended, List<Reference> references) {
         super(ast, ast.Any.buildIn(), extended);
         this.node = node;
         this.id = ast.Counter.getAndIncrement();
         this.base = base;
+        this.references = references;
+    }
+
+    protected Entity(Node node, AST ast, Outline base, List<EntityMember> extended) {
+        this(node, ast, base, extended, new ArrayList<>());
     }
 
     public Entity produce(Entity another) {
@@ -61,7 +64,11 @@ public class Entity extends ProductADT implements Projectable {
     }
 
     public static Entity from(Node node, Outline base, List<EntityMember> extended, List<Reference> references) {
-        return new Entity(node, node.ast(), base, extended);
+        return new Entity(node, node.ast(), base, extended, references);
+    }
+
+    public static Entity fromRefs(Node node, List<Reference> references) {
+        return new Entity(node, node.ast(), node.ast().Any, new ArrayList<>(), references);
     }
 
     public static Entity from(Node node) {
@@ -80,6 +87,32 @@ public class Entity extends ProductADT implements Projectable {
     @Override
     public long id() {
         return this.id;
+    }
+
+    @Override
+    public List<Reference> references() {
+        return this.references;
+    }
+
+    @Override
+    public Outline project(List<OutlineWrapper> types) {
+        Entity e = this;
+        if (this.references.size() < types.size()) {
+            GCPErrorReporter.report(this.node, GCPErrCode.REFERENCE_MIS_MATCH);
+        }
+        for (int i = 0; i < types.size(); i++) {
+            Reference me = this.references.get(i);
+            OutlineWrapper you = types.get(i);
+            if (you == null) break;
+            if (you.outline().is(me)) {
+                e = cast(e.project(me, you));
+            } else {
+                GCPErrorReporter.report(you.node(), GCPErrCode.REFERENCE_MIS_MATCH);
+                e = cast(e.project(me, new OutlineWrapper(you.node(), me.guess())));
+            }
+        }
+
+        return e.eventual();
     }
 
     @Override
@@ -201,7 +234,7 @@ public class Entity extends ProductADT implements Projectable {
 
     @Override
     public Outline project(Reference reference, OutlineWrapper projection) {
-        Entity projected;
+//        Entity projected;
         Outline base = null;
         if (this.base != null) {
             base = this.base.project(reference, projection);
@@ -220,8 +253,9 @@ public class Entity extends ProductADT implements Projectable {
 
             ms.add(EntityMember.from(m.name(), mProjected, m.modifier(), m.mutable().toBool(), n, m.isDefault()));
         }
-
-        return new Entity(this.node, this.ast(), base, ms);
+        List<Reference> refs = new ArrayList<>(this.references);
+        refs.remove(reference);
+        return new Entity(this.node, this.ast(), base, ms, refs);
     }
 
     @Override
@@ -235,13 +269,34 @@ public class Entity extends ProductADT implements Projectable {
 
     @Override
     public boolean equals(Outline another) {
-        if(!(another instanceof Entity)) return false;
+        if (!(another instanceof Entity)) return false;
         Entity you = cast(another);
-        if(this.members.size()!=you.members.size()) return false;
+        if (this.members.size() != you.members.size()) return false;
         for (String k : this.members.keySet()) {
-            if(you.members.get(k)==null) return false;
-            if(!this.members.get(k).outline().equals(you.members.get(k).outline())) return false;
+            if (you.members.get(k) == null) return false;
+            if (!this.members.get(k).outline().equals(you.members.get(k).outline())) return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean containsReference() {
+        return !this.references().isEmpty();
+    }
+
+    @Override
+    public Outline melt(Outline outline) {
+        if(this==outline) return this;
+        Entity other = cast(outline);
+        other.members.forEach((k, v) -> {
+            Optional<EntityMember> m = this.getMember(k);
+            if (m.isPresent()) {
+                Outline melted = m.get().outline.melt(v.outline());
+                this.replaceMember(k, melted);
+            } else {
+                this.addMember(v.name(), v.outline(), v.modifier(), v.mutable() == Mutable.True, v.node());
+            }
+        });
+        return this;
     }
 }

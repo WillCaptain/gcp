@@ -5,8 +5,7 @@ import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.node.expression.Identifier;
-import org.twelve.gcp.node.expression.LiteralNode;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
@@ -57,7 +56,8 @@ public class MemberAccessor extends Accessor {
 
     @Override
     public String lexeme() {
-        return productADT.lexeme().split(":")[0].trim() + "." + member.lexeme();
+//        return productADT.lexeme().split(":")[0].trim() + "." + member.lexeme();
+        return productADT.lexeme().trim() + "." + member.lexeme();
     }
 
     @Override

@@ -8,6 +8,7 @@ import org.twelve.gcp.node.expression.EntityNode;
 import org.twelve.gcp.outline.adt.*;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
+import org.twelve.gcp.outline.decorators.Lazy;
 import org.twelve.gcp.outline.decorators.This;
 import org.twelve.gcp.outline.primitive.SYMBOL;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
@@ -62,10 +63,9 @@ public class EntityInference implements Inference<EntityNode> {
         node.ast().symbolEnv().current().setOutline(entity);
         //infer my members
         node.members().forEach((k, v) -> {
-//            for (MemberNode v : vs) {
             Outline outline = v.infer(inferences);
+//            Outline outline = v.inferLazy(inferences);
             entity.addMember(k, outline, v.modifier(), v.mutable(), v.identifier());
-//            }
         });
         return entity;
     }
@@ -80,11 +80,8 @@ public class EntityInference implements Inference<EntityNode> {
                 if(t!=null) {
                     t.setOrigin(entity);
                     ms.add(EntityMember.from(m.name(), func, m.modifier(), m.mutable() == Mutable.True, m.node(), m.isDefault()));
-//                    return;
                 }
             }
-            //ms.add(EntityMember.from(m.name(), m.outline(), m.modifier(), m.mutable() == Mutable.True, m.node(), m.isDefault()));
-
         });
         entity.addMembers(ms);
     }

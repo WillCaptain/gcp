@@ -1,10 +1,10 @@
 package org.twelve.gcp.node.expression;
 
-import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.statement.MemberNode;
 import org.twelve.gcp.outline.Outline;
 

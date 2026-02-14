@@ -2,13 +2,17 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.AbstractNode;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Expression;
+import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.function.FunctionCallNode;
+import org.twelve.gcp.node.statement.MemberNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.Poly;
+import org.twelve.gcp.outline.decorators.Lazy;
 import org.twelve.gcp.outline.projectable.*;
 
 import java.util.List;
@@ -21,6 +25,9 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
     @Override
     public Outline infer(FunctionCallNode node, Inferences inferences) {
         AST ast = node.ast();
+        if(inferences.isLazy() && isInFunction(node) && isInMember(node)) {
+            return new Lazy(node,ast.inferences());
+        }
         Outline func = node.function().invalidate().infer(inferences);
 //        func.toString();
         if (func == null) {
@@ -60,6 +67,21 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             }
         }
         return result.eventual();
+    }
+
+    private boolean isInFunction(FunctionCallNode node) {
+        Node parent = node.parent();
+        while(parent!=null){
+            if(parent instanceof FunctionBody){
+                return true;
+            }
+            parent = parent.parent();
+        }
+        return false;
+    }
+
+    private boolean isInMember(FunctionCallNode node){
+        return node.parent().parent() instanceof MemberNode;
     }
 
     private Outline targetOverride(Poly overwrite, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {

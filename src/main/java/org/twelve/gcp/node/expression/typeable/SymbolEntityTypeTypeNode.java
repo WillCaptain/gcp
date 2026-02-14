@@ -1,8 +1,9 @@
-package org.twelve.gcp.node.expression;
+package org.twelve.gcp.node.expression.typeable;
 
 
 import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.node.expression.typeable.EntityTypeNode;
+import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
+import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.List;

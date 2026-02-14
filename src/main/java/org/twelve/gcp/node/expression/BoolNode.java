@@ -4,6 +4,7 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.primitive.BOOL;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;

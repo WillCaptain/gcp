@@ -44,7 +44,8 @@ public class FunctionCallNode extends Expression {
 
     @Override
     public String lexeme() {
-        String args = this.arguments.stream().map(AbstractNode::lexeme).collect(Collectors.joining(","));
+        String args = this.arguments.stream().map(AbstractNode::lexeme)
+                .collect(Collectors.joining(","));
         return function.lexeme() + "(" + args + ")" + ((this.outline  instanceof UNKNOWN) ? "" : (" : " + this.outline.toString()));
     }
     @Override

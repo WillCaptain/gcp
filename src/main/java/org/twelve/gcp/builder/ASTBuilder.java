@@ -8,12 +8,14 @@ import org.twelve.gcp.inference.operator.BinaryOperator;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.referable.ReferenceCallNode;
 import org.twelve.gcp.node.expression.typeable.*;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.node.statement.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class ASTBuilder {
@@ -113,7 +115,7 @@ public class ASTBuilder {
     }
 
     public TypeNode buildTupleType(TypeNode... types) {
-        return new TupleTypeNode(Arrays.stream(types).toList());
+        return new TupleTypeNode(new ArrayList<>(),Arrays.stream(types).toList());
 
     }
 

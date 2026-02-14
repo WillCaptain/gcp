@@ -3,12 +3,11 @@ package org.twelve.gcp.outlineenv;
 import lombok.Setter;
 import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.common.SCOPE_TYPE;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.ADT;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Poly;
-import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.projectable.Generic;
 
 import java.util.HashMap;

@@ -1,6 +1,6 @@
 package org.twelve.gcp.outlineenv;
 
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.builtin.UNKNOWN;

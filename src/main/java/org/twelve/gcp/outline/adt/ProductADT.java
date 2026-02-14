@@ -5,7 +5,7 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.outline.builtin.BuildInOutline;

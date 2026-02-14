@@ -1,6 +1,6 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.node.expression.SymbolIdentifier;
+import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.primitive.SYMBOL;
 import org.twelve.gcp.outlineenv.EnvSymbol;

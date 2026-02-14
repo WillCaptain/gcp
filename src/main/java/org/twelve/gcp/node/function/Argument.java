@@ -7,7 +7,7 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.Genericable;

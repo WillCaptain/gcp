@@ -151,4 +151,9 @@ public interface Outline extends Serializable {
     default String type(){
         return this.getClass().getSimpleName();
     }
+
+    default boolean containsReference(){return false;};
+
+    default Outline melt(Outline outline){return outline;};
+
 }

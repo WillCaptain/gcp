@@ -2,7 +2,7 @@ package org.twelve.gcp.builder;
 
 import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.statement.VariableDeclarator;
 

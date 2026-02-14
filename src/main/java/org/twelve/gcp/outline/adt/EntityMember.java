@@ -2,12 +2,8 @@ package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.common.Mutable;
-import org.twelve.gcp.node.expression.Identifier;
-import org.twelve.gcp.node.expression.Variable;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
-import org.twelve.gcp.outline.projectable.Function;
-
-import static org.twelve.gcp.common.Tool.cast;
 
 public class EntityMember {
 

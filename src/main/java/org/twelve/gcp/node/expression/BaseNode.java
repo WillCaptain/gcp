@@ -5,10 +5,11 @@ import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
-public class BaseNode extends Identifier{
+public class BaseNode extends Identifier {
     public BaseNode(AST ast, Token token) {
         super(ast, token);
     }

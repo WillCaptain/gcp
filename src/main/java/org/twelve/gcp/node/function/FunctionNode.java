@@ -3,7 +3,7 @@ package org.twelve.gcp.node.function;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.referable.ReferAbleNode;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.node.expression.body.FunctionBody;

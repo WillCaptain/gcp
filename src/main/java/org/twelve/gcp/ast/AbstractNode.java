@@ -74,8 +74,8 @@ public abstract class AbstractNode implements Node {
             return null;
         }
         if (this.ast != node.ast()) {
-            System.out.println(node.ast());
-            System.out.println(this.ast);
+//            System.out.println(node.ast());
+//            System.out.println(this.ast);
             GCPErrorReporter.report(GCPErrCode.NODE_AST_MISMATCH);
         }
         this.nodes.add(index, cast(node));

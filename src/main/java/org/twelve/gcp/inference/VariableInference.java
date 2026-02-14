@@ -3,7 +3,7 @@ package org.twelve.gcp.inference;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
-import org.twelve.gcp.node.expression.Identifier;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.unpack.UnpackNode;
@@ -27,6 +27,9 @@ public class VariableInference implements Inference<Variable> {
 //                return node.identifier().outline();//new Unpack(cast(node.identifier()));
             }else {
                 Outline outline = inferDeclared(node.declared(), inferences, node.ast());
+                if(outline.containsReference()){
+                    GCPErrorReporter.report(node,GCPErrCode.DECLARED_CAN_NOT_BE_GENERIC);
+                }
                 oEnv.defineSymbol(node.name(), outline, node.mutable(), node);
                 return outline;
             }
