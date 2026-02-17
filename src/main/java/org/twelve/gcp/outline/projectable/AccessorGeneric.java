@@ -43,7 +43,7 @@ public class AccessorGeneric extends Genericable<AccessorGeneric, Accessor> {
                 return new AccessorGeneric(this.node, projection);
 
             } else {
-                Entity entity = cast(projection);
+                Entity entity = cast(projection.eventual());
                 Optional<EntityMember> member = entity.members().stream().filter(m -> m.name().equals(this.memberName())).findFirst();
                 if (member.isPresent()) {
                     session.addProjection(this, member.get().outline());

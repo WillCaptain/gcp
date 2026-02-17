@@ -7,12 +7,15 @@ import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Variable;
+import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.node.expression.typeable.WrapperTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.decorators.OutlineWrapper;
+import org.twelve.gcp.outline.decorators.This;
 import org.twelve.gcp.outline.projectable.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -298,5 +301,26 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
             }
         });
         return this;
+    }
+
+    @Override
+    public void updateThis(ProductADT me) {
+        for (EntityMember member : this.members()) {
+//            member.outline().updateThis(this);
+            member.outline().updateThis(me);
+        }
+    }
+
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        if (!this.references.isEmpty()) {
+            sb.append("<");
+            sb.append(this.references.stream().map(r->r.toString().replaceAll("[<>]","")).collect(Collectors.joining(",")));
+            sb.append(">");
+        }
+        sb.append(super.toString());
+        return sb.toString();
     }
 }

@@ -29,19 +29,7 @@ public class EntityInference implements Inference<EntityNode> {
             Outline base = null;
             if (node.base() != null) {
                 base = node.base().infer(inferences);
-                if (base instanceof Generic) {
-                    /*((Generic) base).addDefinedToBe(new ADT(node.ast()) {
-                        @Override
-                        public Node node() {
-                            return node;
-                        }
-
-                        @Override
-                        public boolean tryYouAreMe(Outline another) {
-                            return another instanceof ADT;
-                        }
-                    });*/
-                } else {
+                if (!(base instanceof Generic)) {
                     if (!(base instanceof ADT)) {
                         GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);
                         return node.ast().Error;
@@ -73,14 +61,14 @@ public class EntityInference implements Inference<EntityNode> {
     private void cloneMembers(Entity entity, List<EntityMember> members) {
         List<EntityMember> ms = new ArrayList<>();
         members.forEach(m -> {
-            if (m.outline() instanceof FirstOrderFunction && ((FirstOrderFunction) m.outline()).getThis()!=null) {
+            if (m.outline() instanceof FirstOrderFunction && ((FirstOrderFunction) m.outline()).getThis() != null) {
 
                 FirstOrderFunction func = cast(m.outline().copy());
                 This t = func.getThis();
-                if(t!=null) {
-                    t.setOrigin(entity);
+//                if (t != null) {
+//                    t.setOrigin(entity);
                     ms.add(EntityMember.from(m.name(), func, m.modifier(), m.mutable() == Mutable.True, m.node(), m.isDefault()));
-                }
+//                }
             }
         });
         entity.addMembers(ms);

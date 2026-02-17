@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.twelve.gcp.common.Tool.cast;
+import static org.twelve.gcp.common.Tool.*;
 
 public class FunctionCallInference implements Inference<FunctionCallNode> {
     @Override
@@ -67,21 +67,6 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             }
         }
         return result.eventual();
-    }
-
-    private boolean isInFunction(FunctionCallNode node) {
-        Node parent = node.parent();
-        while(parent!=null){
-            if(parent instanceof FunctionBody){
-                return true;
-            }
-            parent = parent.parent();
-        }
-        return false;
-    }
-
-    private boolean isInMember(FunctionCallNode node){
-        return node.parent().parent() instanceof MemberNode;
     }
 
     private Outline targetOverride(Poly overwrite, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {

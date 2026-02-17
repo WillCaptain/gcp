@@ -2,6 +2,10 @@ package org.twelve.gcp.common;
 
 import com.sun.xml.ws.developer.Serialization;
 import lombok.SneakyThrows;
+import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.node.expression.body.FunctionBody;
+import org.twelve.gcp.node.function.FunctionCallNode;
+import org.twelve.gcp.node.statement.MemberNode;
 import org.twelve.gcp.outline.Outline;
 
 import java.lang.annotation.Annotation;
@@ -225,6 +229,22 @@ public final class Tool {
     public static Outline getExactNumberOutline(Outline left, Outline right) {
         return left.is(right) ? right : right.is(left) ? left : left.ast().Error;
     }
+
+    public static boolean isInFunction(Node node) {
+        Node parent = node.parent();
+        while(parent!=null){
+            if(parent instanceof FunctionBody){
+                return true;
+            }
+            parent = parent.parent();
+        }
+        return false;
+    }
+
+    public static boolean isInMember(Node node){
+        return node.parent().parent() instanceof MemberNode;
+    }
+
 
     // --- Design Considerations ---
     /*

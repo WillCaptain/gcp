@@ -72,7 +72,7 @@ public class AstScope implements Scope {
     }
 
     public EnvSymbol lookupSymbol(String key, boolean isEntity) {
-        EnvSymbol symbol = symbols.get(key);
+        EnvSymbol symbol = this.lookupSymbol(key);//symbols.get(key);
         if (isEntity && this.scopeType == SCOPE_TYPE.IN_PRODUCT_ADT) {
             //find base
             EnvSymbol baseSymbol = this.lookupSymbol("base");

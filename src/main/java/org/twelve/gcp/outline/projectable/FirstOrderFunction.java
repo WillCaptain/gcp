@@ -9,6 +9,7 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Option;
+import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.decorators.This;
 
@@ -169,6 +170,12 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?, ?>
             }
         }
         return null;
+    }
+
+    @Override
+    public void updateThis(ProductADT me) {
+        this.argument().updateThis(me);
+        this.returns().updateThis(me);
     }
 
     @Override

@@ -5,26 +5,26 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.referable.ReferenceCallNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.decorators.Lazy;
 import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.projectable.ReferAble;
 
-import static org.twelve.gcp.common.Tool.cast;
+import static org.twelve.gcp.common.Tool.*;
 
 public class ReferenceCallInference implements Inference<ReferenceCallNode>{
     @Override
     public Outline infer(ReferenceCallNode node, Inferences inferences) {
-        Expression host = node.host();
-        if(host.lexeme().startsWith("__") && host.lexeme().endsWith("__")){
-            return handleExternal(node,inferences);
+        if(inferences.isLazy() && isInFunction(node) && isInMember(node)) {
+            return new Lazy(node,node.ast().inferences());
         }
-        Outline func = cast(node.host().infer(inferences));
-        if(func instanceof ReferAble){
-            ReferAble referAble = cast(((ReferAble)func).copy());
-//            ReferAble referAble = cast(func);
+
+        Outline hostOutline = cast(node.host().infer(inferences));
+        if(hostOutline instanceof ReferAble){
+            ReferAble referAble = cast(((ReferAble)hostOutline).copy());
             return referAble.project(node.types().stream().map(t->new OutlineWrapper(node,t.infer(inferences))).toList());
         }else {
             GCPErrorReporter.report(node, GCPErrCode.NOT_REFER_ABLE);
-            return func;
+            return hostOutline;
         }
     }
 

@@ -1,6 +1,7 @@
 package org.twelve.gcp.outline.projectable;
 
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.primitive.ANY;
 import org.twelve.gcp.outline.primitive.NOTHING;
 
@@ -29,5 +30,13 @@ public interface Generalizable extends Projectable,Constrainable {
     @Override
     default boolean containsGeneric(){
         return true;
+    }
+
+    @Override
+    default void updateThis(ProductADT me) {
+        this.declaredToBe().updateThis(me);
+        this.definedToBe().updateThis(me);
+        this.extendToBe().updateThis(me);
+        this.hasToBe().updateThis(me);
     }
 }

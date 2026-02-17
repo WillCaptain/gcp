@@ -13,7 +13,9 @@ public class ReferenceCallTypeNodeInference implements Inference<ReferenceCallTy
     @Override
     public Outline infer(ReferenceCallTypeNode node, Inferences inferences) {
         Outline host = node.host().infer(inferences);
-        host = host.eventual();
+        if (!inferences.isLazy()) {
+            host = host.eventual();
+        }
         if (host instanceof ReferAble) {
             List<OutlineWrapper> list = node.typeNodes().stream().map(t -> new OutlineWrapper(t, t.infer(inferences))).toList();
             return ((ReferAble) host).project(list);

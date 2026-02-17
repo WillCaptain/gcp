@@ -4,13 +4,28 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.ProductADT;
+import org.twelve.gcp.outline.projectable.ProjectSession;
+import org.twelve.gcp.outline.projectable.Projectable;
+import org.twelve.gcp.outline.projectable.ReferAble;
+import org.twelve.gcp.outline.projectable.Reference;
 import org.twelve.gcp.outlineenv.AstScope;
 
-public class Lazy implements Outline {
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+public class Lazy implements Projectable, ReferAble {
     private final long id;
     private final Node node;
     private final Inferences inferences;
     private final AstScope scope;
+    private List<OutlineWrapper> referencesProjections = new ArrayList<>();
+    private Map<ProjectSession, GenericProjection> genericProjections = new HashMap<>();
+    private ProductADT me;
 
     public Lazy(Node node, Inferences inferences) {
         this.id = node.ast().Counter.getAndIncrement();
@@ -36,19 +51,124 @@ public class Lazy implements Outline {
 
     @Override
     public boolean is(Outline another) {
-        return this.node()==another.node();
+        return this.node() == another.node();
     }
 
     @Override
     public Outline eventual() {
         this.node.ast().symbolEnv().enter(this.scope);
         Outline eventual = this.node.accept(inferences);
+        if (eventual instanceof ReferAble && !this.referencesProjections.isEmpty()) {
+            eventual = ((ReferAble) eventual).project(this.referencesProjections);
+        }
+        if(!genericProjections.isEmpty() && eventual instanceof Projectable){
+            AtomicReference<Outline> outline = new AtomicReference<>(eventual);
+            genericProjections.forEach((s,p)->{
+                p.projections().forEach((k,v)->{
+                    outline.set(((Projectable) outline.get()).project(k,v,s));
+
+                });
+            });
+            eventual = outline.get();
+        }
+        if(this.me!=null){
+            eventual.updateThis(this.me);
+        }
         this.node.ast().symbolEnv().exit();
         return eventual;
     }
 
     @Override
     public String toString() {
-        return "Lazy{" +this.node.getClass().getSimpleName().split(":")[0] +")";
+        String ref = this.referencesProjections.stream().map(OutlineWrapper::toString).collect(Collectors.joining(","));
+        if (!ref.trim().isEmpty()) {
+            ref = "<" + ref + ">";
+        }
+        return "Lazy{" + this.node.getClass().getSimpleName().split(":")[0] + ref + ")";
+    }
+
+    @Override
+    public List<Reference> references() {
+        return List.of();
+    }
+
+    @Override
+    public Outline project(List<OutlineWrapper> projections) {
+        this.referencesProjections = projections;
+        return this;
+    }
+
+    @Override
+    public Outline project(Reference reference, OutlineWrapper projection) {
+        List<OutlineWrapper> refs = this.referencesProjections;
+        this.referencesProjections = new ArrayList<>();
+        for (OutlineWrapper ref : refs) {
+            if(ref.outline().id()==reference.id()) {
+                this.referencesProjections.add(projection);
+            }else{
+                this.referencesProjections.add(ref);
+            }
+        }
+        return this;
+    }
+
+    @Override
+    public Outline copy() {
+        Lazy lazy = new Lazy(this.node,this.inferences);
+        lazy.referencesProjections.addAll(this.referencesProjections);
+        return lazy;
+    }
+
+    @Override
+    public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
+        GenericProjection p = this.genericProjections.get(session);
+        if(p==null) {
+            this.genericProjections.put(session, new GenericProjection(session));
+            p = this.genericProjections.get(session);
+        }
+        p.add(projected,projection);
+        return this;
+    }
+
+    @Override
+    public void updateThis(ProductADT me) {
+        this.me = me;
+    }
+
+    @Override
+    public Outline guess() {
+        return this;
+    }
+
+    @Override
+    public boolean emptyConstraint() {
+        return true;
+    }
+
+    @Override
+    public boolean containsGeneric() {
+        return false;
+    }
+
+}
+
+class GenericProjection {
+    private final ProjectSession session;
+    private Map<Projectable,Outline> projections = new HashMap<>();
+
+    public GenericProjection(ProjectSession session) {
+        this.session = session;
+    }
+
+    public ProjectSession session(){
+        return this.session;
+    }
+
+    public void add(Projectable projected, Outline projection) {
+        this.projections.put(projected,projection);
+    }
+
+    public Map<Projectable,Outline> projections(){
+        return this.projections;
     }
 }

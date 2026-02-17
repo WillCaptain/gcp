@@ -11,6 +11,7 @@ import org.twelve.gcp.interpreter.Result;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.ERROR;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
+import org.twelve.gcp.outline.decorators.Lazy;
 
 import java.util.ArrayList;
 import java.util.List;

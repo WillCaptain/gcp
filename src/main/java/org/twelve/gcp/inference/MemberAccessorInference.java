@@ -57,6 +57,9 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
             return node.ast().Error;
         }
         ProductADT host = cast(outline);
+        if(host instanceof Entity){
+            host.updateThis(host);
+        }
         host.loadBuiltInMethods();//load methods when access member to avoid recursive call
         host = cast(host.eventual());
 //        if(host instanceof This){

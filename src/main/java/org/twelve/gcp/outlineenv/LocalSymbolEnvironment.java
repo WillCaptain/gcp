@@ -96,7 +96,7 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         boolean reachedThisScope = false;//only possible to try to find base in the first product adt scope
         while(scope!=null){
             EnvSymbol symbol = scope.lookupSymbol(key, !reachedThisScope);
-            if (symbol != null) symbols.add(symbol);
+            if (symbol != null && !symbols.contains(symbol)) symbols.add(symbol);
             if(!reachedThisScope && scope.scopeType()== SCOPE_TYPE.IN_PRODUCT_ADT){
                 reachedThisScope = true;
             }
@@ -105,7 +105,7 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
 
         if (symbols.isEmpty()) return null;
         if(symbols.size()==1) return symbols.getFirst();
-        Outline outline = Poly.from(null,symbols.stream().map(EnvSymbol::outline).toArray(Outline[]::new));
+        Outline outline = Poly.from(symbols.stream().map(EnvSymbol::outline).toArray(Outline[]::new));
         return new EnvSymbol(key, false, outline, this.current.id(), null);//null origin node, means it is merged
     }
 

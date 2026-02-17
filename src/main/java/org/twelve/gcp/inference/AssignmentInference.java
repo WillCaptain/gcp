@@ -8,6 +8,7 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.SumADT;
 import org.twelve.gcp.outline.builtin.IGNORE;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
+import org.twelve.gcp.outline.decorators.Lazy;
 
 /**
  * calculate outline of value if there is
@@ -18,13 +19,13 @@ public class AssignmentInference implements Inference<Assignment> {
     @Override
     public Outline infer(Assignment node, Inferences inferences) {
         AST ast = node.ast();
-        Outline valueOutline = node.rhs() == null?ast.unknown(node):node.rhs().infer(inferences);
+        Outline valueOutline = node.rhs() == null ? ast.unknown(node) : node.rhs().infer(inferences);
         Outline varOutline = node.lhs().infer(inferences);
         if (node.rhs() == null) {
             GCPErrorReporter.report(node.lhs(), GCPErrCode.NOT_INITIALIZED);
             return varOutline;
         }
-        if(valueOutline.containsUnknown()){
+        if (valueOutline.containsUnknown()) {
             valueOutline = node.rhs().infer(inferences);
         }
 
@@ -40,9 +41,9 @@ public class AssignmentInference implements Inference<Assignment> {
             GCPErrorReporter.report(node.lhs(), GCPErrCode.VARIABLE_NOT_DEFINED);
             return ast.Ignore;
         }
-        if(valueOutline.containsIgnore()){//option with ignore
+        if (valueOutline.containsIgnore()) {//option with ignore
             ((SumADT) valueOutline).options().removeIf(o -> o instanceof IGNORE);
-            if(((SumADT) valueOutline).options().size()==1){
+            if (((SumADT) valueOutline).options().size() == 1) {
                 valueOutline = ((SumADT) valueOutline).options().getFirst();
             }
             GCPErrorReporter.report(node, GCPErrCode.AMBIGUOUS_RETURN, "return type is expected");

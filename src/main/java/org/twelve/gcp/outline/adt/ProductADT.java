@@ -9,6 +9,7 @@ import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
+import org.twelve.gcp.outline.projectable.FirstOrderFunction;
 
 import java.util.*;
 
@@ -132,6 +133,10 @@ public abstract class ProductADT extends ADT {
     private boolean addMember(EntityMember member) {
 //        member.outline().updateHost(this);
         //查询是否有同名成员
+        member.outline().updateThis(this);
+//        if (member.outline() instanceof FirstOrderFunction && ((FirstOrderFunction) member.outline()).getThis() != null) {
+//            ((FirstOrderFunction) member.outline()).getThis().setOrigin(this);
+//        }
         EntityMember m = this.members.get(member.name());
         if (m == null || !m.outline().inferred()) {//没有重载,或者第n次infer，覆盖前一次infer结果
             this.members.put(member.name(), member);

@@ -29,6 +29,8 @@ public abstract class ImportExportSpecifier extends AbstractNode {
 
     @Override
     public boolean inferred() {
-        return !(this.outline() instanceof UNKNOWN);
+        boolean result =  !(this.outline() instanceof UNKNOWN);
+        if(!result) ast().missInferred().add(this);
+        return result;
     }
 }

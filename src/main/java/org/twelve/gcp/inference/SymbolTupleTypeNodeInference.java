@@ -17,7 +17,8 @@ public class SymbolTupleTypeNodeInference implements Inference<SymbolTupleTypeTy
         if (node.members().isEmpty()) {
             if (inferences.isLazy()) {
                 LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
-                EnvSymbol supposed = oEnv.lookupSymbol(node.symbol().name());
+//                EnvSymbol supposed = oEnv.lookupSymbol(node.symbol().name());
+                EnvSymbol supposed = oEnv.lookupOutline(node.symbol().name());
                 if (supposed == null) {//only when type is not there, lazy it
                     return new Lazy(node.symbol(), inferences);
                 } else {

@@ -80,7 +80,9 @@ public class Argument extends Identifier {
 
     @Override
     public boolean inferred() {
-        return this.outline.inferred();
+        boolean result = this.outline.inferred();
+        if(!result) ast().missInferred().add(this);
+        return result;
     }
 
     @Override

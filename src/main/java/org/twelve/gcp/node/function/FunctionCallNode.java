@@ -39,7 +39,9 @@ public class FunctionCallNode extends Expression {
 
     @Override
     public boolean inferred() {
-        return this.outline.inferred();
+        boolean result =  this.outline.inferred();
+        if(!result) this.ast().missInferred().add(this);
+        return result;
     }
 
     @Override

@@ -10,15 +10,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class EntityTypeNode  extends TypeNode {
+public class EntityTypeNode extends TypeNode {
     protected final List<Variable> members = new ArrayList<>();
     private final List<ReferenceNode> refs = new ArrayList<>();
     private final long scope;
 
-    public EntityTypeNode(List<Variable> members){
-        this(new ArrayList<>(),members);
+    public EntityTypeNode(List<Variable> members) {
+        this(new ArrayList<>(), members);
     }
-    public EntityTypeNode(AST ast){
+
+    public EntityTypeNode(AST ast) {
         super(ast);
         this.scope = ast.scopeIndexer().incrementAndGet();
     }
@@ -33,24 +34,25 @@ public class EntityTypeNode  extends TypeNode {
         }
     }
 
-    public List<Variable> members(){
+    public List<Variable> members() {
         return this.members;
     }
-    public List<ReferenceNode> refs(){
+
+    public List<ReferenceNode> refs() {
         return this.refs;
     }
 
     @Override
     public String lexeme() {
         StringBuilder sb = new StringBuilder();
-       if(members.isEmpty()) return sb.append("{}").toString();
-       if(!this.refs.isEmpty()){
-           sb.append("<");
-           sb.append(this.refs.stream().map(ReferenceNode::lexeme).collect(Collectors.joining(",")));
-           sb.append(">");
-       }
+        if (members.isEmpty()) return sb.append("{}").toString();
+        if (!this.refs.isEmpty()) {
+            sb.append("<");
+            sb.append(this.refs.stream().map(ReferenceNode::lexeme).collect(Collectors.joining(",")));
+            sb.append(">");
+        }
         sb.append("{");
-        sb.append(members.stream().map(m->(m.mutable()?"var ":"")+m.lexeme()).collect(Collectors.joining(",")));
+        sb.append(members.stream().map(m -> (m.mutable() ? "var " : "") + m.lexeme()).collect(Collectors.joining(",")));
         sb.append("}");
         return sb.toString();
     }

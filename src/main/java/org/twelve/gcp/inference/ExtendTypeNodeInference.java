@@ -29,16 +29,16 @@ public class ExtendTypeNodeInference implements Inference<ExtendTypeNode>{
     private void cloneMembers(Entity entity, List<EntityMember> members) {
         List<EntityMember> ms = new ArrayList<>();
         members.forEach(m -> {
-            Outline o = m.outline();
-            if (m.outline() instanceof FirstOrderFunction && ((FirstOrderFunction) m.outline()).getThis()!=null) {
-
-                FirstOrderFunction func = cast(m.outline().copy());
-                o = func;
-                This t = func.getThis();
-                if(t!=null) {
-                    t.setOrigin(entity);
-                }
-            }
+            Outline o = m.outline().copy();
+//            if (m.outline() instanceof FirstOrderFunction && ((FirstOrderFunction) m.outline()).getThis()!=null) {
+//
+//                FirstOrderFunction func = cast(m.outline().copy());
+//                o = func;
+//                This t = func.getThis();
+//                if(t!=null) {
+//                    t.setOrigin(entity);
+//                }
+//            }
             ms.add(EntityMember.from(m.name(), o, m.modifier(), m.mutable() == Mutable.True, m.node(), m.isDefault()));
         });
         entity.addMembers(ms);

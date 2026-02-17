@@ -2,6 +2,7 @@ package org.twelve.gcp.outline;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.projectable.Projectable;
@@ -155,5 +156,9 @@ public interface Outline extends Serializable {
     default boolean containsReference(){return false;};
 
     default Outline melt(Outline outline){return outline;};
+
+    default void updateThis(ProductADT me){
+
+    }
 
 }

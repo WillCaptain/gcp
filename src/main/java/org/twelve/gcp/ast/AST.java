@@ -12,6 +12,7 @@ import org.twelve.gcp.node.statement.Statement;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.builtin.Module;
+import org.twelve.gcp.outline.decorators.Lazy;
 import org.twelve.gcp.outline.primitive.*;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 

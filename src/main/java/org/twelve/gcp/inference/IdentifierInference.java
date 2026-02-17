@@ -9,6 +9,7 @@ import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.accessor.Accessor;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.builtin.SYSTEM;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
@@ -20,6 +21,9 @@ public class IdentifierInference implements Inference<Identifier> {
     @Override
     public Outline infer(Identifier node, Inferences inferences) {
 //        if (!(node.outline() instanceof UNKNOWN)) return node.outline();
+        if(node.lexeme().startsWith("__") && node.lexeme().endsWith("__")){
+            return new SYSTEM(node);
+        }
         LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
         EnvSymbol supposed;
         if(node.parent() instanceof FunctionCallNode || node.parent() instanceof Accessor) {

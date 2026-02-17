@@ -53,6 +53,15 @@ public class Poly extends SumADT {
         return new Poly(node, node.ast(),outlines);
     }
 
+    public static Outline from(Outline... outlines) {
+        Poly poly =  new Poly(null, outlines[0].ast(),outlines);
+        if(poly.options.size()==1){
+            return poly.options().getFirst();
+        }else{
+            return poly;
+        }
+    }
+
 
     /**
      * 动态poly
