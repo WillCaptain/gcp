@@ -71,7 +71,12 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
             GCPErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
             return node.ast().Error;
         } else {
-            return found.getFirst().outline().eventual();
+            Outline result =  found.getFirst().outline().eventual();
+            if(result instanceof Genericable<?,?>){
+                return ((Genericable<?, ?>) result).guess();//todo:i'm guessing...
+            }else{
+                return result;
+            }
         }
     }
 

@@ -100,11 +100,15 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
     @Override
     public Outline project(List<OutlineWrapper> types) {
         Entity e = this;
-        if (this.references.size() < types.size()) {
+        List<Reference> refs = new ArrayList<>(this.references);
+        if(this.base instanceof ReferAble){
+            refs.addAll(((ReferAble) this.base).references());
+        }
+        if (refs.size() < types.size()) {
             GCPErrorReporter.report(this.node, GCPErrCode.REFERENCE_MIS_MATCH);
         }
         for (int i = 0; i < types.size(); i++) {
-            Reference me = this.references.get(i);
+            Reference me = refs.get(i);
             OutlineWrapper you = types.get(i);
             if (you == null) break;
             if (you.outline().is(me)) {

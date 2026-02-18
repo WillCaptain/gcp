@@ -81,7 +81,8 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?, ?>
         Outline argProjection = this.argument.project(projected, projection, session);
         Genericable<?, ?> argument = argProjection instanceof Genericable<?, ?> ? cast(argProjection) : Generic.from(this.ast(), argProjection);
         Outline r = this.returns.project(projected, projection, session);
-        Returnable returns = (r instanceof Returnable) ? cast(r) : Return.from(this.node, this.ast(), this.returns.declaredToBe());
+//        Returnable returns = (r instanceof Returnable) ? cast(r) : Return.from(this.node, this.ast(), this.returns.declaredToBe());
+        Returnable returns = (r instanceof Returnable) ? cast(r) : Return.from(this.node, this.ast(), r);
         return new FirstOrderFunction(this.node, this.ast(), argument, returns, new ArrayList<>());
     }
 

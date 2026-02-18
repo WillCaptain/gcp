@@ -51,7 +51,11 @@ public class Lazy implements Projectable, ReferAble {
 
     @Override
     public boolean is(Outline another) {
-        return this.node() == another.node();
+        if(another instanceof Lazy) {
+            return this.node() == another.node();
+        }else{
+            return Projectable.super.is(another);
+        }
     }
 
     @Override

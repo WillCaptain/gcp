@@ -116,7 +116,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 //                return target;
 //            }
 //            return new Option(this.node,this.node.ast(),constraint,target);
-            return Option.from(this.node,constraint,target);
+            return Option.from(this.node,this.ast(),constraint,target);
 //            GCPErrorReporter.report(this.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, constraint.toString() + " doesn't match constraints");
         }
         return target;
@@ -837,4 +837,5 @@ class Constraints implements Projectable, Constrainable {
     public String toString() {
         return "?" + this.constraints.stream().map(Object::toString).collect(Collectors.joining(",")) + "?";
     }
+
 }
