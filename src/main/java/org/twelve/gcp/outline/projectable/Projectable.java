@@ -21,7 +21,7 @@ public interface Projectable extends Outline {
         //check if i have done the projection
         Outline cachedProjected = session.getProjection(this);
         if (cachedProjected == null) {//project if i'm not done
-            Outline result = this.doProject(projected, cachedProjection, session);
+            Outline result = this.doProject(projected, cachedProjection.eventual(), session);
             if (this.id() == projected.id()) {
                 session.addProjection(this, result);
             }
@@ -40,6 +40,9 @@ public interface Projectable extends Outline {
 //        return this.tryIamYou(another) || another.tryYouAreMe(this);
 //    }
 
+    /**
+     * when project fail, guess the result
+     */
     Outline guess();
 
     boolean emptyConstraint();

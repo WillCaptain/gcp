@@ -8,19 +8,11 @@ import org.twelve.gcp.outline.Outline;
 import static org.twelve.gcp.common.Tool.cast;
 
 public class FixFunction  extends Function<Node,Outline> {
-//    private final AST ast;
     protected long id;
-//    protected final Node node;
-//    private final Outline argument;
     private final Outline returns;
 
     public FixFunction(Node node, AST ast, Outline arg, Outline returns) {
         super(node,ast,arg,Return.from(ast,returns));
-//        this.node = node;
-//        this.ast = ast;
-//        this.id = ast.Counter.getAndIncrement();
-//
-//        this.argument = arg;
         this.returns = returns;
     }
 
@@ -38,16 +30,6 @@ public class FixFunction  extends Function<Node,Outline> {
         }
         return arg + "->" + guess.returns.toString();
     }
-
-//    @Override
-//    public AST ast() {
-//        return this.ast;
-//    }
-
-//    @Override
-//    public Node node() {
-//        return this.node;
-//    }
 
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
@@ -83,15 +65,7 @@ public class FixFunction  extends Function<Node,Outline> {
             you = cast(((Genericable<?,?>)another).min());
         }
         if(you==null) return false;
-//        if(!(another instanceof Function)) return false;
-//        Function you = cast(another);
         //参数逆变，返回值协变
-//        return (you.argument instanceof ANY || you.argument.is(this.argument)) && this.returns.is(you.returns);
         return (you.argument.toString().equals(CONSTANTS.ANY_STR)||you.argument.canBe(this.argument)) && this.returns.is(you.returns);
     }
-
-//    @Override
-//    public FixFunction copy() {
-//        return new FixFunction(node,argument,returns);
-//    }
 }

@@ -56,8 +56,18 @@ public class Reference extends Genericable<Reference, ReferenceNode> implements 
 
     @Override
     public Outline guess() {
-//        return this.eventual();//todo
         return this;
+    }
+
+    @Override
+    public Outline instantiate() {
+        if(this.ast().symbolEnv().lookupOutline(this.node.name())!=null) return this;
+//        return this;
+        if (this.max() instanceof NOTHING) {
+            return this.min();
+        }else {
+            return this.max();
+        }
     }
 
     @Override
@@ -82,13 +92,13 @@ public class Reference extends Genericable<Reference, ReferenceNode> implements 
         }
     }
 
-    @Override
-    public Outline eventual() {
-        if (this.extendToBe() instanceof NOTHING) {
-            GCPErrorReporter.report(this.node, GCPErrCode.NOT_INITIALIZED);
-        }
-        return this.extendToBe().eventual();
-    }
+//    @Override
+//    public Outline eventual() {
+//        if (this.extendToBe() instanceof NOTHING) {
+//            GCPErrorReporter.report(this.node, GCPErrCode.NOT_INITIALIZED);
+//        }
+//        return this.extendToBe().eventual();
+//    }
 
     @Override
     public Reference copy() {

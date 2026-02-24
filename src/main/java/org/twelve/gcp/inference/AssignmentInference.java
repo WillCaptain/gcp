@@ -5,6 +5,7 @@ import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Assignment;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.adt.SumADT;
 import org.twelve.gcp.outline.builtin.IGNORE;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
@@ -20,6 +21,9 @@ public class AssignmentInference implements Inference<Assignment> {
     public Outline infer(Assignment node, Inferences inferences) {
         AST ast = node.ast();
         Outline valueOutline = node.rhs() == null ? ast.unknown(node) : node.rhs().infer(inferences);
+//        if(valueOutline instanceof ProductADT){
+//            valueOutline.updateThis((ProductADT) valueOutline);
+//        }
         Outline varOutline = node.lhs().infer(inferences);
         if (node.rhs() == null) {
             GCPErrorReporter.report(node.lhs(), GCPErrCode.NOT_INITIALIZED);

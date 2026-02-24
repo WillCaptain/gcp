@@ -25,7 +25,7 @@ public class Lazy implements Projectable, ReferAble {
     private final AstScope scope;
     private List<OutlineWrapper> referencesProjections = new ArrayList<>();
     private Map<ProjectSession, GenericProjection> genericProjections = new HashMap<>();
-    private ProductADT me;
+//    private ProductADT me;
 
     public Lazy(Node node, Inferences inferences) {
         this.id = node.ast().Counter.getAndIncrement();
@@ -75,11 +75,19 @@ public class Lazy implements Projectable, ReferAble {
             });
             eventual = outline.get();
         }
-        if(this.me!=null){
-            eventual.updateThis(this.me);
+        if(eventual instanceof ProductADT) {
+            eventual.updateThis((ProductADT) eventual);
         }
+//        if(this.me!=null){
+//            eventual.updateThis(this.me);
+//        }
         this.node.ast().symbolEnv().exit();
         return eventual;
+    }
+
+    @Override
+    public boolean containsLazyAble() {
+        return true;
     }
 
     @Override
@@ -88,7 +96,7 @@ public class Lazy implements Projectable, ReferAble {
         if (!ref.trim().isEmpty()) {
             ref = "<" + ref + ">";
         }
-        return "Lazy{" + this.node.getClass().getSimpleName().split(":")[0] + ref + ")";
+        return "Lazy{" + this.node.getClass().getSimpleName() + ref + ")";
     }
 
     @Override
@@ -134,10 +142,10 @@ public class Lazy implements Projectable, ReferAble {
         return this;
     }
 
-    @Override
-    public void updateThis(ProductADT me) {
-        this.me = me;
-    }
+//    @Override
+//    public void updateThis(ProductADT me) {
+//        this.me = me;
+//    }
 
     @Override
     public Outline guess() {

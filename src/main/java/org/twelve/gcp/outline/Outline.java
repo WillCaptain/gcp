@@ -129,7 +129,17 @@ public interface Outline extends Serializable {
         return this;
     }
 
+    /**
+     * for lazy able outline
+     */
     default Outline eventual() {
+        return this;
+    }
+
+    /**
+     * for reference possible projection
+     */
+    default Outline instantiate() {
         return this;
     }
 
@@ -154,6 +164,7 @@ public interface Outline extends Serializable {
     }
 
     default boolean containsReference(){return false;};
+    default boolean containsLazyAble(){return false;};
 
     default Outline melt(Outline outline){return outline;};
 

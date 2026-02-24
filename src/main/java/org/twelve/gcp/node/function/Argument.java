@@ -54,7 +54,7 @@ public class Argument extends Identifier {
 
     @Override
     public String lexeme() {
-        if(this.outline instanceof UNKNOWN) {
+        //if(this.outline instanceof UNKNOWN) {
             String ext = "";
             if (this.declared != null) {
                 ext = ": " + this.declared.lexeme();
@@ -63,9 +63,9 @@ public class Argument extends Identifier {
             } else {
                 return this.name();
             }
-        }else{
-            return "(" + this.name() + ":"+this.outline + ")";
-        }
+//        }else{
+//            return "(" + this.name() + ":"+this.outline + ")";
+//        }
     }
 
     @Override

@@ -94,7 +94,11 @@ public class Return extends Genericable<Return, Node> implements Returnable {
     @Override
     protected Outline projectMySelf(Outline projection, ProjectSession session) {
         //todo
-        return super.projectMySelf(projection, session);
+        Outline result = super.projectMySelf(projection, session);
+        if(result instanceof Genericable<?,?> && !(this.supposed instanceof UNKNOWN)){
+            ((Genericable<?, ?>) result).addHasToBe(this.supposed);
+        }
+        return result;
     }
 
     @Override
@@ -206,6 +210,22 @@ public class Return extends Genericable<Return, Node> implements Returnable {
         Return projected = cast(super.project(reference, projection));
         projected.supposed = this.supposed.project(reference, projection);
         return projected;
+    }
+
+    @Override
+    public Outline eventual() {
+        if(this.containsLazyAble()) {
+            Return ret = cast(super.eventual());
+            ret.supposed = this.supposed.eventual();
+            return ret;
+        }else{
+            return super.eventual();
+        }
+    }
+
+    @Override
+    public boolean containsLazyAble() {
+        return super.containsLazyAble() || super.containsLazyAble();
     }
 
     @Override

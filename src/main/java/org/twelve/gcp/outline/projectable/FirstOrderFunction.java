@@ -155,7 +155,7 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?, ?>
             }
         }
 
-        return f.eventual();
+        return f;//.eventual();
     }
 
     public This getThis(){
@@ -182,5 +182,19 @@ public class FirstOrderFunction extends Function<FunctionNode, Genericable<?, ?>
     @Override
     public boolean containsReference() {
         return !this.references().isEmpty();
+    }
+
+    @Override
+    public Outline eventual() {
+        if(this.containsLazyAble()) {
+            return new FirstOrderFunction(node, ast(), cast(argument.eventual()), cast(returns.eventual()), references);
+        }else{
+            return super.eventual();
+        }
+    }
+
+    @Override
+    public boolean containsLazyAble() {
+        return argument.containsLazyAble() || returns().containsLazyAble();
     }
 }

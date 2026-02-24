@@ -12,6 +12,7 @@ import org.twelve.gcp.node.expression.typeable.WrapperTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.decorators.This;
+import org.twelve.gcp.outline.primitive.ANY;
 import org.twelve.gcp.outline.projectable.*;
 
 import java.util.*;
@@ -119,7 +120,7 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
             }
         }
 
-        return e.eventual();
+        return e;//.eventual();
     }
 
     @Override
@@ -182,6 +183,11 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
                 if (myMember.isPresent()) {//project a
                     if (myMember.get().outline() instanceof Projectable) {//project member if me is projectable
                         Projectable me = cast(myMember.get().outline());
+                        // Propagate formal member type to AccessorGeneric so FCI can validate arguments
+                        if (me instanceof Genericable && ((Genericable<?,?>) me).hasToBe() instanceof ANY
+                                && !(yourMember.outline() instanceof Genericable)) {
+                            ((Genericable<?,?>) me).addHasToBe(yourMember.outline());
+                        }
                         outline.addMember(yourMember.name(), me.project(me, yourMember.outline(), session),
                                 yourMember.modifier(), yourMember.mutable() == Mutable.True, yourMember.node());
                         continue;

@@ -109,15 +109,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (target instanceof Constraints) {
             ((Constraints) target).merge(constraint);
         } else {
-//            if (constraint.is(target)) {
-//                return constraint;
-//            }
-//            if (target.is(constraint)) {
-//                return target;
-//            }
-//            return new Option(this.node,this.node.ast(),constraint,target);
             return Option.from(this.node,this.ast(),constraint,target);
-//            GCPErrorReporter.report(this.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, constraint.toString() + " doesn't match constraints");
         }
         return target;
     }
@@ -208,10 +200,10 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         upConstraint = upConstraint == ast().Any ? this.extendToBe : upConstraint;
 
         //is chain不满足，退出
-        if (!upConstraint.is(outline)) {
-            GCPErrorReporter.report(outline.ast(), outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + upConstraint);
-            return false;
-        }
+//        if (!upConstraint.is(outline)) {
+//            GCPErrorReporter.report(outline.ast(), outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + upConstraint);
+//            return false;
+//        }
 
         this.definedToBe = this.addDownConstraint(this.definedToBe, outline);
         return true;
@@ -406,7 +398,15 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
                 return FirstOrderFunction.from(cast(projection.node()), Generic.from(a_.node(), a_.ast(), a_), b_);
             }
         } else {
-            GCPErrorReporter.report(this.ast(), this.node, GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + "between " +
+            // When this.node is null (formal parameter created without AST node),
+            // use the actual lambda's node so the error is not discarded by AST.addError
+            Node errorNode = this.node;
+            GCPErrCode errCode = GCPErrCode.PROJECT_FAIL;
+            if (errorNode == null && projection.node() != null) {
+                errorNode = projection.node();
+                errCode = GCPErrCode.OUTLINE_MISMATCH;
+            }
+            GCPErrorReporter.report(this.ast(), errorNode, errCode, projection.node() + CONSTANTS.MISMATCH_STR + "between " +
                     b.max() + " and " + b.min());
             return this.guess();
         }
@@ -414,25 +414,25 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
     }
 
-    private Outline projectOutline(Outline projection, ProjectSession session) {
-        if (this.definedToBe instanceof Constrainable) {
-            ((Constrainable) this.definedToBe).addExtendToBe(projection);
-        }
-        if (this.hasToBe instanceof Constrainable) {
-            ((Constrainable) this.hasToBe).addExtendToBe(projection);
-        }
-        if (this.declaredToBe instanceof Constrainable) {
-            ((Constrainable) this.declaredToBe).addExtendToBe(projection);
-        }
-        if (this.extendToBe instanceof Constrainable) {
-//            if (this.max() instanceof Option) {
-//                return ((Option) this.max()).project((Projectable) this.max(), projection, session);
-//            } else {
-            ((Constrainable) this.extendToBe).addHasToBe(projection);
-//            }
-        }
-        return projection;
-    }
+//    private Outline projectOutline(Outline projection, ProjectSession session) {
+//        if (this.definedToBe instanceof Constrainable) {
+//            ((Constrainable) this.definedToBe).addExtendToBe(projection);
+//        }
+//        if (this.hasToBe instanceof Constrainable) {
+//            ((Constrainable) this.hasToBe).addExtendToBe(projection);
+//        }
+//        if (this.declaredToBe instanceof Constrainable) {
+//            ((Constrainable) this.declaredToBe).addExtendToBe(projection);
+//        }
+//        if (this.extendToBe instanceof Constrainable) {
+////            if (this.max() instanceof Option) {
+////                return ((Option) this.max()).project((Projectable) this.max(), projection, session);
+////            } else {
+//            ((Constrainable) this.extendToBe).addHasToBe(projection);
+////            }
+//        }
+//        return projection;
+//    }
 
     /**
      * genericable(a) project function(b)
@@ -500,16 +500,16 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
      */
     private Outline projectEntity(Entity projection, ProjectSession session) {
         Outline outline = projection;
-        if (!(this.definedToBe instanceof ANY)) {
+        if (!(this.definedToBe instanceof ANY) && this.definedToBe instanceof Projectable) {
             outline = ((Projectable) this.definedToBe).project(cast(this.definedToBe), projection, session);
         }
-        if (!(this.hasToBe instanceof ANY)) {
+        if (!(this.hasToBe instanceof ANY) && this.hasToBe instanceof Projectable) {
             outline = ((Projectable) this.hasToBe).project(cast(this.hasToBe), projection, session);
         }
-        if (!(this.declaredToBe instanceof ANY)) {
+        if (!(this.declaredToBe instanceof ANY) && this.declaredToBe instanceof Projectable) {
             outline = ((Projectable) this.declaredToBe).project(cast(this.declaredToBe), projection, session);
         }
-        if (!(this.extendToBe instanceof NOTHING)) {
+        if (!(this.extendToBe instanceof NOTHING) && outline instanceof Projectable && this.extendToBe instanceof Projectable) {
 //            this.extendToBe = this.extendToBe.copy();
             ((Projectable) outline).project(cast(outline), cast(this.extendToBe), session);
         }
@@ -599,6 +599,29 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         this.hasToBe = this.hasToBe.melt(other.hasToBe);
         this.definedToBe = this.definedToBe.melt(other.definedToBe);
         return this;
+    }
+
+
+    @Override
+    public Outline eventual() {
+        if(this.containsLazyAble()) {
+            G copied = this.copy();
+            copied.declaredToBe = this.declaredToBe.eventual();
+            copied.definedToBe = this.definedToBe.eventual();
+            copied.hasToBe = this.hasToBe.eventual();
+            copied.extendToBe = this.extendToBe.eventual();
+            return copied;
+        }else{
+            return Generalizable.super.eventual();
+        }
+    }
+
+    @Override
+    public boolean containsLazyAble() {
+        return this.definedToBe.containsLazyAble()
+                || this.declaredToBe.containsLazyAble()
+                || this.hasToBe.containsLazyAble()
+                || this.extendToBe.containsLazyAble();
     }
 
     @Override

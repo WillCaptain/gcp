@@ -6,13 +6,14 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.function.FunctionCallNode;
-import org.twelve.gcp.node.statement.MemberNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.Poly;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.decorators.Lazy;
+import org.twelve.gcp.outline.primitive.ANY;
+import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.projectable.*;
 
 import java.util.List;
@@ -25,8 +26,8 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
     @Override
     public Outline infer(FunctionCallNode node, Inferences inferences) {
         AST ast = node.ast();
-        if(inferences.isLazy() && isInFunction(node) && isInMember(node)) {
-            return new Lazy(node,ast.inferences());
+        if (inferences.isLazy() && isInFunction(node) && isInMember(node)) {
+            return new Lazy(node, ast.inferences());
         }
         Outline func = node.function().invalidate().infer(inferences);
 //        func.toString();
@@ -48,16 +49,13 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
                     || node.ast().asf().isLastInfer()) {
                 result = func;
             }
-
         }
-//        if (result == Outline.Unknown && !node.ast().asf().isLastInfer()) {
         if (result == ast.unknown(node)) {
             GCPErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_FOUND);
             return result;
         }
 
         if (node.arguments().isEmpty()) {
-            //result = ((Function<?, ?>) result).returns().supposedToBe();
             result = project(result);
         } else {
             //按顺序投影参数
@@ -66,7 +64,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
                 result = project(result, argument);
             }
         }
-        return result.eventual();
+        return result.instantiate();
     }
 
     private Outline targetOverride(Poly overwrite, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {
@@ -101,20 +99,22 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         return true;
     }
 
+
     private Outline project(Outline target) {
         if (target instanceof Genericable) {
 //            Returnable returns = Return.from(target.ast());
 //            HigherOrderFunction defined = new HigherOrderFunction(target.ast(), target.ast().Unit, returns);
 //            ((Genericable<?, ?>) target).addDefinedToBe(defined);
 //            return returns;
-            return this.project((Genericable<?, ?>) target,null);
+            return this.project((Genericable<?, ?>) target, null);
         }
-        if(target instanceof Function<?,?>){
+        if (target instanceof Function<?, ?>) {
             return ((Function<?, ?>) target).returns().supposedToBe();
         }
 
         return target.ast().Error;
     }
+
     private Outline project(Outline target, AbstractNode argument) {
 //        ProjectSession session = new ProjectSession();
         //hlf function call
@@ -143,14 +143,33 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         if (generic.definedToBe() instanceof HigherOrderFunction) {
             return ((HigherOrderFunction) generic.definedToBe()).returns();
         }
-        if(generic.definedToBe() instanceof Poly){
+        if (generic.definedToBe() instanceof Poly) {
             Optional<Outline> option = ((Poly) generic.definedToBe()).options().stream().filter(o -> o instanceof HigherOrderFunction).findFirst();
-            if(option.isPresent()){
-                return ((HigherOrderFunction)option.get()).returns();
+            if (option.isPresent()) {
+                return ((HigherOrderFunction) option.get()).returns();
             }
         }
+        // Use formal function type from hasToBe (set during entity projection of outline types)
+        Outline hasToBe = generic.hasToBe();
+        if (!(hasToBe instanceof ANY)
+                && hasToBe instanceof Function
+                && !(hasToBe instanceof FixFunction)) {
+            Function<?, ?> formalFunc = cast(hasToBe);
+            if (argument != null) {
+                Outline argOutline = argument.outline();
+                if (!argOutline.is(formalFunc.argument())) {
+                    GCPErrorReporter.report(argument, GCPErrCode.OUTLINE_MISMATCH,
+                            argument + " mismatch: expected " + formalFunc.argument() + " but got " + argOutline);
+                }
+            }
+            Outline returnType = formalFunc.returns().supposedToBe();
+            if (returnType instanceof UNKNOWN || returnType instanceof NOTHING) {
+                return formalFunc.returns();
+            }
+            return returnType;
+        }
         Returnable returns = Return.from(generic.node());
-        Outline argOutline = argument==null?generic.node().ast().Unit:argument.outline();
+        Outline argOutline = argument == null ? generic.node().ast().Unit : argument.outline();
         HigherOrderFunction defined = new HigherOrderFunction(generic.node(), argOutline, returns);
         generic.addDefinedToBe(defined);
         return returns;
@@ -191,9 +210,9 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             ((FirstOrderFunction) result).setSession(session);
         }
         //if this is the final projected, remove generics
-        if(result instanceof Option){
-            ((Option) result).options().removeIf(o->o instanceof Generic);
-            if(((Option) result).options().size()==1){
+        if (result instanceof Option) {
+            ((Option) result).options().removeIf(o -> o instanceof Generic);
+            if (((Option) result).options().size() == 1) {
                 result = ((Option) result).options().getFirst();
             }
         }

@@ -3,6 +3,8 @@ package org.twelve.gcp.outline.projectable;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.primitive.NOTHING;
+import org.twelve.gcp.outlineenv.AstScope;
 
 import static org.twelve.gcp.common.Tool.cast;
 

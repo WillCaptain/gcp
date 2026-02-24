@@ -62,21 +62,18 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
         }
         host.loadBuiltInMethods();//load methods when access member to avoid recursive call
         host = cast(host.eventual());
-//        if(host instanceof This){
-//            host = ((This) host).real();
-////            host = ((This) host).reflect();
-//        }
+
         List<EntityMember> found = host.members().stream().filter(m -> m.name().equals(node.member().name())).collect(Collectors.toList());
         if (found.isEmpty()) {
             GCPErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
             return node.ast().Error;
         } else {
-            Outline result =  found.getFirst().outline().eventual();
-            if(result instanceof Genericable<?,?>){
-                return ((Genericable<?, ?>) result).guess();//todo:i'm guessing...
-            }else{
-                return result;
-            }
+            return found.getFirst().outline().eventual();
+//            if(result instanceof Genericable<?,?>){
+//                return ((Genericable<?, ?>) result).guess();//todo:i'm guessing...
+//            }else{
+//                return result;
+//            }
         }
     }
 
