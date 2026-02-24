@@ -44,12 +44,130 @@ public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer
         if (!super.loadBuiltInMethods()) return false;
         this.createMapper(this.members);
         this.createReducer(this.members);
+        this.createFlatMapper(this.members);
+        this.createFilter(this.members);
+        this.createForEach(this.members);
+        this.createFind(this.members);
+        this.createAny(this.members);
+        this.createAll(this.members);
+        this.createSort(this.members);
+        members.put("len",     EntityMember.from("len",     FirstOrderFunction.from(this.ast(), this.ast().Integer,                       this.ast().Unit),    Modifier.PUBLIC, false, null, true));
+        members.put("reverse", EntityMember.from("reverse", FirstOrderFunction.from(this.ast(), Array.from(this.ast(), this.itemOutline()),  this.ast().Unit),    Modifier.PUBLIC, false, null, true));
+        members.put("take",    EntityMember.from("take",    FirstOrderFunction.from(this.ast(), Array.from(this.ast(), this.itemOutline()),  this.ast().Integer), Modifier.PUBLIC, false, null, true));
+        members.put("drop",    EntityMember.from("drop",    FirstOrderFunction.from(this.ast(), Array.from(this.ast(), this.itemOutline()),  this.ast().Integer), Modifier.PUBLIC, false, null, true));
+        members.put("min",     EntityMember.from("min",     FirstOrderFunction.from(this.ast(), this.itemOutline(),                         this.ast().Unit),    Modifier.PUBLIC, false, null, true));
+        members.put("max",     EntityMember.from("max",     FirstOrderFunction.from(this.ast(), this.itemOutline(),                         this.ast().Unit),    Modifier.PUBLIC, false, null, true));
         return true;
     }
 
     @Override
     public boolean inferred() {
         return this.itemOutline().inferred();
+    }
+
+    /**
+     * flat_map: (T → [T]) → [T]
+     * Applies a mapper that returns an array and flattens one level.
+     * Argument type is the concrete function T→[T]; no Generic wrapper is used because
+     * both T values are the same known element type, so no new type variable is needed.
+     */
+    private void createFlatMapper(Map<String, EntityMember> members) {
+        AST ast = this.ast();
+        // ret_flat is an unconstrained Reference used as the inner function's return type.
+        // Using a Reference here allows any Array-returning lambda to pass the compatibility check
+        // (Reference.emptyConstraint() == true) while the outer return stays as [T].
+        Identifier mock_u = new Identifier(ast, new Token<>("u"));
+        Reference ret_flat = Reference.from(new ReferenceNode(mock_u, null), null);
+        // flatMapper: T -> ret_flat  (any-array return, accepted by compatibility check)
+        FirstOrderFunction flatMapper = FirstOrderFunction.from(ast, ret_flat, this.itemOutline());
+        Generic arg = cast(Generic.from(ast, flatMapper));
+        // Outer return: Array(T) — concrete, like filter's outer return
+        Returnable ret = Return.from(ast);
+        ret.addReturn(Array.from(ast, this.itemOutline()));
+        members.put("flat_map", EntityMember.from("flat_map", FirstOrderFunction.from(ast, arg, ret, new ArrayList<>()), Modifier.PUBLIC, false, null, true));
+    }
+
+    /**
+     * filter: (T → Bool) → [T]
+     * Retains only elements satisfying the predicate.
+     */
+    private void createFilter(Map<String, EntityMember> members) {
+        AST ast = this.ast();
+        FirstOrderFunction predicate = FirstOrderFunction.from(ast, ast.Boolean, this.itemOutline());
+        Generic arg = cast(Generic.from(ast, predicate));
+        Returnable ret = Return.from(ast);
+        ret.addReturn(Array.from(ast, this.itemOutline()));
+        members.put("filter", EntityMember.from("filter", FirstOrderFunction.from(ast, arg, ret, new ArrayList<>()), Modifier.PUBLIC, false, null, true));
+    }
+
+    /**
+     * forEach: (T → Any) → Unit
+     * Calls the consumer for each element; return value of consumer is ignored.
+     */
+    private void createForEach(Map<String, EntityMember> members) {
+        AST ast = this.ast();
+        Identifier mock_b = new Identifier(ast, new Token<>("b"));
+        Reference consumer_ret = Reference.from(new ReferenceNode(mock_b, null), null);
+        FirstOrderFunction consumer = FirstOrderFunction.from(ast, consumer_ret, this.itemOutline());
+        Generic arg = cast(Generic.from(ast, consumer));
+        List<Reference> refs = new ArrayList<>();
+        refs.add(consumer_ret);
+        Returnable ret = Return.from(ast);
+        ret.addReturn(ast.Unit);
+        members.put("forEach", EntityMember.from("forEach", FirstOrderFunction.from(ast, arg, ret, refs), Modifier.PUBLIC, false, null, true));
+    }
+
+    /**
+     * find: (T → Bool) → T
+     * Returns the first element matching the predicate.
+     */
+    private void createFind(Map<String, EntityMember> members) {
+        AST ast = this.ast();
+        FirstOrderFunction predicate = FirstOrderFunction.from(ast, ast.Boolean, this.itemOutline());
+        Generic arg = cast(Generic.from(ast, predicate));
+        Returnable ret = Return.from(ast);
+        ret.addReturn(this.itemOutline());
+        members.put("find", EntityMember.from("find", FirstOrderFunction.from(ast, arg, ret, new ArrayList<>()), Modifier.PUBLIC, false, null, true));
+    }
+
+    /**
+     * any: (T → Bool) → Bool
+     * Returns true if at least one element satisfies the predicate.
+     */
+    private void createAny(Map<String, EntityMember> members) {
+        AST ast = this.ast();
+        FirstOrderFunction predicate = FirstOrderFunction.from(ast, ast.Boolean, this.itemOutline());
+        Generic arg = cast(Generic.from(ast, predicate));
+        Returnable ret = Return.from(ast);
+        ret.addReturn(ast.Boolean);
+        members.put("any", EntityMember.from("any", FirstOrderFunction.from(ast, arg, ret, new ArrayList<>()), Modifier.PUBLIC, false, null, true));
+    }
+
+    /**
+     * all: (T → Bool) → Bool
+     * Returns true if every element satisfies the predicate.
+     */
+    private void createAll(Map<String, EntityMember> members) {
+        AST ast = this.ast();
+        FirstOrderFunction predicate = FirstOrderFunction.from(ast, ast.Boolean, this.itemOutline());
+        Generic arg = cast(Generic.from(ast, predicate));
+        Returnable ret = Return.from(ast);
+        ret.addReturn(ast.Boolean);
+        members.put("all", EntityMember.from("all", FirstOrderFunction.from(ast, arg, ret, new ArrayList<>()), Modifier.PUBLIC, false, null, true));
+    }
+
+    /**
+     * sort: (T → T → Number) → [T]
+     * Returns a new sorted array using the given comparator (curried: negative/zero/positive).
+     * The comparator returns Number to accept any numeric difference (integer or floating-point).
+     */
+    private void createSort(Map<String, EntityMember> members) {
+        AST ast = this.ast();
+        FirstOrderFunction comparator = FirstOrderFunction.from(ast, ast.Number, this.itemOutline(), this.itemOutline());
+        Generic arg = cast(Generic.from(ast, comparator));
+        Returnable ret = Return.from(ast);
+        ret.addReturn(Array.from(ast, this.itemOutline()));
+        members.put("sort", EntityMember.from("sort", FirstOrderFunction.from(ast, arg, ret, new ArrayList<>()), Modifier.PUBLIC, false, null, true));
     }
 
     private void createReducer(Map<String, EntityMember> members) {

@@ -1,0 +1,185 @@
+@startuml GCP Type System
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam classFontSize 11
+skinparam packageStyle rectangle
+
+title GCP 类型系统层次 与 Genericable 四维约束模型
+
+' ============================================================
+' TYPE HIERARCHY
+' ============================================================
+package "Outline 类型层次" #F5F5F5 {
+
+    interface Outline << root >> {
+        is(Outline): boolean
+        canBe(Outline): boolean
+        project(Reference, OutlineWrapper): Outline
+    }
+
+    package "Primitive 原始类型" #FFF3E0 {
+        class ANY    { «任意类型，Top Type» }
+        class NOTHING { «空类型，Bottom Type» }
+        class NUMBER
+        class STRING
+        class INTEGER
+        class BOOL
+    }
+
+    package "ADT 代数数据类型" #E8F5E9 {
+
+        package "Product ADT（积类型，结构类型）" #C8E6C9 {
+            class Entity {
+                members: Map<name, EntityMember>
+                base: Outline
+                --
+                «结构体/对象类型，支持成员继承»
+                «produce(Entity): 合并成员，冲突→Poly»
+                «doProject: 泛型成员替换的核心»
+            }
+            class Tuple { «位置索引结构» }
+            class Array  { «同质元素集合» }
+            class Dict   { «键值映射» }
+        }
+
+        package "Sum ADT（和类型，联合类型）" #BBDEFB {
+            class Poly {
+                options: List<Outline>
+                --
+                «联合类型，支持方法重载»
+                «sum(Outline): 添加选项»
+            }
+            class Option {
+                «可选类型 (T | null)»
+            }
+        }
+    }
+
+    package "Projectable 可投影类型（泛型系统）" #F3E5F5 {
+
+        abstract class "Genericable<G,N>" as Gen {
+            .. 四维约束 ..
+            extendToBe: Outline   «上界：实际值类型»
+            declaredToBe: Outline «声明类型»
+            hasToBe: Outline      «使用约束»
+            definedToBe: Outline  «结构用途»
+            --
+            .. 约束链方向 ..
+            extendToBe ⊇ declaredToBe ⊇ hasToBe ⊇ definedToBe
+            --
+            min(): 最强下界
+            max(): 最宽上界
+            guess(): 当前最佳猜测
+        }
+
+        class Generic {
+            «普通类型变量»
+        }
+        class Return {
+            «函数返回类型容器»
+            addReturn(Outline)
+            supposedToBe(): Outline
+        }
+        class Reference {
+            «泛型参数引用，如 List<T> 中的 T»
+        }
+        class AccessorGeneric {
+            «成员访问占位符»
+            «MemberAccessorInference 创建»
+            «FunctionCallInference 填充 hasToBe»
+        }
+
+        abstract class "Function<T,A>" as Func {
+            argument(): Outline
+            returns(): Returnable
+        }
+        class FirstOrderFunction {
+            «一阶函数：a -> b»
+            «由 FunctionNode / FunctionTypeNode 创建»
+            session: ProjectSession
+        }
+        class HigherOrderFunction {
+            «高阶函数：未完全确定的函数类型»
+            «FunctionCallInference 动态创建»
+        }
+        class FixFunction {
+            «宽松函数类型：接受任意参数»
+            «内置方法使用，不触发类型错误»
+        }
+
+        Gen <|-- Generic
+        Gen <|-- Return
+        Gen <|-- Reference
+        Gen <|-- AccessorGeneric
+        Func <|-- FirstOrderFunction
+        Func <|-- HigherOrderFunction
+        Func <|-- FixFunction
+    }
+
+    package "内置/装饰类型" #ECEFF1 {
+        class UNKNOWN { «尚未推断，触发重推» }
+        class UNIT    { «无返回值» }
+        class ERROR   { «类型错误标记» }
+        class Lazy    {
+            «延迟求值包装»
+            «non-last pass 时的占位»
+        }
+        class This {
+            «~this 自引用类型»
+            «用于 Aggregator 等自返回方法»
+        }
+    }
+
+    Outline <|.. ANY
+    Outline <|.. NOTHING
+    Outline <|.. NUMBER
+    Outline <|.. STRING
+    Outline <|.. INTEGER
+    Outline <|.. BOOL
+    Outline <|.. Entity
+    Outline <|.. Tuple
+    Outline <|.. Array
+    Outline <|.. Dict
+    Outline <|.. Poly
+    Outline <|.. Option
+    Outline <|.. Gen
+    Outline <|.. Func
+    Outline <|.. UNKNOWN
+    Outline <|.. UNIT
+    Outline <|.. ERROR
+    Outline <|.. Lazy
+    Outline <|.. This
+}
+
+' ============================================================
+' CONSTRAINT CONVERGENCE DIAGRAM
+' ============================================================
+package "Genericable 四维约束收敛示例" #FFFDE7 {
+
+    note as N1
+    <b>示例：var agg 在 agg.avg(e->e.age) 中的约束演进</b>
+
+    初始状态（推断开始）：
+      G1.extendToBe   = NOTHING
+      G1.declaredToBe = ANY
+      G1.hasToBe      = ANY
+      G1.definedToBe  = ANY
+
+    遍 1：MemberAccessorInference 处理 agg.avg
+      G1.definedToBe = Entity{avg: AccessorGeneric}
+
+    遍 2：FunctionCallInference 处理 aggregate(agg->{...})
+      → ArgumentInference 为 agg 添加 extendToBe = Aggregator
+      G1.extendToBe = Aggregator<Employee>
+
+    遍 3：Entity.doProject 传播形式类型
+      G_avg.hasToBe = (Employee->Number)->~this
+
+    最终遍：FunctionCallInference.project(G_avg, e->e.name)
+      e->e.name 返回 String
+      String.is( (Employee->Number) ) == false
+      → 报告 OUTLINE_MISMATCH ✓
+    end note
+}
+
+@enduml

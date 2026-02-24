@@ -4,6 +4,8 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.node.expression.BinaryExpression;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.primitive.NOTHING;
+import org.twelve.gcp.outline.primitive.NUMBER;
 
 import java.util.Map;
 
@@ -69,6 +71,38 @@ public class NumericAble implements Projectable {
     @Override
     public Outline guess() {
         return this.ast().Number;
+    }
+
+    /**
+     * Resolves an operand to its best-known concrete type.
+     * For Genericable operands, prefers the upper bound (extendToBe / max) when available,
+     * falling back to guess(). This allows arithmetic-result types to compare correctly
+     * against concrete numeric types once their operand generics are constrained.
+     */
+    private Outline resolveOperand(Outline operand) {
+        if (operand instanceof Genericable<?, ?>) {
+            Genericable<?, ?> g = cast(operand);
+            Outline max = g.max();
+            if (!(max instanceof NOTHING)) return max;
+        }
+        if (operand instanceof Projectable) {
+            return ((Projectable) operand).guess();
+        }
+        return operand;
+    }
+
+    /**
+     * Resolves both operands and delegates to getExactNumberOutline when both are concrete.
+     * This allows {@code a - b} (where a, b: Integer) to compare as Integer.
+     */
+    @Override
+    public boolean tryIamYou(Outline another) {
+        Outline l = resolveOperand(left);
+        Outline r = resolveOperand(right);
+        if (l instanceof NUMBER && r instanceof NUMBER) {
+            return getExactNumberOutline(l, r).is(another);
+        }
+        return false;
     }
 
     @Override

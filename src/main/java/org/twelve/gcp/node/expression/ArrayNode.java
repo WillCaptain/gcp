@@ -26,6 +26,11 @@ public class ArrayNode extends Expression {
     public ArrayNode(AST ast, Expression[] values) {
         super(ast, null);
         this.values = values;
+        if (values != null) {
+            for (Expression value : values) {
+                if (value != null) this.addNode(value);
+            }
+        }
     }
 
     public ArrayNode(AST ast) {

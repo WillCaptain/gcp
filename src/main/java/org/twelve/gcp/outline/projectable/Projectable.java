@@ -10,7 +10,6 @@ public interface Projectable extends Outline {
 
     default Outline project(Projectable projected, Outline projection, ProjectSession session) {
         //check if want to be projected has done the projection before
-
         Outline cachedProjection = session.getProjection(projected) == null ? projection : session.getProjection(projected);
         while (cachedProjection instanceof Projectable && session.getProjection(cast(cachedProjection)) != null) {
 //            cachedProjection = session.getProjection(cast(projection));

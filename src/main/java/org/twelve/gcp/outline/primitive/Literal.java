@@ -4,6 +4,7 @@ import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.node.ValueNode;
 import org.twelve.gcp.node.expression.LiteralNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.ADT;
 import org.twelve.gcp.outline.builtin.Any_;
 import org.twelve.gcp.outline.builtin.Nothing_;
 
@@ -55,5 +56,22 @@ public class Literal extends Primitive {
 
     public Outline outline() {
         return this.origin;
+    }
+
+    /**
+     * In addition to the built-in methods registered by {@code ADT} (e.g. {@code to_str}),
+     * also mirror all methods from the origin type (e.g. NUMBER methods on integer literals,
+     * STRING methods on string literals) so that {@code 100.abs()} and {@code "hi".length()}
+     * resolve correctly even though the host type is a Literal wrapper rather than the bare
+     * primitive singleton.
+     */
+    @Override
+    public boolean loadBuiltInMethods() {
+        if (!super.loadBuiltInMethods()) return false;
+        if (origin instanceof ADT originAdt) {
+            originAdt.loadBuiltInMethods();
+            originAdt.members().forEach(m -> members.putIfAbsent(m.name(), m));
+        }
+        return true;
     }
 }

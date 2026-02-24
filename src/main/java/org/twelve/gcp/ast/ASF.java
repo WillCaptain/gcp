@@ -1,6 +1,8 @@
 package org.twelve.gcp.ast;
 
 import org.twelve.gcp.common.CONSTANTS;
+import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.exception.GCPRuntimeException;
 import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.inference.OutlineInferences;
 import org.twelve.gcp.outlineenv.GlobalSymbolEnvironment;
@@ -83,13 +85,14 @@ public class ASF {
     }
 
     /**
-     * Retrieves an AST by its name (throws NoSuchElementException if not found).
+     * 按名称查找 AST。若不存在，抛出带有明确模块名的 {@link GCPRuntimeException}，
+     * 而不是 JDK 的 {@link java.util.NoSuchElementException}，方便调用方定位问题。
      */
     public AST get(String name) {
         return this.asts.stream()
                 .filter(a -> a.name().equals(name))
                 .findFirst()
-                .get();  // Risk: Throws if absent. Consider .orElse(null) for graceful handling.
+                .orElseThrow(() -> new GCPRuntimeException(GCPErrCode.MODULE_NOT_DEFINED, "Module not found: " + name));
     }
 
     public boolean isLastInfer() {

@@ -12,6 +12,9 @@ import org.twelve.gcp.outline.projectable.ProjectSession;
 import org.twelve.gcp.outline.projectable.Projectable;
 import org.twelve.gcp.outline.projectable.Reference;
 
+import org.twelve.gcp.common.Modifier;
+import org.twelve.gcp.outline.projectable.FirstOrderFunction;
+
 import java.util.Map;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -24,12 +27,35 @@ public class Dict extends DictOrArray<Outline> {
         super(null,ast, Dict_.instance(), key, value);
     }
 
-    public Outline key(){
+    public Outline key() {
         return this.key;
     }
 
-    public Outline value(){
+    public Outline value() {
         return this.value;
+    }
+
+    /**
+     * Loads built-in dict methods.  Key/value types are resolved from the concrete dict instance,
+     * so each Dict instance gets properly typed methods.
+     * <ul>
+     *   <li>{@code len()}             : Unit → Integer  — number of entries</li>
+     *   <li>{@code keys()}           : Unit → [K]      — all keys as an array</li>
+     *   <li>{@code values()}         : Unit → [V]      — all values as an array</li>
+     *   <li>{@code contains_key(K)}  : K    → Bool     — membership check by key</li>
+     *   <li>{@code get(K)}           : K    → V        — look up value by key</li>
+     * </ul>
+     */
+    @Override
+    public boolean loadBuiltInMethods() {
+        if (!super.loadBuiltInMethods()) return false;
+        AST ast = this.ast();
+        members.put("len",          EntityMember.from("len",          FirstOrderFunction.from(ast, ast.Integer,               ast.Unit),    Modifier.PUBLIC, false, null, true));
+        members.put("keys",         EntityMember.from("keys",         FirstOrderFunction.from(ast, Array.from(ast, this.key),  ast.Unit),    Modifier.PUBLIC, false, null, true));
+        members.put("values",       EntityMember.from("values",       FirstOrderFunction.from(ast, Array.from(ast, this.value),ast.Unit),    Modifier.PUBLIC, false, null, true));
+        members.put("contains_key", EntityMember.from("contains_key", FirstOrderFunction.from(ast, ast.Boolean,               this.key),    Modifier.PUBLIC, false, null, true));
+        members.put("get",          EntityMember.from("get",          FirstOrderFunction.from(ast, this.value,                 this.key),    Modifier.PUBLIC, false, null, true));
+        return true;
     }
 
     @Override

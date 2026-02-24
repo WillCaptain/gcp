@@ -1,0 +1,74 @@
+@startuml GCP Inference Flow
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam sequenceParticipantBorderColor #888888
+skinparam sequenceArrowColor #555555
+
+title GCP 类型推断核心数据流\n以 agg.avg(e->e.age).avg(e->e.name) 为例
+
+actor "ASF.infer()" as asf
+participant "FunctionCallInference\n(outer: .avg(...))" as fci_outer
+participant "MemberAccessorInference\n(agg.avg)" as mai
+participant "Genericable<G1>\n(agg 的泛型约束)" as g1
+participant "AccessorGeneric<G_avg>\n(agg.avg 占位符)" as g_avg
+participant "ArgumentInference\n(e->e.age / e->e.name)" as arginfer
+participant "Entity.doProject\n(Aggregator outline)" as entity_proj
+participant "FunctionCallInference\n.project(Genericable, arg)" as fci_inner
+
+note over asf: ASF 发起多遍推断\n每遍全量推断所有节点
+
+== 第一遍推断（isLazy=true）==
+
+asf -> fci_outer: infer(agg.avg(e->e.age), inferences)
+fci_outer -> mai: infer(agg.avg)
+mai -> g1: definedToBe() == ANY?\n→ 是，创建 Entity 约束
+mai -> g_avg: new AccessorGeneric(node)\n注册为 Entity 成员 "avg"
+mai --> fci_outer: 返回 g_avg (AccessorGeneric)
+
+note over fci_outer: isLazy=true 且在函数体内\n→ 返回 Lazy，延迟处理
+
+== 第二遍推断（isLastInfer 前）==
+
+asf -> fci_outer: infer(agg.avg(e->e.age), inferences)
+fci_outer -> mai: infer(agg.avg)
+mai --> fci_outer: 返回已缓存的 g_avg
+
+fci_outer -> arginfer: infer(e->e.age)
+note over arginfer: 推断 lambda 参数 e 的类型\n结合 employee 实体约束\n返回 FirstOrderFunction: (Employee->Number)
+
+fci_outer -> fci_inner: project(g_avg, argument=lambda)
+
+alt g_avg.definedToBe 是 HigherOrderFunction
+    fci_inner --> fci_outer: 返回 HOF.returns()
+else g_avg.hasToBe 是 Function (由 Entity.doProject 传播)
+    fci_inner -> fci_inner: 验证 argOutline.is(formalFunc.argument())
+    note over fci_inner: 若 e->e.name (String) 不满足\nformalFunc.argument() (Number)\n→ 报告 OUTLINE_MISMATCH 错误
+    fci_inner --> fci_outer: 返回 formalFunc.returns() (~this)
+else 兜底
+    fci_inner -> g_avg: addDefinedToBe(new HigherOrderFunction(...))
+    fci_inner --> fci_outer: 返回虚拟 Return
+end
+
+== Entity.doProject 传播 hasToBe 的时机 ==
+
+note over entity_proj
+  当 Aggregator<Employee> 被实例化时：
+  Entity(Aggregator).doProject(Aggregator_entity, Employee_entity)
+  遍历 Employee 成员：
+    - age: Number    → 传播到 G_avg.hasToBe = (Employee->Number)->~this
+    - name: String   → 同上
+  AccessorGeneric(avg).hasToBe 从 ANY 变为具体函数类型
+end note
+
+entity_proj -> g_avg: addHasToBe(formalFuncType: (Employee->Number)->~this)
+
+== 最终遍（isLastInfer=true）==
+
+asf -> fci_outer: infer(agg.avg(e->e.age), inferences)
+fci_outer -> fci_inner: project(g_avg, e->e.age)
+fci_inner -> fci_inner: hasToBe is Function?\n→ 验证 (Employee->Number).is(formalArg)\n→ 通过
+fci_inner --> fci_outer: 返回 ~this (Aggregator<Employee>)
+
+note over fci_outer: 链式调用 .avg(e->e.name):\n继续投影 ~this 上的 avg 成员\n→ 再次进入 FCI.project(g_avg2, e->e.name)\n→ e->e.name 返回 String\n→ String.is(Number) == false\n→ 报告 OUTLINE_MISMATCH!
+
+@enduml

@@ -6,6 +6,7 @@ import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.imexport.ImportSpecifier;
 import org.twelve.gcp.node.namespace.NamespaceNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.builtin.Module;
 
 /**
@@ -21,12 +22,19 @@ public class ImportInference implements Inference<Import> {
         }
         Identifier moduleSymbol = node.source().name();
         Module module = node.ast().asf().globalEnv().lookup(namespace, moduleSymbol);
+        if (module == null) {
+            return node.ast().Ignore;
+        }
         for (ImportSpecifier _import : node.specifiers()) {
             if(_import.imported().lexeme().equals(CONSTANTS.STAR)){
                 node.ast().symbolEnv().defineSymbol(moduleSymbol.name(), module, false, moduleSymbol);
             }else{
                 Outline outline = module.lookup(_import.imported());
-                node.ast().symbolEnv().defineSymbol(_import.local().name(),outline,false,moduleSymbol);
+                if (outline == null) continue;
+                node.ast().symbolEnv().defineSymbol(_import.local().name(), outline, false, moduleSymbol);
+                if (outline instanceof Entity) {
+                    node.ast().symbolEnv().defineOutline(_import.local().name(), outline, moduleSymbol);
+                }
             }
             _import.infer(inferences);
         }

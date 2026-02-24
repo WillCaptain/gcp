@@ -21,25 +21,37 @@ import java.util.stream.Collectors;
 import static org.twelve.gcp.common.Tool.cast;
 
 /**
- * Entity是实例化后的Product ADT的通用类型
- * Entity可以有不同的基础类型（buildIn）
- * 基础类型为Any的时候，Entity可等价于Object
- * Primitive类型的扩展后类型皆为Entity
+ * Entity type (Product ADT) in the GCP type system, corresponding to struct/object types in programs.
  *
- * @author huizi 2024
+ * <h2>Key Features</h2>
+ * <ul>
+ *   <li><b>Member inheritance</b>: An Entity may have a {@code base} Entity; {@link #members()}
+ *       merges base and own members.</li>
+ *   <li><b>Generic projection ({@code doProject})</b>: the core of GCP generic instantiation —
+ *       substitutes type variables in Outline type definitions with concrete types, while also
+ *       propagating formal type constraints to the {@code hasToBe} of {@link AccessorGeneric} members.</li>
+ *   <li><b>Reference list</b>: supports generic Entities with type parameters, e.g. {@code List<T>}.</li>
+ * </ul>
+ *
+ * <h2>produce method</h2>
+ * {@link #produce(Entity)} merges two Entities (similar to object extension / mixin).
+ * When the same member name exists in both, the conflicting types are merged into a
+ * {@link org.twelve.gcp.outline.adt.Poly} union type.
+ *
+ * @author huizi 2025
  */
 public class Entity extends ProductADT implements Projectable, ReferAble {
     private final List<Reference> references;
     //    private final List<Reference> references;
     private long id;
     /**
-     * Entity的基Entity
-     * entity2 = entity1{name="Will“}
-     * 此时entity1就是entity2的基entity
+     * The base Entity this entity extends.
+     * e.g. for {@code entity2 = entity1{name="Will"}}, {@code entity1} is the base of {@code entity2}.
      */
     protected Outline base;
     /**
-     * Entity不是标准类型，所以一定会对应一个节点
+     * The AST node this entity is associated with.
+     * Unlike primitive types, every Entity must correspond to a concrete AST node.
      */
     protected final Node node;
 
@@ -170,20 +182,48 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
         return this.node;
     }
 
+    /**
+     * Core projection method for Entity: substitutes generic member types during generic instantiation.
+     *
+     * <h2>Two Projection Scenarios</h2>
+     *
+     * <h3>Scenario 1: Self-projection (projected == this)</h3>
+     * When an Outline type definition (e.g. {@code Aggregator}) is projected by a concrete
+     * instance type (e.g. {@code employees}), iterate the projection's members and replace
+     * this entity's generic member types with concrete ones:
+     * <ul>
+     *   <li>If a member is {@link Projectable}, call its {@code project} method to substitute the type.</li>
+     *   <li>Key: if a member is an {@link AccessorGeneric} (i.e. hasToBe==ANY) and the projection
+     *       member is a concrete type, propagate that type to the AccessorGeneric's hasToBe,
+     *       enabling {@link org.twelve.gcp.inference.FunctionCallInference} to validate argument types later.</li>
+     *   <li>If the projection member is Genericable, reverse-propagate this member's type
+     *       as a hasToBe constraint on the projection member.</li>
+     * </ul>
+     *
+     * <h3>Scenario 2: Transitive projection (projected != this)</h3>
+     * This Entity contains generic members; forward the projection to all Projectable members
+     * so that nested type parameters are resolved recursively.
+     *
+     * @param projected  the initiator of the projection (the Outline type definition Entity)
+     * @param projection the concrete instance type (provides the actual member types)
+     * @param session    projection session (caches substitutions to avoid reprocessing)
+     * @return a new Entity with all generic variables replaced by concrete types
+     */
     @Override
     public Outline doProject(Projectable projected, Outline projection, ProjectSession session) {
         Outline base = this.base;
         if (this.base != null && this.base instanceof Projectable) {
             base = ((Projectable) this.base).project(projected, projection, session);
         }
-        if (this.id() == projected.id()) {//project myself:{a} project{a,b}
+        if (this.id() == projected.id()) {// Scenario 1: self-projection
             Entity outline = Entity.from(this.node(), base, new ArrayList<>());
-            for (EntityMember yourMember : ((ADT) projection).members()) {//match projection members
-                Optional<EntityMember> myMember = this.getMember(yourMember.name());//find matched member in projected
-                if (myMember.isPresent()) {//project a
-                    if (myMember.get().outline() instanceof Projectable) {//project member if me is projectable
+            for (EntityMember yourMember : ((ADT) projection).members()) {// iterate concrete type members
+                Optional<EntityMember> myMember = this.getMember(yourMember.name());// find the matching member in this entity
+                if (myMember.isPresent()) {
+                    if (myMember.get().outline() instanceof Projectable) {
                         Projectable me = cast(myMember.get().outline());
-                        // Propagate formal member type to AccessorGeneric so FCI can validate arguments
+                        // propagate the formal member type to AccessorGeneric's hasToBe,
+                        // enabling FunctionCallInference to validate argument types for this member
                         if (me instanceof Genericable && ((Genericable<?,?>) me).hasToBe() instanceof ANY
                                 && !(yourMember.outline() instanceof Genericable)) {
                             ((Genericable<?,?>) me).addHasToBe(yourMember.outline());
@@ -192,7 +232,7 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
                                 yourMember.modifier(), yourMember.mutable() == Mutable.True, yourMember.node());
                         continue;
                     }
-                    //if you are genericable and i'm not, add me as your constraint
+                    // if the projection member is Genericable, reverse-propagate this type as a hasToBe constraint
                     if (yourMember.outline() instanceof Genericable<?, ?>) {
                         ((Genericable<?, ?>) yourMember.outline()).addHasToBe(myMember.get().outline());
                     }
@@ -200,15 +240,13 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
                 outline.addMember(yourMember.name(), yourMember.outline(), yourMember.modifier(), yourMember.mutable() == Mutable.True, yourMember.node());
             }
             if (outline.is(this)) {
-//                session.addProjection(projected, outline);
                 return outline;
             } else {
                 GCPErrorReporter.report(projection.ast(), projection.node(), GCPErrCode.PROJECT_FAIL,
                         projection.node() + CONSTANTS.MISMATCH_STR + this);
                 return this.guess();
             }
-        } else {//project possible members
-//            Entity outline = this.node()==null?Entity.from(this.ast()):Entity.from(this.node());
+        } else {// Scenario 2: forward the projection to all generic members
             Entity outline = Entity.from(this.node(), base, new ArrayList<>());
             for (EntityMember m : this.members()) {
                 if (m.outline() instanceof Projectable) {
@@ -219,7 +257,6 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
                     outline.addMember(m.name(), m.outline(), m.modifier(), m.mutable() == Mutable.True, m.node());
                 }
             }
-//            session.addProjection(this, outline);
             return outline;
         }
     }
@@ -274,7 +311,10 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
     @Override
     public boolean tryIamYou(Outline another) {
         if (another instanceof Entity) {
-            return super.tryIamYou(another) && this.base().is(((Entity) another).base());
+            if (!super.tryIamYou(another)) return false;
+            // Anonymous entity literals have base=Any; skip base check and allow structural assignment
+            if (this.base() == this.ast().Any) return true;
+            return this.base().is(((Entity) another).base());
         } else {
             return super.tryIamYou(another);
         }
@@ -334,3 +374,31 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
         return sb.toString();
     }
 }
+    /**
+     * Core projection method for Entity: substitutes generic member types during generic instantiation.
+     *
+     * <h2>Two Projection Scenarios</h2>
+     *
+     * <h3>Scenario 1: Self-projection (projected == this)</h3>
+     * When an Outline type definition (e.g. {@code Aggregator}) is projected by a concrete
+     * instance type (e.g. {@code employees}), iterate the projection's members and replace
+     * this entity's generic member types with concrete ones:
+     * <ul>
+     *   <li>If a member is {@link Projectable}, call its {@code project} method to substitute the type.</li>
+     *   <li>Key: if a member is an {@link AccessorGeneric} (i.e. {@code hasToBe==ANY}) and the projection
+     *       member is a concrete type, propagate that concrete type to the AccessorGeneric's {@code hasToBe},
+     *       enabling {@link org.twelve.gcp.inference.FunctionCallInference} to validate argument types later.</li>
+     *   <li>If the projection member is Genericable, reverse-propagate this member's concrete type
+     *       as a {@code hasToBe} constraint on the projection member.</li>
+     * </ul>
+     *
+     * <h3>Scenario 2: Transitive projection (projected != this)</h3>
+     * This Entity contains generic members; forward the projection to all Projectable members
+     * so that nested type parameters are resolved recursively.
+     *
+     * @param projected  the initiator of the projection (the Outline type definition Entity)
+     * @param projection the concrete instance type (provides the actual member types)
+     * @param session    projection session (caches substitutions for this call to avoid reprocessing)
+     * @return a new Entity with all generic variables replaced by concrete types
+     */
+

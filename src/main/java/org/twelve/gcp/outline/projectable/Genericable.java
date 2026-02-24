@@ -23,20 +23,65 @@ import static org.twelve.gcp.common.Tool.cast;
 import static org.twelve.gcp.outline.projectable.ConstraintDirection.DOWN;
 import static org.twelve.gcp.outline.projectable.ConstraintDirection.UP;
 
+/**
+ * Core abstract class of the GCP generic constraint system.
+ *
+ * <h2>Four-Dimensional Constraint Model</h2>
+ * Each {@code Genericable} variable narrows its possible type range through four constraints
+ * that form a chain from "actual value" to "structural usage":
+ * <pre>
+ *   extendToBe  (upper bound — inferred from actual assigned value)
+ *       |
+ *       ↓  is relation
+ *   declaredToBe  (declared type — explicit annotation, e.g. x: Number)
+ *       |
+ *       ↓  is relation
+ *   hasToBe  (usage constraint — inferred from how the variable is used)
+ *       |
+ *       ↓  is relation
+ *   definedToBe  (structural usage — inferred from call/access patterns, e.g. x(a))
+ * </pre>
+ *
+ * <ul>
+ *   <li><b>extendToBe</b> (upper bound): widest type inferred from an actual assignment.
+ *       e.g. {@code x = 100} → {@code x.extendToBe = Integer}.</li>
+ *   <li><b>declaredToBe</b> (declared type): explicitly annotated by the programmer.
+ *       e.g. {@code x: Number} → {@code x.declaredToBe = Number}.</li>
+ *   <li><b>hasToBe</b> (usage constraint): inferred from how the variable is consumed.
+ *       e.g. {@code var y=100; y=x} → {@code x.hasToBe = Number}.</li>
+ *   <li><b>definedToBe</b> (structural usage): inferred from call or member-access patterns.
+ *       e.g. {@code x(a)} → {@code x.definedToBe = (Generic->Generic)}.</li>
+ * </ul>
+ *
+ * <h2>Constraint Convergence</h2>
+ * Type inference is a multi-pass process. As more information is gathered, the four constraints
+ * narrow toward each other. {@link #min()} returns the strongest lower bound;
+ * {@link #max()} returns the widest upper bound.
+ * {@link #guess()} returns the best current approximation when constraints are incomplete.
+ *
+ * <h2>Projection</h2>
+ * Generic instantiation is handled by {@link #doProject}, which dispatches to
+ * {@link #projectFunction}, {@link #projectEntity}, or {@link #projectGeneric}
+ * depending on the type of the projection target.
+ *
+ * @param <G> self type (for fluent API and copy operations)
+ * @param <N> the associated AST node type
+ * @author huizi 2025
+ */
 public abstract class Genericable<G extends Genericable, N extends Node> implements Generalizable, OperateAble<N> {
     private final AST ast;
     protected long id;
     protected final N node;
 
-    //extend_to_be(out) <: projection <: declared_to_be <: (in)has_to_be (out)<:(in)defined_to_be
-    //x:Number => x.declaredToBe = Number
+    // Constraint chain: extendToBe(upper) <: projection <: declaredToBe <: hasToBe(lower) <: definedToBe
+    // e.g. x: Number => x.declaredToBe = Number
     protected Outline declaredToBe;
 
-    //x = 100; => x.extend_to_be = Number
+    // Upper bound inferred from the actual assigned value. e.g. x = 100 => x.extendToBe = Integer
     protected Outline extendToBe;
-    //var y=100; y=x; => x.has_to_be = Number
+    // Lower-bound usage constraint inferred from context. e.g. var y=100; y=x => x.hasToBe = Number
     protected Outline hasToBe;
-    //x(a) => x.definedToBe = generic->generic
+    // Structural/call usage constraint. e.g. x(a) => x.definedToBe = (Generic->Generic)
     protected Outline definedToBe;
 
     protected Genericable(N node, AST ast, Outline declaredToBe) {
@@ -86,11 +131,39 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     /**
-     * add constraint for extend, hasto or defined
+     * Returns a guaranteed non-null node suitable for error reporting.
+     * <p>
+     * Some Outline instances (formal type parameters, built-in method types, projection
+     * intermediates) are created without a source-code node because no corresponding AST
+     * node exists. Passing {@code null} to {@link org.twelve.gcp.ast.AST#addError} silently
+     * discards the error. This method falls back to {@code ast.program()} so that constraint
+     * violations on such types are always surfaced instead of being lost.
      *
-     * @param target
-     * @param constraint
-     * @return
+     * @param outline the outline whose node is used as the primary source location
+     * @return the outline's own node if present; otherwise this outline's node;
+     *         otherwise the program root node as a last resort
+     */
+    protected Node safeNode(Outline outline) {
+        if (outline.node() != null) return outline.node();
+        if (this.node != null) return (Node) this.node;
+        return ast().program();
+    }
+
+    /**
+     * Adds a "downward" constraint (i.e. a more specific type, in the direction of
+     * {@code declaredToBe} / {@code hasToBe} / {@code definedToBe}).
+     * <p>
+     * Merge strategy:
+     * <ul>
+     *   <li>If the current constraint is ANY, replace it directly with the new constraint.</li>
+     *   <li>If both are Entity types, merge their members (product-type merge via {@code produce}).</li>
+     *   <li>If the new constraint is Genericable, wrap both in a {@link Constraints} relation.</li>
+     *   <li>Otherwise, create an {@link org.twelve.gcp.outline.adt.Option} union type.</li>
+     * </ul>
+     *
+     * @param target     the current constraint value
+     * @param constraint the new constraint to add
+     * @return the merged constraint
      */
     private Outline addDownConstraint(Outline target, Outline constraint) {
         //first time
@@ -114,6 +187,14 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         return target;
     }
 
+    /**
+     * Adds an "upward" constraint (i.e. a wider type, in the direction of {@code extendToBe}).
+     * Reports an error if the new constraint violates any existing lower-bound constraint.
+     *
+     * @param target     the current upper-bound constraint
+     * @param constraint the new upper bound to add
+     * @return the merged upper-bound constraint
+     */
     private Outline addUpConstraint(Outline target, Outline constraint) {
         if (target instanceof NOTHING) {
             return constraint;
@@ -130,7 +211,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             if (target.is(constraint)) {
                 return constraint;
             }
-            GCPErrorReporter.report(this.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, constraint.toString() + " doesn't match constraints");
+            GCPErrorReporter.report(safeNode(constraint), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, constraint + " doesn't match constraints");
         }
         return target;
     }
@@ -145,7 +226,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 //        }
 
         if (!outline.is(downConstraint)) {
-            GCPErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + downConstraint);
+            GCPErrorReporter.report(safeNode(outline), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline + CONSTANTS.MISMATCH_STR + downConstraint);
             return;
         }
 
@@ -159,12 +240,12 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
         //find down stream maximum constraint
         if (!declared.is(downConstraint)) {
-            GCPErrorReporter.report(declared.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, declared.node() + CONSTANTS.MISMATCH_STR + downConstraint);
+            GCPErrorReporter.report(safeNode(declared), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, declared + CONSTANTS.MISMATCH_STR + downConstraint);
             return;
         }
 
         if (!upConstraint.is(declared)) {
-            GCPErrorReporter.report(declared.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, declared.node() + CONSTANTS.MISMATCH_STR + upConstraint);
+            GCPErrorReporter.report(safeNode(declared), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, declared + CONSTANTS.MISMATCH_STR + upConstraint);
             return;
         }
         this.declaredToBe = this.addDownConstraint(this.declaredToBe, declared);
@@ -180,12 +261,12 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
         //find down stream maximum constraint
         if (!outline.is(downConstraint)) {
-            GCPErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + downConstraint);
+            GCPErrorReporter.report(safeNode(outline), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline + CONSTANTS.MISMATCH_STR + downConstraint);
             return;
         }
 
         if (!upConstraint.is(outline)) {
-            GCPErrorReporter.report(outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + upConstraint);
+            GCPErrorReporter.report(safeNode(outline), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline + CONSTANTS.MISMATCH_STR + upConstraint);
             return;
         }
 
@@ -234,6 +315,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     public G copy() {
         G copied = this.createNew();
         copied.extendToBe = this.extendToBe.copy();
+        copied.declaredToBe = this.declaredToBe.copy();
         copied.hasToBe = this.hasToBe.copy();
         copied.definedToBe = this.definedToBe.copy();
         copied.id = this.id;
@@ -321,7 +403,8 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     protected Outline projectMySelf(Outline projection, ProjectSession session) {
-        if (!projection.is(this)) {
+        boolean projIsThis = projection.is(this);
+        if (!projIsThis) {
             GCPErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.node());
             return this.guess();
         }
@@ -358,6 +441,31 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         return projection;
     }
 
+    /**
+     * Projects a formal function type ({@code projected: a->b}) onto a lambda expression
+     * ({@code projection: c->d}).
+     * <p>
+     * Core algorithm (bidirectional function-type inference):
+     * <pre>
+     *   Input: projected = a->b,  projection = c->d
+     *   1. a_ = c.project(a)    ← instantiate formal parameter type a using lambda param type c
+     *   2. d_ = d.project(a)    ← propagate parameter constraints into lambda return type d
+     *   3. b_ = b.project(d_)  ← instantiate formal return type b using projected return d_
+     *   4. return a_ -> b_
+     * </pre>
+     * <p>
+     * Error handling: if the lambda's return type does not satisfy the formal type's bounds,
+     * an OUTLINE_MISMATCH error is reported and {@link #guess()} is returned.
+     * Special case: when {@code this.node} is null (a formal parameter created without an AST node),
+     * {@code projection.node()} is used as the error node to prevent the error from being
+     * silently discarded by {@link org.twelve.gcp.ast.AST#addError}.
+     *
+     * @param projected  the formal function type (source of constraints)
+     * @param projection the actual lambda expression type (target to project onto)
+     * @param session    projection session (caches already-projected type pairs)
+     * @return the projected function type, or the guessed type on error
+     * @author huizi 2025
+     */
     protected Outline projectLambda(Function<?, ?> projected, FirstOrderFunction projection, ProjectSession session) {
         /*function:a->b project lambda: c->d
           a_ = c.project(a)
@@ -398,8 +506,6 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
                 return FirstOrderFunction.from(cast(projection.node()), Generic.from(a_.node(), a_.ast(), a_), b_);
             }
         } else {
-            // When this.node is null (formal parameter created without AST node),
-            // use the actual lambda's node so the error is not discarded by AST.addError
             Node errorNode = this.node;
             GCPErrCode errCode = GCPErrCode.PROJECT_FAIL;
             if (errorNode == null && projection.node() != null) {

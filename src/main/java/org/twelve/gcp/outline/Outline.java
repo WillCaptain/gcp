@@ -9,12 +9,52 @@ import org.twelve.gcp.outline.projectable.Projectable;
 import org.twelve.gcp.outline.projectable.Reference;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.twelve.gcp.common.Tool.cast;
 
+/**
+ * Root interface of the GCP type system, representing a type "outline".
+ *
+ * <h2>Type Relation Semantics</h2>
+ * GCP uses structural typing. Type relationships are expressed through {@code is} / {@code canBe}:
+ * <ul>
+ *   <li><b>is(another)</b>: Duck-typing subtype relation ("I am you").
+ *       {@code this.is(another)==true} means {@code this} can be used wherever {@code another} is expected.
+ *       Used for function argument matching: if {@code y.is(x)==true}, calling {@code f(x)} with {@code f(y)} is valid.</li>
+ *   <li><b>canBe(another)</b>: Assignment compatibility ("I can become you").
+ *       {@code b.canBe(a)==true} means the assignment {@code a = b} is legal.
+ *       {@code is} implies {@code canBe}, but not vice versa (Poly types relax the condition).</li>
+ *   <li><b>maybe(another)</b>: Weaker form of {@code is} that only checks basic structure,
+ *       ignoring extended attributes. For non-ProductADT types, {@code maybe == is}.</li>
+ * </ul>
+ *
+ * <h2>Type Hierarchy</h2>
+ * <pre>
+ *   Outline
+ *   ├── Primitive  (ANY, NOTHING, STRING, NUMBER, ...)
+ *   ├── ADT        (Entity, Tuple, Array, Poly, Option, ...)
+ *   ├── Projectable (Genericable, Function, ...)
+ *   └── BuildInOutline (UNKNOWN, UNIT, ERROR, ...)
+ * </pre>
+ *
+ * <h2>Projection Mechanism</h2>
+ * Projection is the core mechanism for generic instantiation in GCP:
+ * it substitutes type variables with concrete types.
+ * {@link #project(Reference, OutlineWrapper)} replaces a reference type with its actual type.
+ *
+ * @author huizi 2025
+ */
 public interface Outline extends Serializable {
 
+    /**
+     * Thread-local set of "{id_a}:{id_b}" pairs currently being compared via {@link #is}.
+     * Prevents infinite recursion when two structurally equivalent types reference each other
+     * through their built-in method signatures (e.g. {@code Number.min: Number → Number}).
+     */
+    ThreadLocal<Set<String>> IS_COMPARING = ThreadLocal.withInitial(HashSet::new);
 
     AST ast();
 
@@ -26,79 +66,101 @@ public interface Outline extends Serializable {
     }
 
     /**
-     * Get the string representation of the type for debugging or display purposes.
-     *
-     * @return String representation of the outline type.
+     * Structural equality: bidirectional {@code is} relation with no uninstantiated generic variables.
+     * Note: this is type-semantic equality, not Java's {@link Object#equals}.
      */
-//    @Serialization
-//    default String name() {
-//        String name = this.getClass().getSimpleName();
-//        return name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase();
-//    }
     default boolean equals(Outline another) {
         return this.is(another) && another.is(this) && !(another instanceof Projectable && ((Projectable) another).containsGeneric());
     }
 
     /**
-     * 基本outline 满足is关系，未验证扩展属性是否满足
-     * 非product adt， maybe==is
+     * Weaker form of {@link #is}: checks only the basic structure, ignoring extended attributes.
+     * For non-ProductADT types, {@code maybe == is}.
      *
-     * @param another
-     * @return
+     * @param another the target type
+     * @return whether this type structurally may match the target
      */
     default boolean maybe(Outline another) {
         return this.is(another);
     }
 
     /**
-     * is关系决定了一种duck typing的继承关系
-     * is决定了我可以是你，即我是你的子类的概念
-     * is关系的判定用于函数调用传递变量，如果y.is(x)==true,则f(x)函数调用f(y)合法
-     * poly场景下，is与canbe不一致
+     * Duck-typing subtype relation ("I am you").
+     * <p>
+     * {@code this.is(another)==true} means {@code this} is a subtype of {@code another}
+     * and can be used in any position that expects {@code another}.
+     * Implemented via bidirectional delegation: first tries {@code this.tryIamYou(another)},
+     * then {@code another.tryYouAreMe(this)}, allowing each side to define its own protocol.
+     * <p>
+     * The identity short-circuit ({@code this == another → true}) is essential for correctness
+     * when built-in methods reference singleton types (e.g. {@code ast.Number}).
+     * Without it, comparing two numeric types whose {@code min}/{@code max} members both reference
+     * {@code ast.Number} would recurse infinitely through structural member comparison.
      *
-     * @param another 对方类型
-     * @return 我是否是对方类型或者对方类型的子类
+     * @param another the target type
+     * @return whether this type is a subtype of the target
      */
     default boolean is(Outline another) {
-        //if(this==another) return true;
-        return this.tryIamYou(another) || another.tryYouAreMe(this);
+        if (this == another) return true;
+        // Cycle detection: when structural member comparison recurses back to the same
+        // (this, another) pair (e.g. Number.min: Number→Number causes Number.is(Number)
+        // to recurse), break the cycle by assuming compatibility for that pair.
+        // Key is ASYMMETRIC (this.id:another.id) so that A.is(B) and B.is(A) are tracked
+        // independently; only a genuine re-entry of the exact same directed call is treated
+        // as a cycle, preventing false positives that would suppress real type errors.
+        String key = this.id() + ":" + another.id();
+        Set<String> guard = IS_COMPARING.get();
+        if (!guard.add(key)) return true;
+        try {
+            return this.tryIamYou(another) || another.tryYouAreMe(this);
+        } finally {
+            guard.remove(key);
+        }
     }
 
     /**
-     * canBe
-     * 如果b.canBe(a)==true,则a = b合法
-     * is关系满足，则一定满足canBe，canBe满足，未必满足is关系
-     * 在poly场景下，canBe满足条件更宽泛,不需要验证基本类型
+     * Assignment compatibility ("I can become you").
+     * <p>
+     * {@code b.canBe(a)==true} means the assignment {@code a = b} is legal.
+     * {@link #is} implies {@code canBe}, but not vice versa.
+     * For Poly (union) types, {@code canBe} is more permissive: it only requires
+     * this type to be one of the union's options, not a full structural match.
      *
-     * @param another 对方类型
-     * @return 我是否可以作为对方类型的赋值类型
+     * @param another the assignment target type
+     * @return whether this type is assignable to the target
      */
     default boolean canBe(Outline another) {
         return this.tryIamYou(another) || another.tryYouCanBeMe(this);
     }
 
+    /** Active subtype check initiated by {@code this}. Subclasses override as needed. */
     default boolean tryIamYou(Outline another) {
         return false;
     }
 
+    /** Passive subtype check from {@code another}'s perspective. Subclasses override as needed. */
     default boolean tryYouAreMe(Outline another) {
         return false;
     }
 
+    /** Passive assignment-compatibility check. Defaults to {@link #tryYouAreMe}; subclasses may override for looser semantics. */
     default boolean tryYouCanBeMe(Outline another) {
         return this.tryYouAreMe(another);
     }
 
+    /**
+     * Shallow copy. Returns {@code this} by default (immutable types need no copy).
+     * Mutable types such as {@link org.twelve.gcp.outline.projectable.Genericable} must override this.
+     */
     default <T extends Outline> T copy() {
         return cast(this);
-//        try {
-//            return cast(this.getClass().newInstance());
-//        } catch (Exception e) {
-//            return cast(this);
-////            return null;
-//        }
     }
 
+    /**
+     * Cache-aware deep copy that prevents infinite recursion from circular references.
+     *
+     * @param cache map of already-copied objects (key=original, value=copy)
+     */
     default Outline copy(Map<Outline, Outline> cache) {
         Outline copied = cast(cache.get(this));
         if (copied == null) {
@@ -112,6 +174,7 @@ public interface Outline extends Serializable {
         return true;
     }
 
+    /** Returns {@code true} if this type has been fully inferred (i.e. not UNKNOWN). */
     default boolean inferred() {
         return !(this instanceof UNKNOWN);
     }
@@ -119,25 +182,28 @@ public interface Outline extends Serializable {
     long id();
 
     /**
-     * project one reference
+     * Substitutes one {@link Reference} (type parameter) with a concrete type — the fundamental
+     * operation of generic instantiation. The default returns {@code this} for non-generic types.
      *
-     * @param reference  to be projected
-     * @param projection the real type for the reference
-     * @return the real type
+     * @param reference  the type parameter to replace
+     * @param projection the concrete type to substitute (with its AST node)
+     * @return the resulting type after substitution
      */
     default Outline project(Reference reference, OutlineWrapper projection) {
         return this;
     }
 
     /**
-     * for lazy able outline
+     * Forces evaluation of {@link org.twelve.gcp.outline.decorators.Lazy}-wrapped types
+     * and returns the final resolved type. Non-lazy types return {@code this}.
      */
     default Outline eventual() {
         return this;
     }
 
     /**
-     * for reference possible projection
+     * Expands a generic type containing {@link org.twelve.gcp.outline.projectable.Reference}
+     * after a concrete value has been assigned. Non-generic types return {@code this}.
      */
     default Outline instantiate() {
         return this;
@@ -166,8 +232,17 @@ public interface Outline extends Serializable {
     default boolean containsReference(){return false;};
     default boolean containsLazyAble(){return false;};
 
+    /**
+     * Merges the constraints of another outline of the same kind into this one.
+     * Used for constraint convergence across multiple inference paths.
+     * The default returns {@code outline} directly (unconstrained types are simply overwritten).
+     */
     default Outline melt(Outline outline){return outline;};
 
+    /**
+     * Called when the host {@link ProductADT} has been resolved to a concrete type,
+     * so that any internal {@code ~this} self-reference can be bound lazily.
+     */
     default void updateThis(ProductADT me){
 
     }
