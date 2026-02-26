@@ -35,6 +35,34 @@ public class Token<T> {
     }
 
     /**
+     * Creates a token with full source location including line / column.
+     * Prefer this constructor when converting MSLL lexer tokens so that
+     * error messages can show {@code "line N:M"} instead of a raw offset.
+     *
+     * @param data  Token content (non-null)
+     * @param start Absolute character offset of the first character
+     * @param line  1-based line number
+     * @param col   0-based column offset from the start of the line
+     */
+    public Token(T data, int start, int line, int col) {
+        this.data = Objects.requireNonNull(data, "Token data cannot be null");
+        this.loc = new SourceLocation(
+                start,
+                start + data.toString().length() - 1,
+                line,
+                col);
+    }
+
+    /**
+     * Creates a token from an existing {@link Location}.
+     * Useful when re-wrapping a location that already carries full source info.
+     */
+    public Token(T data, Location loc) {
+        this.data = Objects.requireNonNull(data, "Token data cannot be null");
+        this.loc = loc;
+    }
+
+    /**
      * Creates a system-generated token without valid location.
      * @param lexeme Token content (non-null)
      */

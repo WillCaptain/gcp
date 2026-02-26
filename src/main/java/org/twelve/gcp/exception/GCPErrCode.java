@@ -3,149 +3,95 @@ package org.twelve.gcp.exception;
 /**
  * Enumerates all error codes in the GCP compiler/interpreter system.
  *
- * <p>Errors are categorized by phase and severity for better handling.
- * Each code should have a corresponding user-friendly message in resources.
+ * <p>Every enum constant carries a short, human-readable {@link #description()}
+ * suitable for display in error messages and IDE diagnostics.
  */
 public enum GCPErrCode {
-    // --- Syntax/Structure Errors ---
-    /**
-     * Attempted to connect nodes from different ASTs
-     */
-    NODE_AST_MISMATCH,
 
-    /**
-     * Unreachable code detected during control flow analysis
-     */
-    UNREACHABLE_STATEMENT,
+    // ── Syntax / Structure ────────────────────────────────────────────────────
+    NODE_AST_MISMATCH           ("internal: node belongs to a different AST"),
+    UNREACHABLE_STATEMENT       ("unreachable code"),
+    DUPLICATED_DEFINITION       ("duplicate definition"),
 
-    /**
-     * Duplicate definition of variable/function/type
-     */
-    DUPLICATED_DEFINITION,
+    // ── Type System ───────────────────────────────────────────────────────────
+    OUTLINE_MISMATCH            ("type mismatch"),
+    CONSTRUCT_CONSTRAINTS_FAIL  ("type constraint violated"),
+    UNSUPPORTED_UNARY_OPERATION ("unsupported unary operation for this type"),
+    ARGUMENT_MISMATCH           ("argument type does not match parameter type"),
+    POLY_SUM_FAIL               ("polymorphic type resolution failed"),
 
-    // --- Type System Errors ---
-    /**
-     * Type mismatch during assignment or operation
-     */
-    OUTLINE_MISMATCH,
+    // ── Semantics ─────────────────────────────────────────────────────────────
+    VARIABLE_NOT_DEFINED        ("variable is not defined"),
+    MODULE_NOT_DEFINED          ("module is not defined"),
+    FUNCTION_NOT_DEFINED        ("function is not defined"),
+    NOT_A_FUNCTION              ("expression is not callable"),
+    FIELD_NOT_FOUND             ("field not found in type"),
+    NOT_INITIALIZED             ("variable used before initialization"),
+    NOT_ASSIGNABLE              ("cannot assign to an immutable binding"),
+    THIS_IS_NOT_ASSIGNABLE      ("'this' is not assignable"),
 
-    /**
-     * Type mismatch specifically in GCP operations
-     */
-    CONSTRUCT_CONSTRAINTS_FAIL,
+    // ── Control Flow ──────────────────────────────────────────────────────────
+    CONDITION_IS_NOT_BOOL       ("condition must be a Bool expression"),
+    POSSIBLE_ENDLESS_LOOP       ("possible infinite loop"),
 
-    /**
-     * Operation cannot be performed on the given type
-     */
-    UNSUPPORTED_UNARY_OPERATION,
+    // ── Name Resolution ───────────────────────────────────────────────────────
+    AMBIGUOUS_VARIABLE_REFERENCE("ambiguous variable reference"),
+    AMBIGUOUS_DECLARATION       ("ambiguous declaration"),
 
-    /**
-     * Argument type doesn't match parameter type
-     */
-    ARGUMENT_MISMATCH,
+    // ── Type Inference ────────────────────────────────────────────────────────
+    INFER_ERROR                 ("type inference failed"),
+    UNAVAILABLE_OUTLINE_ASSIGNMENT("cannot determine type for assignment"),
+    DECLARED_CAN_NOT_BE_GENERIC ("declared type cannot be generic"),
 
-    /**
-     * Polymorphic type resolution failed
-     */
-    POLY_SUM_FAIL,
+    // ── Functions / References ────────────────────────────────────────────────
+    AMBIGUOUS_RETURN            ("ambiguous return type"),
+    FUNCTION_NOT_FOUND          ("function overload not found"),
+    NOT_REFER_ABLE              ("expression is not referable"),
+    REFERENCE_MIS_MATCH         ("reference type mismatch"),
 
-    // --- Semantic Errors ---
-    /**
-     * Reference to undefined variable
-     */
-    VARIABLE_NOT_DEFINED,
+    // ── Operators ─────────────────────────────────────────────────────────────
+    UNARY_POSITION_MISMATCH     ("unary operator used in wrong position"),
 
-    /**
-     * Reference to undefined module
-     */
-    MODULE_NOT_DEFINED,
+    // ── Type Cast ─────────────────────────────────────────────────────────────
+    TYPE_CAST_NEVER_SUCCEED     ("this type cast can never succeed"),
 
-    /**
-     * Reference to undefined function
-     */
-    FUNCTION_NOT_DEFINED,
+    // ── Collections / Arrays ──────────────────────────────────────────────────
+    NOT_INTEGER                 ("array index must be an integer"),
+    NOT_AN_ARRAY_OR_DICT        ("expression is not an array or dict"),
+    UNPACK_INDEX_OVER_FLOW      ("unpack index out of range"),
 
-    /**
-     * Attempt to call non-function value
-     */
-    NOT_A_FUNCTION,
+    // ── ADT / Symbols ─────────────────────────────────────────────────────────
+    INVALID_SYMBOL              ("invalid symbol"),
+    NOT_ENTITY_INHERITED        ("type is not an entity subtype"),
 
-    /**
-     * Field not found in type
-     */
-    FIELD_NOT_FOUND,
+    // ── Assignability ─────────────────────────────────────────────────────────
+    NOT_BE_ASSIGNEDABLE         ("value cannot be assigned to this binding"),
+    OUTLINE_NOT_FOUND           ("outline (type) not found"),
+    UNAVAILABLE_THIS            ("'this' is not available in this context"),
 
-    /**
-     * Variable used before initialization
-     */
-    NOT_INITIALIZED,
+    // ── Implementation ────────────────────────────────────────────────────────
+    INTERPRETER_NOT_IMPLEMENTED ("interpreter support for this feature is not yet implemented"),
+    PROJECT_FAIL                ("project compilation failed");
 
-    /**
-     * Assignment to non-assignable target (e.g., constant)
-     */
-    NOT_ASSIGNABLE,
+    // ─────────────────────────────────────────────────────────────────────────
 
-    /**
-     * Illegal assignment to 'this' reference
-     */
-    THIS_IS_NOT_ASSIGNABLE,
+    private final String description;
 
-    // --- Control Flow Errors ---
-    /**
-     * Condition expression is not boolean
-     */
-    CONDITION_IS_NOT_BOOL,
+    GCPErrCode(String description) {
+        this.description = description;
+    }
 
-    /**
-     * Potential infinite loop detected
-     */
-    POSSIBLE_ENDLESS_LOOP,
+    /** Short, human-readable description of the error. */
+    public String description() {
+        return description;
+    }
 
-    // --- Name Resolution Errors ---
-    /**
-     * Ambiguous reference to variable
-     */
-    AMBIGUOUS_VARIABLE_REFERENCE,
-
-    // --- Type Inference Errors ---
-    /**
-     * Type inference failed
-     */
-    INFER_ERROR,
-
-    /**
-     * Could not determine type for assignment
-     */
-    UNAVAILABLE_OUTLINE_ASSIGNMENT,
-
-    // --- Implementation Limitations ---
-    /**
-     * Feature not yet implemented in interpreter
-     */
-    INTERPRETER_NOT_IMPLEMENTED,
-
-    // --- System Errors ---
-    /**
-     * Critical project compilation failure
-     */
-    PROJECT_FAIL,
-
-    /**
-     * Unary operator position mismatch
-     */
-    UNARY_POSITION_MISMATCH, AMBIGUOUS_RETURN, UNAVAILABLE_THIS, FUNCTION_NOT_FOUND, TYPE_CAST_NEVER_SUCCEED, NOT_BE_ASSIGNEDABLE, OUTLINE_NOT_FOUND, NOT_REFER_ABLE, REFERENCE_MIS_MATCH, NOT_INTEGER, NOT_AN_ARRAY_OR_DICT, AMBIGUOUS_DECLARATION,
-
-    UNPACK_INDEX_OVER_FLOW, INVALID_SYMBOL, NOT_ENTITY_INHERITED, DECLARED_CAN_NOT_BE_GENERIC;
-    /**
-     * Returns the error category for grouping related errors.
-     */
+    /** Returns the error category for grouping related errors. */
     public ErrorCategory getCategory() {
         return ErrorCategory.forError(this);
     }
 
-    /**
-     * Checks if this error is recoverable (warnings or non-fatal errors).
-     */
+    /** Checks if this error is recoverable (warnings or non-fatal errors). */
     public boolean isRecoverable() {
         return switch (this) {
             case POSSIBLE_ENDLESS_LOOP, UNREACHABLE_STATEMENT, TYPE_CAST_NEVER_SUCCEED -> true;
@@ -153,9 +99,7 @@ public enum GCPErrCode {
         };
     }
 
-    /**
-     * Categories for error classification.
-     */
+    /** Categories for error classification. */
     public enum ErrorCategory {
         SYNTAX, TYPE_SYSTEM, SEMANTIC, CONTROL_FLOW, NAME_RESOLUTION, INFERENCE, SYSTEM;
 
@@ -167,7 +111,7 @@ public enum GCPErrCode {
                 case VARIABLE_NOT_DEFINED, MODULE_NOT_DEFINED, FUNCTION_NOT_DEFINED,
                      NOT_A_FUNCTION, FIELD_NOT_FOUND, NOT_INITIALIZED -> SEMANTIC;
                 case CONDITION_IS_NOT_BOOL, POSSIBLE_ENDLESS_LOOP -> CONTROL_FLOW;
-                case AMBIGUOUS_VARIABLE_REFERENCE -> NAME_RESOLUTION;
+                case AMBIGUOUS_VARIABLE_REFERENCE, AMBIGUOUS_DECLARATION -> NAME_RESOLUTION;
                 case INFER_ERROR, UNAVAILABLE_OUTLINE_ASSIGNMENT -> INFERENCE;
                 default -> SYSTEM;
             };

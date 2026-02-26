@@ -119,4 +119,39 @@ public class ASF {
     public List<AST> asts() {
         return java.util.Collections.unmodifiableList(this.asts);
     }
+
+    /**
+     * Collects every {@link org.twelve.gcp.exception.GCPError} from all ASTs
+     * in this forest in a single flat list, ordered by AST insertion order.
+     */
+    public List<org.twelve.gcp.exception.GCPError> allErrors() {
+        return this.asts.stream()
+                .flatMap(a -> a.errors().stream())
+                .toList();
+    }
+
+    /**
+     * Returns {@code true} if any AST in this forest has reported at least one error.
+     */
+    public boolean hasErrors() {
+        return this.asts.stream().anyMatch(a -> !a.errors().isEmpty());
+    }
+
+    /**
+     * Prints all diagnostics to {@link System#err} in a compact, human-readable
+     * format.  Each line shows the AST module name, the error description, the
+     * source snippet, and the location.
+     *
+     * <p>Suitable for CLI tools and test output; IDEs should use {@link #allErrors()}
+     * and render diagnostics in their own UI.
+     */
+    public void printDiagnostics() {
+        for (AST ast : this.asts) {
+            if (ast.errors().isEmpty()) continue;
+            System.err.println("── " + ast.name() + " ──────────────────────");
+            for (org.twelve.gcp.exception.GCPError e : ast.errors()) {
+                System.err.println("  " + e);
+            }
+        }
+    }
 }

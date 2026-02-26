@@ -19,6 +19,20 @@ public interface Location extends Serializable {
     long start();
     long end();
 
+    /** Source line number (1-based). Returns {@code -1} if unknown. */
+    default int line() { return -1; }
+
+    /** Column offset from the start of the line (0-based). Returns {@code -1} if unknown. */
+    default int col() { return -1; }
+
+    /**
+     * Human-readable location string, e.g. {@code "line 3:7"}.
+     * Falls back to absolute offset when line info is unavailable.
+     */
+    default String display() {
+        return line() >= 0 ? "line " + line() + ":" + col() : "offset " + start();
+    }
+
     /**
      * Checks if this location contains the given offset.
      * @param offset The position to check (inclusive)

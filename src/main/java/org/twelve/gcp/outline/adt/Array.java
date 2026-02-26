@@ -55,6 +55,7 @@ public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer
         members.put("reverse", EntityMember.from("reverse", FirstOrderFunction.from(this.ast(), Array.from(this.ast(), this.itemOutline()),  this.ast().Unit),    Modifier.PUBLIC, false, null, true));
         members.put("take",    EntityMember.from("take",    FirstOrderFunction.from(this.ast(), Array.from(this.ast(), this.itemOutline()),  this.ast().Integer), Modifier.PUBLIC, false, null, true));
         members.put("drop",    EntityMember.from("drop",    FirstOrderFunction.from(this.ast(), Array.from(this.ast(), this.itemOutline()),  this.ast().Integer), Modifier.PUBLIC, false, null, true));
+        members.put("concat",  EntityMember.from("concat",  FirstOrderFunction.from(this.ast(), Array.from(this.ast(), this.itemOutline()),  Array.from(this.ast(), this.itemOutline())), Modifier.PUBLIC, false, null, true));
         members.put("min",     EntityMember.from("min",     FirstOrderFunction.from(this.ast(), this.itemOutline(),                         this.ast().Unit),    Modifier.PUBLIC, false, null, true));
         members.put("max",     EntityMember.from("max",     FirstOrderFunction.from(this.ast(), this.itemOutline(),                         this.ast().Unit),    Modifier.PUBLIC, false, null, true));
         return true;
