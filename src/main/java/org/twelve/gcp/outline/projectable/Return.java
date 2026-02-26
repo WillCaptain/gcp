@@ -126,7 +126,10 @@ public class Return extends Genericable<Return, Node> implements Returnable {
         } else {
             Return result = this.copy(session.copiedCache());
             this.projectConstraints(result, projected, projection, session);
-            if (!(this.supposedToBe() instanceof UNKNOWN) && (!result.max().is(result.supposedToBe()) || !result.supposedToBe().is(result.min()))) {
+            // ANY supposed return type means "unconstrained" — skip the consistency check to
+            // avoid false-positive "mismatch with any" errors on valid higher-order projections.
+            if (!(this.supposedToBe() instanceof UNKNOWN) && !(this.supposedToBe() instanceof ANY)
+                    && (!result.max().is(result.supposedToBe()) || !result.supposedToBe().is(result.min()))) {
                 GCPErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.supposed);
             }
             return result;

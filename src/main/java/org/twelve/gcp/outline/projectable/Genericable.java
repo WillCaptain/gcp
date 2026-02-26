@@ -218,6 +218,9 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
     public void addExtendToBe(Outline outline) {
         if (outline instanceof NOTHING) return;
+        // ANY means "unconstrained" – adding it as an upper bound conveys no information
+        // and would pollute extendToBe, causing false "mismatch with any" errors downstream.
+        if (outline instanceof ANY) return;
         //find down stream maximum constraint
         Outline downConstraint = this.declaredToBe == ast().Any ? this.hasToBe : declaredToBe;
         downConstraint = downConstraint == ast().Any ? this.definedToBe : downConstraint;
@@ -239,12 +242,13 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         Outline downConstraint = this.hasToBe == ast().Any ? this.definedToBe : this.hasToBe;
 
         //find down stream maximum constraint
-        if (!declared.is(downConstraint)) {
+        if (!(downConstraint instanceof ANY) && !declared.is(downConstraint)) {
             GCPErrorReporter.report(safeNode(declared), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, declared + CONSTANTS.MISMATCH_STR + downConstraint);
             return;
         }
 
-        if (!upConstraint.is(declared)) {
+        // ANY upper-bound means "unconstrained from above" — skip to avoid false-positive errors.
+        if (!(upConstraint instanceof ANY) && !upConstraint.is(declared)) {
             GCPErrorReporter.report(safeNode(declared), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, declared + CONSTANTS.MISMATCH_STR + upConstraint);
             return;
         }
@@ -260,12 +264,15 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 //        if (upConstraint.equals(outline)) return;
 
         //find down stream maximum constraint
-        if (!outline.is(downConstraint)) {
+        if (!(downConstraint instanceof ANY) && !outline.is(downConstraint)) {
             GCPErrorReporter.report(safeNode(outline), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline + CONSTANTS.MISMATCH_STR + downConstraint);
             return;
         }
 
-        if (!upConstraint.is(outline)) {
+        // ANY upper-bound means "unconstrained from above" — any concrete type satisfies it.
+        // We must NOT call any.is(outline) here because any.tryIamYou() always returns false
+        // for non-trivial types, producing false-positive "mismatch with any" errors.
+        if (!(upConstraint instanceof ANY) && !upConstraint.is(outline)) {
             GCPErrorReporter.report(safeNode(outline), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline + CONSTANTS.MISMATCH_STR + upConstraint);
             return;
         }
@@ -280,8 +287,9 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         Outline upConstraint = this.hasToBe == ast().Any ? this.declaredToBe : this.hasToBe;
         upConstraint = upConstraint == ast().Any ? this.extendToBe : upConstraint;
 
-        //is chain不满足，退出
-        if (!upConstraint.is(outline)) {
+        // ANY upper-bound means "totally unconstrained" — skip the is-check to avoid
+        // false-positive "mismatch with any" errors on valid generic instantiations.
+        if (!(upConstraint instanceof ANY) && !upConstraint.is(outline)) {
             GCPErrorReporter.report(outline.ast(), outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + upConstraint);
             return false;
         }
