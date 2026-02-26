@@ -6,8 +6,8 @@ import org.twelve.gcp.outline.adt.Poly;
 
 public class PolyTypeInference  implements Inference<PolyTypeNode>{
     @Override
-    public Outline infer(PolyTypeNode node, Inferences inferences) {
-        Outline[] outlines = node.nodes().stream().map(n -> n.infer(inferences)).toArray(Outline[]::new);
+    public Outline infer(PolyTypeNode node, Inferencer inferencer) {
+        Outline[] outlines = node.nodes().stream().map(n -> n.infer(inferencer)).toArray(Outline[]::new);
         return Poly.from(node,outlines);
     }
 }

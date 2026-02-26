@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.expression.conditions;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.body.Block;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.UNIT;
@@ -13,8 +13,8 @@ public class Consequence extends Block {
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
-        Outline o = inferences.visit((Block) this);
+    public Outline acceptInfer(Inferencer inferencer) {
+        Outline o = inferencer.visit((Block) this);
         if(o instanceof UNIT){
             //this.nodes().
         }

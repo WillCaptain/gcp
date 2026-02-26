@@ -30,7 +30,7 @@ import org.twelve.gcp.node.statement.VariableDeclarator;
 import org.twelve.gcp.node.unpack.*;
 import org.twelve.gcp.outline.Outline;
 
-public interface Inferences {
+public interface Inferencer {
     Boolean isLazy();
     default Outline visit(Node node){
         for (Node child : node.nodes()) {

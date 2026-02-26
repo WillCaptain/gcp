@@ -2,9 +2,11 @@ package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.inference.operator.BinaryOperator;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.operator.OperatorNode;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.interpreter.Interpreter;
+import org.twelve.gcp.interpreter.value.Value;
 
 public class BinaryExpression extends Expression{
     private final Expression left;
@@ -34,9 +36,14 @@ public class BinaryExpression extends Expression{
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
-        return inferences.visit(this);
+    public Outline acceptInfer(Inferencer inferencer) {
+        return inferencer.visit(this);
     }
+    @Override
+    public Value acceptInterpret(Interpreter interpreter) {
+        return interpreter.visit(this);
+    }
+
 
     @Override
     public String lexeme() {

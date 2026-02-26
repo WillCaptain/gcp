@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.expression.body;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.statement.Statement;
 import org.twelve.gcp.outline.Outline;
@@ -15,8 +15,8 @@ public abstract class Body extends Expression {
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
-        return inferences.visit(this);
+    public Outline acceptInfer(Inferencer inferencer) {
+        return inferencer.visit(this);
     }
 
     @Override

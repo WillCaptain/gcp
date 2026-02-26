@@ -10,8 +10,8 @@ import org.twelve.gcp.outline.adt.Tuple;
 import static org.twelve.gcp.common.Tool.cast;
 
 public class TupleInference extends EntityInference{
-    public Outline infer(EntityNode node, Inferences inferences) {
-        Entity entity = cast(super.infer(node,inferences));
+    public Outline infer(EntityNode node, Inferencer inferencer) {
+        Entity entity = cast(super.infer(node, inferencer));
         if(entity instanceof SymbolEntity){
             return new SymbolTuple(((SymbolEntity) entity).base(),new Tuple(entity));
         }else {

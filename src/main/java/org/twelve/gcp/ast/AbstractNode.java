@@ -5,13 +5,12 @@ import org.twelve.gcp.common.Tool;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.exception.GCPRuntimeException;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.interpreter.Interpreter;
-import org.twelve.gcp.interpreter.Result;
+import org.twelve.gcp.interpreter.value.Value;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.ERROR;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
-import org.twelve.gcp.outline.decorators.Lazy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -111,13 +110,13 @@ public abstract class AbstractNode implements Node {
     }
 
     @Override
-    public Outline infer(Inferences inferences) {
+    public Outline infer(Inferencer inferencer) {
         try {
             if (!this.inferred()) {
                 this.ast().symbolEnv().enter(this);
                 try {
                     this.clearError();
-                    this.outline = this.accept(inferences);
+                    this.outline = this.acceptInfer(inferencer);
                 } catch (Exception ex) {
                     if (this.ast().asf().isLastInfer()) {
                         throw ex;
@@ -156,8 +155,8 @@ public abstract class AbstractNode implements Node {
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
-        return inferences.visit(this);
+    public Outline acceptInfer(Inferencer inferencer) {
+        return inferencer.visit(this);
     }
 
     @Override
@@ -234,14 +233,15 @@ public abstract class AbstractNode implements Node {
     // --- Interpreter ---
 
     /**
-     * runtime interpreter for the node
-     *
-     * @param interpreter the interpreter for the node
-     * @param <T>         result data type
-     * @return result of the interpretation
+     * Entry point for the interpreter pass.
+     * Delegates to {@link #acceptInterpret(Interpreter)} which
+     * dispatches to the typed {@code visit} method in the concrete {@code Interpreter}
+     * implementation, mirroring how {@link #infer(Inferencer)}
+     * delegates to {@link #acceptInfer(Inferencer)}.
      */
-    public <T> Result<T> interpret(Interpreter interpreter) {
-        return interpreter.visit(this);
+    @Override
+    public Value interpret(Interpreter interpreter) {
+        return this.acceptInterpret(interpreter);
     }
 
     @Override

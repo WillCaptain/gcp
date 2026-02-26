@@ -7,9 +7,9 @@ import org.twelve.gcp.outline.Outline;
 
 public class AsInference implements Inference<As> {
     @Override
-    public Outline infer(As node, Inferences inferences) {
-        Outline var = node.expression().infer(inferences);
-        Outline as = node.as().infer(inferences);
+    public Outline infer(As node, Inferencer inferencer) {
+        Outline var = node.expression().infer(inferencer);
+        Outline as = node.as().infer(inferencer);
         if (!var.is(as)) {
             GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH, var + " is not " + as);
         }

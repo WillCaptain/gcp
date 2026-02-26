@@ -10,9 +10,9 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class SymbolEntityTypeNodeInference implements Inference<SymbolEntityTypeTypeNode> {
     @Override
-    public Outline infer(SymbolEntityTypeTypeNode node, Inferences inferences) {
-        Entity entity = cast(new EntityTypeNodeInference().infer(node,inferences));
-        SYMBOL symbol = cast(node.symbol().infer(inferences));
+    public Outline infer(SymbolEntityTypeTypeNode node, Inferencer inferencer) {
+        Entity entity = cast(new EntityTypeNodeInference().infer(node, inferencer));
+        SYMBOL symbol = cast(node.symbol().infer(inferencer));
         return new SymbolEntity(symbol,entity);
     }
 }

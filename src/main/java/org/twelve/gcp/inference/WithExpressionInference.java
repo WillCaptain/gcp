@@ -10,8 +10,8 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class WithExpressionInference implements Inference<WithExpression>{
     @Override
-    public Outline infer(WithExpression node, Inferences inferences) {
-        Outline resource = node.resource().infer(inferences);
+    public Outline infer(WithExpression node, Inferencer inferencer) {
+        Outline resource = node.resource().infer(inferencer);
         if(resource instanceof Entity){
             Entity entity = cast(resource);
             checkResourceMethod(node, entity, "open");
@@ -21,9 +21,9 @@ public class WithExpressionInference implements Inference<WithExpression>{
         }
         if(node.as()!=null){
             node.ast().symbolEnv().defineSymbol(node.as().name(), resource, false, node.as());
-            node.as().infer(inferences);
+            node.as().infer(inferencer);
         }
-        return node.body().infer(inferences);
+        return node.body().infer(inferencer);
     }
 
     private static void checkResourceMethod(WithExpression node, Entity entity, String name) {

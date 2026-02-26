@@ -1,10 +1,8 @@
 package org.twelve.gcp.node.expression.conditions;
 
 import org.twelve.gcp.ast.Token;
-import org.twelve.gcp.inference.Inferences;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.LiteralNode;
-import org.twelve.gcp.outline.Outline;
 
 public class IfArm extends Arm<Expression>{
     private final LiteralNode<Boolean> others;

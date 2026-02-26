@@ -7,9 +7,9 @@ import org.twelve.gcp.outline.Outline;
 
 public class BinaryExprInference implements Inference<BinaryExpression> {
     @Override
-    public Outline infer(BinaryExpression node, Inferences inferences) {
-        Outline left = node.left().infer(inferences);
-        Outline right = node.right().infer(inferences);
+    public Outline infer(BinaryExpression node, Inferencer inferencer) {
+        Outline left = node.left().infer(inferencer);
+        Outline right = node.right().infer(inferencer);
         Outline inferred = node.operator().infer(left, right, node);
         if (inferred == node.ast().Error) {
             GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);

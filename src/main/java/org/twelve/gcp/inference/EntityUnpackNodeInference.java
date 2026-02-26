@@ -8,10 +8,10 @@ import org.twelve.gcp.outline.adt.Entity;
 
 public class EntityUnpackNodeInference implements Inference<EntityUnpackNode>{
     @Override
-    public Outline infer(EntityUnpackNode node, Inferences inferences) {
+    public Outline infer(EntityUnpackNode node, Inferencer inferencer) {
         Entity entity = Entity.from(node);
         for (Field field : node.fields()) {
-            entity.addMember(field.field().name(),field.infer(inferences), Modifier.PUBLIC, false, field.field());
+            entity.addMember(field.field().name(),field.infer(inferencer), Modifier.PUBLIC, false, field.field());
         }
         return entity;
     }

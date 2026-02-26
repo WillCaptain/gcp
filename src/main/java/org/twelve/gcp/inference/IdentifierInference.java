@@ -19,7 +19,7 @@ import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
  */
 public class IdentifierInference implements Inference<Identifier> {
     @Override
-    public Outline infer(Identifier node, Inferences inferences) {
+    public Outline infer(Identifier node, Inferencer inferencer) {
 //        if (!(node.outline() instanceof UNKNOWN)) return node.outline();
         if(node.lexeme().startsWith("__") && node.lexeme().endsWith("__")){
             return new SYSTEM(node);

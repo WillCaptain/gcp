@@ -1,8 +1,9 @@
 package org.twelve.gcp.ast;
 
 import org.twelve.gcp.exception.GCPError;
-import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.inference.OutlineInferences;
+import org.twelve.gcp.inference.Inferencer;
+import org.twelve.gcp.inference.OutlineInferencer;
+import org.twelve.gcp.interpreter.OutlineInterpreter;
 import org.twelve.gcp.node.base.Program;
 import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.imexport.Export;
@@ -12,7 +13,6 @@ import org.twelve.gcp.node.statement.Statement;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.builtin.Module;
-import org.twelve.gcp.outline.decorators.Lazy;
 import org.twelve.gcp.outline.primitive.*;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
@@ -41,7 +41,7 @@ public class AST {
     private final AtomicLong scopeIndexer = new AtomicLong(-1);
 
     private List<GCPError> errors = new ArrayList<>();  // Compilation errors
-    private final Inferences inferences;  // Type inference rules
+    private final Inferencer inferencer;  // Type inference rules
     private final LocalSymbolEnvironment symbolEnv;  // Local symbol table
     private ASF asf;  // Parent Abstract Syntax Forest
     private Set<Long> cache = new HashSet<>();  // Optional: Inference caching mechanism
@@ -76,10 +76,10 @@ public class AST {
 
 
     public AST(ASF asf) {
-        this(new OutlineInferences(), asf);  // Default inference rules
+        this(new OutlineInferencer(), asf);  // Default inference rules
     }
-    public AST(Inferences inferences, ASF asf) {
-        this.inferences = inferences;
+    public AST(Inferencer inferencer, ASF asf) {
+        this.inferencer = inferencer;
         this.id = nodeIndexer.incrementAndGet();  // Assign unique ID
         this.asf = asf;
 
@@ -118,12 +118,20 @@ public class AST {
         this.Number.loadBuiltInMethods();
     }
     // Core Methods
-    public Inferences inferences(){
-        return this.inferences;
+    public Inferencer inferences(){
+        return this.inferencer;
     }
     public Module infer() {
-        this.program.infer(this.inferences);  // Trigger type inference
+        this.program.infer(this.inferencer);  // Trigger type inference
         return this.symbolEnv.module();  // Expose inferred module interface
+    }
+    /**
+     * Note: use {@link OutlineInterpreter#runAst(AST)} for full
+     * interpretation.  This convenience method returns unit; it exists so
+     * {@code Node.interpret} can be called without a live interpreter during testing.
+     */
+    public org.twelve.gcp.interpreter.value.Value interpret(){
+        return org.twelve.gcp.interpreter.value.UnitValue.INSTANCE;
     }
 
     public boolean inferred() {

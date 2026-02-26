@@ -2,7 +2,7 @@ package org.twelve.gcp.node.expression.typeable;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Location;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.outline.Outline;
 
 public class WrapperTypeNode extends TypeNode {
@@ -18,7 +18,7 @@ public class WrapperTypeNode extends TypeNode {
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
+    public Outline acceptInfer(Inferencer inferencer) {
         return this.outline;
     }
 

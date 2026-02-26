@@ -9,10 +9,10 @@ import org.twelve.gcp.outline.projectable.Generic;
 
 public class DictTypeNodeInference implements Inference<DictTypeNode> {
     @Override
-    public Outline infer(DictTypeNode node, Inferences inferences) {
+    public Outline infer(DictTypeNode node, Inferencer inferencer) {
         AST ast = node.ast();
-        Outline key = node.keyNode() == null ? ast.Any : node.keyNode().infer(inferences);
-        Outline value = node.valueNode() == null ? ast.Any : node.valueNode().infer(inferences);
+        Outline key = node.keyNode() == null ? ast.Any : node.keyNode().infer(inferencer);
+        Outline value = node.valueNode() == null ? ast.Any : node.valueNode().infer(inferencer);
         if (node.parent() instanceof Argument) {
             if (key == ast.Any) {
                 key = Generic.from(node, null);

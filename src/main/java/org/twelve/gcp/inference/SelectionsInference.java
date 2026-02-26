@@ -13,10 +13,10 @@ import java.util.List;
 
 public class SelectionsInference implements Inference<Selections<?>>{
     @Override
-    public Outline infer(Selections<?> node, Inferences inferences) {
+    public Outline infer(Selections<?> node, Inferencer inferencer) {
         List<Outline> inferred = new ArrayList<>();
         for (Arm arm : node.arms()) {
-            inferred.add(arm.infer(inferences));
+            inferred.add(arm.infer(inferencer));
         }
         if(!node.containsElse() && !inferred.contains(node.ast().Ignore)){
             inferred.add(node.ast().Ignore);

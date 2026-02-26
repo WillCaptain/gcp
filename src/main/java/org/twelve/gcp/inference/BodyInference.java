@@ -1,6 +1,5 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.node.expression.body.Body;
@@ -22,11 +21,11 @@ import static org.twelve.gcp.common.Tool.cast;
  */
 public abstract class BodyInference<T extends Body> implements Inference<T> {
     @Override
-    public Outline infer(T node, Inferences inferences) {
+    public Outline infer(T node, Inferencer inferencer) {
         Outline returns = null;
         for (int i = 0; i < node.nodes().size(); i++) {
             Statement child = cast(node.nodes().get(i));
-            Outline outline = child.infer(inferences);
+            Outline outline = child.infer(inferencer);
             //ignore IGNORE
             if (outline == node.ast().Ignore) {
                 continue;

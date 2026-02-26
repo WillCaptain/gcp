@@ -14,7 +14,7 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class ThisInference implements Inference<ThisNode> {
     @Override
-    public Outline infer(ThisNode node, Inferences inferences) {
+    public Outline infer(ThisNode node, Inferencer inferencer) {
         return findEntity(node);
     }
 

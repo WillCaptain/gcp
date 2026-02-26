@@ -3,16 +3,15 @@ package org.twelve.gcp.inference;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.conditions.Arm;
-import org.twelve.gcp.node.expression.conditions.IfArm;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.primitive.BOOL;
 
 public class ArmInference implements Inference<Arm>{
     @Override
-    public Outline infer(Arm node, Inferences inferences) {
-        if(!(node.test().infer(inferences) instanceof BOOL)){
+    public Outline infer(Arm node, Inferencer inferencer) {
+        if(!(node.test().infer(inferencer) instanceof BOOL)){
             GCPErrorReporter.report(node.test(), GCPErrCode.CONDITION_IS_NOT_BOOL);
         }
-        return node.consequence().infer(inferences);
+        return node.consequence().infer(inferencer);
     }
 }

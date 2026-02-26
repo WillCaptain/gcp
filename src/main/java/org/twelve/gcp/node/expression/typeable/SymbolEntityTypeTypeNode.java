@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.expression.typeable;
 
 
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.outline.Outline;
@@ -19,8 +19,8 @@ public class SymbolEntityTypeTypeNode extends EntityTypeNode implements SymbolTy
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
-        return inferences.visit(this);
+    public Outline acceptInfer(Inferencer inferencer) {
+        return inferencer.visit(this);
     }
 
     @Override

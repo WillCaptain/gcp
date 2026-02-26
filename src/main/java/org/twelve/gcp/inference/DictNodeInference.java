@@ -10,14 +10,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class DictNodeInference implements Inference<DictNode> {
     @Override
-    public Outline infer(DictNode node, Inferences inferences) {
+    public Outline infer(DictNode node, Inferencer inferencer) {
         if(node.isEmpty()){
             return new Dict(node,node.ast().Nothing,node.ast().Nothing);
         }
         AtomicReference<Outline> key = new AtomicReference<>();
         AtomicReference<Outline> value = new AtomicReference<>();
         node.values().forEach((k,v)->{
-            Outline inferredK = k.infer(inferences);
+            Outline inferredK = k.infer(inferencer);
             if(key.get()==null){
                 key.set(inferredK);
             }else{
@@ -28,7 +28,7 @@ public class DictNodeInference implements Inference<DictNode> {
                     GCPErrorReporter.report(k, GCPErrCode.OUTLINE_MISMATCH);
                 }
             }
-            Outline inferredV = v.infer(inferences);
+            Outline inferredV = v.infer(inferencer);
             if(value.get()==null){
                 value.set(inferredV);
             }else{

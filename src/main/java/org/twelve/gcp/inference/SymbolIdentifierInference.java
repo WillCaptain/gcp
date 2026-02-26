@@ -8,7 +8,7 @@ import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 public class SymbolIdentifierInference implements Inference<SymbolIdentifier> {
     @Override
-    public Outline infer(SymbolIdentifier node, Inferences inferences) {
+    public Outline infer(SymbolIdentifier node, Inferencer inferencer) {
         LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
         EnvSymbol supposed = oEnv.lookupSymbol(node.name());
         if (supposed == null) {

@@ -10,8 +10,8 @@ import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 public class ReferenceNodeInference implements Inference<ReferenceNode> {
     @Override
-    public Outline infer(ReferenceNode node, Inferences inferences) {
-        Outline outline = Reference.from(node, node.declared() == null ? null : node.declared().infer(inferences));
+    public Outline infer(ReferenceNode node, Inferencer inferencer) {
+        Outline outline = Reference.from(node, node.declared() == null ? null : node.declared().infer(inferencer));
         LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
         EnvSymbol symbol = oEnv.current().lookupOutline(node.name());//only check my scope
         if (symbol == null) {

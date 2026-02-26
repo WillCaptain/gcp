@@ -1,6 +1,8 @@
 package org.twelve.gcp.node.expression.conditions;
 
 import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.interpreter.Interpreter;
+import org.twelve.gcp.interpreter.value.Value;
 import org.twelve.gcp.node.expression.Expression;
 
 public class MatchExpression extends Selections<MatchArm>{
@@ -27,5 +29,10 @@ public class MatchExpression extends Selections<MatchArm>{
 
     public Expression subject(){
         return this.subject;
+    }
+
+    @Override
+    public Value acceptInterpret(Interpreter interpreter) {
+        return interpreter.visit(this);
     }
 }

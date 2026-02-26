@@ -281,10 +281,10 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         upConstraint = upConstraint == ast().Any ? this.extendToBe : upConstraint;
 
         //is chain不满足，退出
-//        if (!upConstraint.is(outline)) {
-//            GCPErrorReporter.report(outline.ast(), outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + upConstraint);
-//            return false;
-//        }
+        if (!upConstraint.is(outline)) {
+            GCPErrorReporter.report(outline.ast(), outline.node(), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline.node() + CONSTANTS.MISMATCH_STR + upConstraint);
+            return false;
+        }
 
         this.definedToBe = this.addDownConstraint(this.definedToBe, outline);
         return true;

@@ -8,9 +8,9 @@ import org.twelve.gcp.outline.projectable.Generic;
 
 public class ArrayTypeNodeInference implements Inference<ArrayTypeNode> {
     @Override
-    public Outline infer(ArrayTypeNode node, Inferences inferences) {
+    public Outline infer(ArrayTypeNode node, Inferencer inferencer) {
 
-        Outline itemOutline = node.itemNode() == null ? node.ast().Any : node.itemNode().infer(inferences);
+        Outline itemOutline = node.itemNode() == null ? node.ast().Any : node.itemNode().infer(inferencer);
         if (itemOutline == node.ast().Any && node.parent() instanceof Argument) {
             itemOutline = Generic.from(node, null);
         }

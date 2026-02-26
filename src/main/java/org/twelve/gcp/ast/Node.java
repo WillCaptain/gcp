@@ -1,7 +1,10 @@
 package org.twelve.gcp.ast;
 
 import org.twelve.gcp.exception.GCPRuntimeException;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
+import org.twelve.gcp.interpreter.Interpreter;
+import org.twelve.gcp.interpreter.value.UnitValue;
+import org.twelve.gcp.interpreter.value.Value;
 import org.twelve.gcp.outline.Outline;
 
 import java.io.Serializable;
@@ -42,7 +45,24 @@ public interface Node extends Serializable {
      * Performs type inference using visitor pattern.
      * Manages symbol table scope during inference.
      */
-    Outline infer(Inferences inferences);
+    Outline infer(Inferencer inferencer);
+
+    /**
+     * Interprets this node using the given visitor.
+     * Calls {@link #acceptInterpret(Interpreter)} which dispatches to the correct
+     * typed {@code visit} method on {@code interpreters}.
+     */
+    Value interpret(Interpreter interpreter);
+
+    /**
+     * Double-dispatch hook: each concrete node type overrides this to call
+     * {@code interpreters.visit(this)} with the specific node type, enabling
+     * the visitor to resolve the correct overloaded {@code visit} method.
+     * Default: returns {@link UnitValue#INSTANCE}.
+     */
+    default Value acceptInterpret(Interpreter interpreter) {
+        return UnitValue.INSTANCE;
+    }
 
     void clearError();
 
@@ -51,7 +71,7 @@ public interface Node extends Serializable {
     /**
      * Visitor pattern entry point for inference.
      */
-    Outline accept(Inferences inferences);
+    Outline acceptInfer(Inferencer inferencer);
 
     // --- Validation ---
 

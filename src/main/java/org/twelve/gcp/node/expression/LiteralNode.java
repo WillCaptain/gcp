@@ -2,6 +2,8 @@ package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
+import org.twelve.gcp.interpreter.Interpreter;
+import org.twelve.gcp.interpreter.value.Value;
 import org.twelve.gcp.node.ValueNode;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.primitive.*;
@@ -63,12 +65,17 @@ public class LiteralNode<T> extends ValueNode<LiteralNode<?>> {
     }
 
 //    @Override
-//    protected Outline accept(Inferences inferences) {
+//    protected Outline accept(Inferencer inferences) {
 //        return this.outline;
 //    }
 
     public T value() {
         return this.token.data();
+    }
+
+    @Override
+    public Value acceptInterpret(Interpreter interpreter) {
+        return interpreter.visit(this);
     }
 
     @Override

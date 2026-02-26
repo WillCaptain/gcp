@@ -2,13 +2,15 @@ package org.twelve.gcp.node.imexport;
 
 import org.twelve.gcp.ast.*;
 import org.twelve.gcp.common.Pair;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.namespace.ModuleNode;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.twelve.gcp.interpreter.Interpreter;
+import org.twelve.gcp.interpreter.value.Value;
 
 public class Import extends AbstractNode {
     private final ModuleNode source;
@@ -54,7 +56,12 @@ public class Import extends AbstractNode {
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
-        return inferences.visit(this);
+    public Outline acceptInfer(Inferencer inferencer) {
+        return inferencer.visit(this);
     }
+    @Override
+    public Value acceptInterpret(Interpreter interpreter) {
+        return interpreter.visit(this);
+    }
+
 }

@@ -13,22 +13,22 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class SymbolTupleTypeNodeInference implements Inference<SymbolTupleTypeTypeNode> {
     @Override
-    public Outline infer(SymbolTupleTypeTypeNode node, Inferences inferences) {
+    public Outline infer(SymbolTupleTypeTypeNode node, Inferencer inferencer) {
         if (node.members().isEmpty()) {
-            if (inferences.isLazy()) {
+            if (inferencer.isLazy()) {
                 LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
 //                EnvSymbol supposed = oEnv.lookupSymbol(node.symbol().name());
                 EnvSymbol supposed = oEnv.lookupOutline(node.symbol().name());
                 if (supposed == null) {//only when type is not there, lazy it
-                    return new Lazy(node.symbol(), inferences);
+                    return new Lazy(node.symbol(), inferencer);
                 } else {
                     return supposed.outline();
                 }
             }
-            return node.symbol().infer(inferences);
+            return node.symbol().infer(inferencer);
         } else {
-            Tuple tuple = cast(new TupleTypeNodeInference().infer(node, inferences));
-            SYMBOL symbol = cast(node.symbol().infer(inferences));
+            Tuple tuple = cast(new TupleTypeNodeInference().infer(node, inferencer));
+            SYMBOL symbol = cast(node.symbol().infer(inferencer));
             return new SymbolTuple(symbol, tuple);
         }
     }

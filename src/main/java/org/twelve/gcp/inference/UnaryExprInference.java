@@ -11,9 +11,9 @@ import org.twelve.gcp.outline.primitive.NUMBER;
 
 public class UnaryExprInference implements Inference<UnaryExpression> {
     @Override
-    public Outline infer(UnaryExpression node, Inferences inferences) {
+    public Outline infer(UnaryExpression node, Inferencer inferencer) {
         // Infer the type of the operand
-        Outline ol = node.operand().infer(inferences);
+        Outline ol = node.operand().infer(inferencer);
 
         // Check the operator type and operand type compatibility
         switch (node.operator()) {

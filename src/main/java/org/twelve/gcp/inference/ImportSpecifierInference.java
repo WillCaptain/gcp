@@ -8,7 +8,7 @@ import org.twelve.gcp.outline.Outline;
 
 public class ImportSpecifierInference implements Inference<ImportSpecifier> {
     @Override
-    public Outline infer(ImportSpecifier node, Inferences inferences) {
+    public Outline infer(ImportSpecifier node, Inferencer inferencer) {
         Identifier moduleSymbol = ((Import)node.parent()).source().name();
         if(node.imported().lexeme().equals(CONSTANTS.STAR)){
             return node.ast().symbolEnv().lookupAll(moduleSymbol.name()).outline();

@@ -8,7 +8,7 @@ import org.twelve.gcp.outline.adt.ProductADT;
 
 public class BaseInference implements Inference<BaseNode> {
     @Override
-    public Outline infer(BaseNode node, Inferences inferences) {
+    public Outline infer(BaseNode node, Inferencer inferencer) {
         return findBase(node);
     }
 

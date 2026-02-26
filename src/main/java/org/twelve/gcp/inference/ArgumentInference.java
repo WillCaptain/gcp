@@ -19,16 +19,16 @@ import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
  */
 public class ArgumentInference implements Inference<Argument> {
     @Override
-    public Outline infer(Argument node, Inferences inferences) {
+    public Outline infer(Argument node, Inferencer inferencer) {
         if (node.token() == Token.unit()) return Generic.from(node, node.ast().Unit);
         LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
         EnvSymbol symbol = oEnv.lookupAll(node.name());
         if (symbol == null || !symbol.scope().equals(node.scope())) {
             Expression defaultValue = node.defaultValue();
-            Outline outline = inferDeclared(node.declared(), inferences, node.ast());
+            Outline outline = inferDeclared(node.declared(), inferencer, node.ast());
             Genericable<?, ?> generic = Generic.from(node, outline);
             if (defaultValue != null) {
-                generic.addExtendToBe(defaultValue.infer(inferences));
+                generic.addExtendToBe(defaultValue.infer(inferencer));
             }
             node.ast().symbolEnv().defineSymbol(node.name(), generic, true, node);
 //            node.ast().cache().add(id.id());
@@ -41,8 +41,8 @@ public class ArgumentInference implements Inference<Argument> {
         }
     }
 
-    private Outline inferDeclared(TypeNode declared, Inferences inferences, AST ast) {
+    private Outline inferDeclared(TypeNode declared, Inferencer inferencer, AST ast) {
         if (declared == null) return ast.unknown();
-        return declared.infer(inferences);
+        return declared.infer(inferencer);
     }
 }

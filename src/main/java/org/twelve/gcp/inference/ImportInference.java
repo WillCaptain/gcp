@@ -14,7 +14,7 @@ import org.twelve.gcp.outline.builtin.Module;
  */
 public class ImportInference implements Inference<Import> {
     @Override
-    public Outline infer(Import node, Inferences inferences) {
+    public Outline infer(Import node, Inferencer inferencer) {
         String namespace = node.ast().namespace().lexeme();
         NamespaceNode ns = node.source().namespace();
         if(ns!=null) {//import source is in different namespace
@@ -36,7 +36,7 @@ public class ImportInference implements Inference<Import> {
                     node.ast().symbolEnv().defineOutline(_import.local().name(), outline, moduleSymbol);
                 }
             }
-            _import.infer(inferences);
+            _import.infer(inferencer);
         }
         return node.ast().Ignore;
     }

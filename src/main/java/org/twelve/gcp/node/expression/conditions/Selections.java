@@ -1,12 +1,14 @@
 package org.twelve.gcp.node.expression.conditions;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.twelve.gcp.interpreter.Interpreter;
+import org.twelve.gcp.interpreter.value.Value;
 
 /**
  * unify if, match, ternary to same structure with
@@ -41,7 +43,12 @@ public abstract class Selections<A extends Arm> extends Expression {
         return this.arms.stream().anyMatch(Arm::isElse);
     }
     @Override
-    public Outline accept(Inferences inferences) {
-        return inferences.visit(this);
+    public Outline acceptInfer(Inferencer inferencer) {
+        return inferencer.visit(this);
     }
+    @Override
+    public Value acceptInterpret(Interpreter interpreter) {
+        return interpreter.visit(this);
+    }
+
 }

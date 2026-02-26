@@ -17,10 +17,10 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class MatchTestInference implements Inference<MatchTest> {
     @Override
-    public Outline infer(MatchTest node, Inferences inferences) {
-        Outline subject = node.subject().infer(inferences);//match a{}, this is outline of a
+    public Outline infer(MatchTest node, Inferencer inferencer) {
+        Outline subject = node.subject().infer(inferencer);//match a{}, this is outline of a
         Expression pattern = node.pattern();//match a{ b ->}, this is outline of b. b could be literal, id, unpack
-        Outline outline = pattern.infer(inferences);
+        Outline outline = pattern.infer(inferencer);
 //        if(tryGeneric(subject,outline)){
 //            if (pattern instanceof UnpackNode) {
 //                for (Identifier id : ((UnpackNode)pattern).identifiers()) {
@@ -41,12 +41,12 @@ public class MatchTestInference implements Inference<MatchTest> {
         if (pattern instanceof UnpackNode) {
             ((UnpackNode)pattern).assign(node.ast().symbolEnv(),subject);
             if(subject instanceof Generic){
-                ((Generic) subject).addHasToBe(pattern.infer(inferences));
+                ((Generic) subject).addHasToBe(pattern.infer(inferencer));
             }
         }
-        pattern.infer(inferences);
+        pattern.infer(inferencer);
         if(node.condition()!=null) {
-            Outline condition = node.condition().infer(inferences);
+            Outline condition = node.condition().infer(inferencer);
             if(!(condition instanceof BOOL)){
                 GCPErrorReporter.report(node,GCPErrCode.OUTLINE_MISMATCH,"match condition should be boolean");
             }

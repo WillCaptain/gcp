@@ -30,13 +30,13 @@ import org.twelve.gcp.node.unpack.*;
 import org.twelve.gcp.outline.Outline;
 
 
-public class OutlineInferences implements Inferences {
+public class OutlineInferencer implements Inferencer {
     private final Boolean isLazy;
 
-    public OutlineInferences(Boolean isLazy){
+    public OutlineInferencer(Boolean isLazy){
         this.isLazy = isLazy;
     }
-    public OutlineInferences(){
+    public OutlineInferencer(){
         this(false);
     }
 

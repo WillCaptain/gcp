@@ -2,7 +2,6 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.AbstractNode;
-import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Expression;
@@ -51,13 +50,13 @@ import static org.twelve.gcp.common.Tool.*;
  */
 public class FunctionCallInference implements Inference<FunctionCallNode> {
     @Override
-    public Outline infer(FunctionCallNode node, Inferences inferences) {
+    public Outline infer(FunctionCallNode node, Inferencer inferencer) {
         AST ast = node.ast();
         // Member-access call inside a function body (e.g. HOF callback): defer on non-final passes to prevent premature convergence
-        if (inferences.isLazy() && isInFunction(node) && isInMember(node)) {
+        if (inferencer.isLazy() && isInFunction(node) && isInMember(node)) {
             return new Lazy(node, ast.inferences());
         }
-        Outline func = node.function().invalidate().infer(inferences);
+        Outline func = node.function().invalidate().infer(inferencer);
         if (func == null) {
             GCPErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_DEFINED);
             return ast.Error;
@@ -69,11 +68,11 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         Outline result = ast.unknown(node);
         // Overloaded function: select the matching version from the Poly union
         if (func instanceof Poly) {
-            result = targetOverride(cast(func), node.arguments(), inferences, node);
+            result = targetOverride(cast(func), node.arguments(), inferencer, node);
         } else {
             // Non-overloaded: verify argument match, or force-proceed on the final pass to avoid stalling
             if ((func instanceof Function<?, ?> &&
-                    this.matchFunction((Function<?, ?>) func, node.arguments(), inferences, node))
+                    this.matchFunction((Function<?, ?>) func, node.arguments(), inferencer, node))
                     || node.ast().asf().isLastInfer()) {
                 result = func;
             }
@@ -88,7 +87,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         } else {
             // Project each argument in order; each projection further narrows the generic constraints
             for (Expression argument : node.arguments()) {
-                argument.infer(inferences);
+                argument.infer(inferencer);
                 result = project(result, argument);
             }
         }
@@ -100,14 +99,14 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      *
      * @param overwrite  the overload set
      * @param arguments  the actual argument list
-     * @param inferences the inference context
+     * @param inferencer the inference context
      * @param node       the call node (used for error reporting)
      * @return the matching function type, or UNKNOWN if no overload matches
      */
-    private Outline targetOverride(Poly overwrite, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {
+    private Outline targetOverride(Poly overwrite, List<Expression> arguments, Inferencer inferencer, FunctionCallNode node) {
         List<Function<?, ?>> fs = overwrite.options().stream().filter(o -> o instanceof Function).map(o -> (Function<?, ?>) o).collect(Collectors.toList());
         for (Function<?, ?> f : fs) {
-            if (this.matchFunction(f, arguments, inferences, node)) {
+            if (this.matchFunction(f, arguments, inferencer, node)) {
                 return f;
             }
         }
@@ -120,11 +119,11 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      *
      * @param function   the candidate function type
      * @param arguments  the actual argument list
-     * @param inferences the inference context
+     * @param inferencer the inference context
      * @param node       the call node
      * @return {@code true} if all arguments match
      */
-    private boolean matchFunction(Function<?, ?> function, List<Expression> arguments, Inferences inferences, FunctionCallNode node) {
+    private boolean matchFunction(Function<?, ?> function, List<Expression> arguments, Inferencer inferencer, FunctionCallNode node) {
         Function<?, ?> f = null;
         for (Expression argument : arguments) {
             if (f == null) {// first argument: use the function type directly
@@ -136,7 +135,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
                     return false;
                 }
             }
-            Outline arg = argument.infer(inferences);
+            Outline arg = argument.infer(inferencer);
             if (!arg.is(f.argument())) {
                 return false;
             }

@@ -2,7 +2,7 @@ package org.twelve.gcp.node.statement;
 
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.common.VariableKind;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.Assignable;
 import org.twelve.gcp.node.expression.Assignment;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
@@ -11,6 +11,8 @@ import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 
 import static org.twelve.gcp.common.Tool.cast;
+import org.twelve.gcp.interpreter.Interpreter;
+import org.twelve.gcp.interpreter.value.Value;
 
 public class MemberNode extends VariableDeclarator {
 
@@ -42,11 +44,16 @@ public class MemberNode extends VariableDeclarator {
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
-       return inferences.visit(this);
+    public Outline acceptInfer(Inferencer inferencer) {
+       return inferencer.visit(this);
 //        super.accept(inferences);
 //        return this.outline();
     }
+    @Override
+    public Value acceptInterpret(Interpreter interpreter) {
+        return interpreter.visit(this);
+    }
+
 
     public Identifier identifier() {
         return cast(this.assignments().getFirst().lhs());

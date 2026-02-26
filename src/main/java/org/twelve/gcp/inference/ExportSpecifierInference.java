@@ -5,7 +5,7 @@ import org.twelve.gcp.outline.Outline;
 
 public class ExportSpecifierInference implements Inference<ExportSpecifier>{
     @Override
-    public Outline infer(ExportSpecifier node, Inferences inferences) {
+    public Outline infer(ExportSpecifier node, Inferencer inferencer) {
         return node.local().outline();
     }
 }

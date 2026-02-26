@@ -14,9 +14,9 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class ArrayAccessorInference implements Inference<ArrayAccessor> {
     @Override
-    public Outline infer(ArrayAccessor node, Inferences inferences) {
-        Outline array = node.array().infer(inferences);
-        Outline index = node.index().infer(inferences);
+    public Outline infer(ArrayAccessor node, Inferencer inferencer) {
+        Outline array = node.array().infer(inferencer);
+        Outline index = node.index().infer(inferencer);
         Outline inferred = this.inferArray(node, array, index);
         if (inferred == null) {
             inferred = this.inferDict(node, array, index);

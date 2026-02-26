@@ -1,11 +1,8 @@
 package org.twelve.gcp.node.expression.conditions;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.ast.Location;
-import org.twelve.gcp.ast.Token;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.node.expression.LiteralNode;
 import org.twelve.gcp.node.expression.body.Block;
 import org.twelve.gcp.outline.Outline;
 
@@ -31,8 +28,8 @@ public abstract class Arm<T extends Expression> extends Block {
         return this.consequence;
     }
     @Override
-    public Outline accept(Inferences inferences) {
-        return inferences.visit(this);
+    public Outline acceptInfer(Inferencer inferencer) {
+        return inferencer.visit(this);
     }
     @Override
     public Outline outline() {

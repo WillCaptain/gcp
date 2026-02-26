@@ -5,11 +5,11 @@ import org.twelve.gcp.outline.Outline;
 
 public class ReturnInference implements Inference<ReturnStatement> {
     @Override
-    public Outline infer(ReturnStatement node, Inferences inferences) {
+    public Outline infer(ReturnStatement node, Inferencer inferencer) {
         if (node.expression() == null) {
             return node.ast().Unit;// return;
         } else {
-            return node.expression().infer(inferences);// return ***
+            return node.expression().infer(inferencer);// return ***
         }
     }
 }

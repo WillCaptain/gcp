@@ -1,13 +1,14 @@
 package org.twelve.gcp.node.statement;
 
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.Expression;
-import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.twelve.gcp.interpreter.Interpreter;
+import org.twelve.gcp.interpreter.value.Value;
 
 /**
  * wrap an expression to make it a return ignore statement
@@ -28,10 +29,15 @@ public class ExpressionStatement extends Statement{
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
-        this.expressions.forEach(e->e.infer(inferences));
+    public Outline acceptInfer(Inferencer inferencer) {
+        this.expressions.forEach(e->e.infer(inferencer));
         return this.ast().Ignore;
     }
+    @Override
+    public Value acceptInterpret(Interpreter interpreter) {
+        return interpreter.visit(this);
+    }
+
 
     @Override
     public String lexeme() {

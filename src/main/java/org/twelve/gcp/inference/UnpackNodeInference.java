@@ -6,10 +6,10 @@ import org.twelve.gcp.outline.Outline;
 
 public class UnpackNodeInference implements Inference<UnpackNode>{
     @Override
-    public Outline infer(UnpackNode node, Inferences inferences) {
+    public Outline infer(UnpackNode node, Inferencer inferencer) {
         for (Identifier id : node.identifiers()) {
             node.ast().symbolEnv().defineSymbol(id.name(), node.ast().unknown(id), false, id);
-            id.infer(inferences);
+            id.infer(inferencer);
         }
 
        return node.outline();

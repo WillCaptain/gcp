@@ -6,7 +6,7 @@ import org.twelve.gcp.outline.Outline;
 
 public class MatchExpressionInference extends SelectionsInference{
 //    @Override
-//    public Outline infer(Selections<?> node, Inferences inferences) {
+//    public Outline infer(Selections<?> node, Inferencer inferences) {
 //        ((MatchExpression)node).subject().infer(inferences);
 //        return super.infer(node,inferences);
 //    }

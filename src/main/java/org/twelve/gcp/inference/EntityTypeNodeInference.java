@@ -9,19 +9,19 @@ import org.twelve.gcp.outline.projectable.Reference;
 
 public class EntityTypeNodeInference implements Inference<EntityTypeNode> {
     @Override
-    public Outline infer(EntityTypeNode node, Inferences inferences) {
+    public Outline infer(EntityTypeNode node, Inferencer inferencer) {
 
-        return this.infer(node, inferences, node.ast().Any);
+        return this.infer(node, inferencer, node.ast().Any);
     }
 
-    public Outline infer(EntityTypeNode node, Inferences inferences, Outline base) {
+    public Outline infer(EntityTypeNode node, Inferencer inferencer, Outline base) {
         node.ast().symbolEnv().current().setScopeType(SCOPE_TYPE.IN_PRODUCT_ADT);
-        Entity entity = Entity.fromRefs(node, node.refs().stream().map(r -> (Reference) r.infer(inferences)).toList());
+        Entity entity = Entity.fromRefs(node, node.refs().stream().map(r -> (Reference) r.infer(inferencer)).toList());
         node.ast().symbolEnv().current().setOutline(entity);
 
-        Inferences sessionInferences = new OutlineInferences(true);
+        Inferencer sessionInferencer = new OutlineInferencer(true);
         for (Variable m : node.members()) {
-            Outline declared = m.declared() == null ? node.ast().Any : m.declared().infer(sessionInferences);
+            Outline declared = m.declared() == null ? node.ast().Any : m.declared().infer(sessionInferencer);
             entity.addMember(m.name(), declared, m.modifier(), m.mutable(), m);
         }
 

@@ -2,7 +2,7 @@ package org.twelve.gcp.outline.decorators;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.projectable.ProjectSession;
@@ -21,17 +21,17 @@ import java.util.stream.Collectors;
 public class Lazy implements Projectable, ReferAble {
     private final long id;
     private final Node node;
-    private final Inferences inferences;
+    private final Inferencer inferencer;
     private final AstScope scope;
     private List<OutlineWrapper> referencesProjections = new ArrayList<>();
     private Map<ProjectSession, GenericProjection> genericProjections = new HashMap<>();
 //    private ProductADT me;
 
-    public Lazy(Node node, Inferences inferences) {
+    public Lazy(Node node, Inferencer inferencer) {
         this.id = node.ast().Counter.getAndIncrement();
         this.node = node;
         this.scope = node.ast().symbolEnv().current();
-        this.inferences = inferences;
+        this.inferencer = inferencer;
     }
 
     @Override
@@ -61,7 +61,7 @@ public class Lazy implements Projectable, ReferAble {
     @Override
     public Outline eventual() {
         this.node.ast().symbolEnv().enter(this.scope);
-        Outline eventual = this.node.accept(inferences);
+        Outline eventual = this.node.acceptInfer(inferencer);
         if (eventual instanceof ReferAble && !this.referencesProjections.isEmpty()) {
             eventual = ((ReferAble) eventual).project(this.referencesProjections);
         }
@@ -126,7 +126,7 @@ public class Lazy implements Projectable, ReferAble {
 
     @Override
     public Outline copy() {
-        Lazy lazy = new Lazy(this.node,this.inferences);
+        Lazy lazy = new Lazy(this.node,this.inferencer);
         lazy.referencesProjections.addAll(this.referencesProjections);
         return lazy;
     }

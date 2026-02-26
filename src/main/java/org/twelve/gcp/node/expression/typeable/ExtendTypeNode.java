@@ -1,8 +1,7 @@
 package org.twelve.gcp.node.expression.typeable;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.common.Pair;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
 import org.twelve.gcp.outline.Outline;
 
@@ -39,8 +38,8 @@ public class ExtendTypeNode extends TypeNode {
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
-        return inferences.visit(this);
+    public Outline acceptInfer(Inferencer inferencer) {
+        return inferencer.visit(this);
     }
 
     @Override

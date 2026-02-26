@@ -1,6 +1,6 @@
 package org.twelve.gcp.node.expression.typeable;
 
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.ValueNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
@@ -30,9 +30,9 @@ public class LiteralTypeNode extends TypeNode {
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
+    public Outline acceptInfer(Inferencer inferencer) {
         if (this.typeNode.outline() instanceof UNKNOWN) {
-            return this.typeNode.infer(inferences);
+            return this.typeNode.infer(inferencer);
 //            return this.typeNode.accept(inferences);
         } else {
             return this.outline();

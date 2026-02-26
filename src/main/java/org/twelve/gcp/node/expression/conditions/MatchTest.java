@@ -2,7 +2,7 @@ package org.twelve.gcp.node.expression.conditions;
 
 import lombok.Setter;
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.outline.Outline;
 
@@ -30,9 +30,9 @@ public class MatchTest extends Expression {
         return this.condition;
     }
     @Override
-    public Outline accept(Inferences inferences) {
+    public Outline acceptInfer(Inferencer inferencer) {
 
-        return inferences.visit(this);
+        return inferencer.visit(this);
     }
 
     @Override

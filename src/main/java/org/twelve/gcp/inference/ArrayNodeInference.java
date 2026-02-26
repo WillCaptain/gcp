@@ -14,41 +14,41 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class ArrayNodeInference implements Inference<ArrayNode> {
     @Override
-    public Outline infer(ArrayNode node, Inferences inferences) {
+    public Outline infer(ArrayNode node, Inferencer inferencer) {
         if(node.isEmpty()){
             return Array.from(node,node.ast().Nothing);
         }
         if (node.values() == null) {
-            return inferRange(node, inferences);
+            return inferRange(node, inferencer);
         } else {
-            return inferValues(node, inferences);
+            return inferValues(node, inferencer);
         }
     }
 
-    private Outline inferRange(ArrayNode node, Inferences inferences) {
+    private Outline inferRange(ArrayNode node, Inferencer inferencer) {
         Outline outline = node.ast().Integer;
         //validate begin
         if (node.begin() != null) {
-            Outline begin = node.begin().infer(inferences);
+            Outline begin = node.begin().infer(inferencer);
             if (!begin.is(node.ast().Integer)) {
                 GCPErrorReporter.report(node.begin(), GCPErrCode.NOT_INTEGER);
             }
         }
         //validate end
-        Outline end = node.end().infer(inferences);
+        Outline end = node.end().infer(inferencer);
         if (!end.is(node.ast().Integer)) {
             GCPErrorReporter.report(node.end(), GCPErrCode.NOT_INTEGER);
         }
         //validate step
         if (node.step() != null) {
-            Outline step = node.step().infer(inferences);
+            Outline step = node.step().infer(inferencer);
             if (!step.is(node.ast().Integer)) {
                 GCPErrorReporter.report(node.step(), GCPErrCode.NOT_INTEGER);
             }
         }
         //infer processor
         if(node.processor()!=null){
-            Outline processor = node.processor().infer(inferences);
+            Outline processor = node.processor().infer(inferencer);
             if (processor instanceof Function<?, ?>) {
                 Function<?, Genericable<?,?>> f = cast(processor);
                 outline = f.returns().project(f.argument(), node.ast().Integer, new ProjectSession());
@@ -58,7 +58,7 @@ public class ArrayNodeInference implements Inference<ArrayNode> {
         }
         //validate condition
         if (node.condition() != null) {
-            Outline condition = node.condition().infer(inferences);
+            Outline condition = node.condition().infer(inferencer);
             if (condition instanceof Function<?, ?>) {
                 Function<?, Genericable<?,?>> f = cast(condition);
                 if (!f.returns().supposedToBe().is(node.ast().Boolean)) {
@@ -71,11 +71,11 @@ public class ArrayNodeInference implements Inference<ArrayNode> {
         return Array.from(node, outline);
     }
 
-    private Outline inferValues(ArrayNode node, Inferences inferences) {
+    private Outline inferValues(ArrayNode node, Inferencer inferencer) {
         Expression[] values = node.values();
         Outline outline = node.ast().Any;
         for (Expression value : values) {
-            Outline v = value.infer(inferences);
+            Outline v = value.infer(inferencer);
 //            if (outline == Outline.Nothing) {
 //                outline = v;
 //            } else {

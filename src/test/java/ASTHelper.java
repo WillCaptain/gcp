@@ -1535,4 +1535,159 @@ public class ASTHelper {
                 builder.buildDict().add(builder.buildLiteral(1),builder.buildLiteral(2)).build()));
         return builder.ast();
     }
+
+    // =========================================================================
+    // Static micro-helpers for interpreter tests
+    // =========================================================================
+
+    /** Create a LiteralNode from a String. */
+    public static LiteralNode<String> lit(AST ast, String v) {
+        return LiteralNode.parse(ast, new Token<>(v));
+    }
+
+    /** Create a LiteralNode from an Integer. */
+    public static LiteralNode<Integer> lit(AST ast, int v) {
+        return LiteralNode.parse(ast, new Token<>(v));
+    }
+
+    /** Create a LiteralNode from a Boolean. */
+    public static LiteralNode<Boolean> lit(AST ast, boolean v) {
+        return LiteralNode.parse(ast, new Token<>(v));
+    }
+
+    /** Create a BinaryExpression with the given operator symbol. */
+    public static BinaryExpression binOp(AST ast, Expression left, String op, Expression right) {
+        return new BinaryExpression(left, right,
+                new OperatorNode<>(ast, BinaryOperator.parse(op)));
+    }
+
+    /** Create a VariableDeclarator statement (let name = expr). */
+    public static VariableDeclarator varLet(AST ast, String name, Expression expr) {
+        VariableDeclarator decl = new VariableDeclarator(ast, VariableKind.LET);
+        decl.declare(new Identifier(ast, new Token<>(name)), expr);
+        return decl;
+    }
+
+    /** Create a ReferenceCallNode (__constructorName__<typeArg>). */
+    public static ReferenceCallNode refCall(AST ast, String constructorName, String typeArg) {
+        IdentifierTypeNode typeNode = new IdentifierTypeNode(new Identifier(ast, new Token<>(typeArg)));
+        return new ReferenceCallNode(new Identifier(ast, new Token<>(constructorName)), typeNode);
+    }
+
+    /** Create a FunctionCallNode (identifier called with one expression argument). */
+    public static FunctionCallNode call(AST ast, String funcName, Expression arg) {
+        return new FunctionCallNode(new Identifier(ast, new Token<>(funcName)), arg);
+    }
+
+    /** Create a FunctionCallNode (expression called with zero arguments – unit call). */
+    public static FunctionCallNode call(AST ast, Expression func) {
+        return new FunctionCallNode(func);
+    }
+
+    /** Create a MemberAccessor (objectName.memberName). */
+    public static MemberAccessor memberAccess(AST ast, String objName, String member) {
+        return new MemberAccessor(new Identifier(ast, new Token<>(objName)),
+                new Identifier(ast, new Token<>(member)));
+    }
+
+    /** Create an ArrayNode from literal expressions. */
+    @SafeVarargs
+    public static ArrayNode arrayLit(AST ast, Expression... items) {
+        return new ArrayNode(ast, items);
+    }
+
+    /**
+     * AST: let x = 10; let f = y -> x + y; let result = f(5);
+     */
+    public static AST mockClosureCapture() {
+        ASF asf = new ASF();
+        AST ast = asf.newAST();
+        // let x = 10
+        VariableDeclarator xDecl = new VariableDeclarator(ast, VariableKind.LET);
+        xDecl.declare(new Identifier(ast, new Token<>("x")), LiteralNode.parse(ast, new Token<>(10)));
+        ast.addStatement(xDecl);
+
+        // let f = y -> x + y
+        FunctionBody body = new FunctionBody(ast);
+        body.addStatement(new ReturnStatement(
+                new BinaryExpression(
+                        new Identifier(ast, new Token<>("x")),
+                        new Identifier(ast, new Token<>("y")),
+                        new OperatorNode<>(ast, BinaryOperator.ADD))));
+        FunctionNode fn = FunctionNode.from(body, new Argument(new Identifier(ast, new Token<>("y"))));
+        VariableDeclarator fDecl = new VariableDeclarator(ast, VariableKind.LET);
+        fDecl.declare(new Identifier(ast, new Token<>("f")), fn);
+        ast.addStatement(fDecl);
+
+        // let result = f(5)
+        VariableDeclarator rDecl = new VariableDeclarator(ast, VariableKind.LET);
+        rDecl.declare(new Identifier(ast, new Token<>("result")),
+                new FunctionCallNode(new Identifier(ast, new Token<>("f")),
+                        LiteralNode.parse(ast, new Token<>(5))));
+        ast.addStatement(rDecl);
+
+        return ast;
+    }
+
+    /**
+     * Clean factorial AST: just the function definition + one correct call.
+     * let factorial = n -> n==0 ? 1 : n * factorial(n-1);
+     * let r = factorial(5);
+     */
+    public static AST mockRecursiveClean() {
+        ASF asf = new ASF();
+        AST ast = asf.newAST();
+
+        Token<String> fToken = new Token<>("factorial");
+        Consequence c1 = new Consequence(ast);
+        c1.addStatement(new ReturnStatement(LiteralNode.parse(ast, new Token<>(1))));
+        Consequence c2 = new Consequence(ast);
+        FunctionCallNode call = new FunctionCallNode(new Identifier(ast, fToken),
+                new BinaryExpression(new Identifier(ast, new Token<>("n")),
+                        LiteralNode.parse(ast, new Token<>(1)),
+                        new OperatorNode<>(ast, BinaryOperator.SUBTRACT)));
+        c2.addStatement(new ReturnStatement(
+                new BinaryExpression(new Identifier(ast, new Token<>("n")), call,
+                        new OperatorNode<>(ast, BinaryOperator.MULTIPLY))));
+
+        FunctionBody body = new FunctionBody(ast);
+        IfArm arm1 = new IfArm(new BinaryExpression(new Identifier(ast, new Token<>("n")),
+                LiteralNode.parse(ast, new Token<>(0)),
+                new OperatorNode<>(ast, BinaryOperator.EQUALS)), c1);
+        IfArm arm2 = new IfArm(c2);
+        Selections ifs = new TernaryExpression(arm1, arm2);
+        body.addStatement(new ReturnStatement(ifs));
+
+        FunctionNode factorial = FunctionNode.from(body, new Argument(new Identifier(ast, new Token<>("n"))));
+        VariableDeclarator declarator = new VariableDeclarator(ast, VariableKind.LET);
+        declarator.declare(new Identifier(ast, fToken), factorial);
+        ast.addStatement(declarator);
+
+        return ast;
+    }
+
+    /**
+     * AST: let f = () -> 42; let r = f();
+     */
+    public static AST mockUnitFuncCall() {
+        ASF asf = new ASF();
+        AST ast = asf.newAST();
+
+        // let f = () -> 42
+        FunctionBody body = new FunctionBody(ast);
+        body.addStatement(new ReturnStatement(LiteralNode.parse(ast, new Token<>(42))));
+        FunctionNode fn = FunctionNode.from(body); // no args = unit arg
+        VariableDeclarator fDecl = new VariableDeclarator(ast, VariableKind.LET);
+        fDecl.declare(new Identifier(ast, new Token<>("f")), fn);
+        ast.addStatement(fDecl);
+
+        // let r = f()
+        VariableDeclarator rDecl = new VariableDeclarator(ast, VariableKind.LET);
+        rDecl.declare(new Identifier(ast, new Token<>("r")),
+                new FunctionCallNode(new Identifier(ast, new Token<>("f"))));
+        ast.addStatement(rDecl);
+
+        return ast;
+    }
+
 }

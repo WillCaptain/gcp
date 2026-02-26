@@ -1,6 +1,5 @@
 package org.twelve.gcp.inference;
 
-import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.node.unpack.TupleUnpackNode;
@@ -14,21 +13,21 @@ import java.util.List;
 
 public class TupleUnpackNodeInference implements Inference<TupleUnpackNode>{
     @Override
-    public Outline infer(TupleUnpackNode node, Inferences inferences) {
-        return new Tuple(convertEntity(node, inferences));
+    public Outline infer(TupleUnpackNode node, Inferencer inferencer) {
+        return new Tuple(convertEntity(node, inferencer));
     }
-    private static Entity convertEntity(TupleUnpackNode node, Inferences inferences) {
+    private static Entity convertEntity(TupleUnpackNode node, Inferencer inferencer) {
         List<Node> begins = node.begins();
         List<Node> ends = node.ends();
         List<EntityMember> members = new ArrayList<>();
 //        if(!begins.isEmpty()){
             for (int i = 0; i < begins.size(); i++) {
-                members.add(EntityMember.from(String.valueOf(i),begins.get(i).infer(inferences), Modifier.PUBLIC,false));
+                members.add(EntityMember.from(String.valueOf(i),begins.get(i).infer(inferencer), Modifier.PUBLIC,false));
             }
 //        }
 //        if(!ends.isEmpty()){
             for (int i = 0; i < ends.size(); i++) {
-                members.add(EntityMember.from(String.valueOf(i-ends.size()),ends.get(i).infer(inferences), Modifier.PUBLIC,false));
+                members.add(EntityMember.from(String.valueOf(i-ends.size()),ends.get(i).infer(inferencer), Modifier.PUBLIC,false));
             }
 //        }
         return Entity.from(node,members);

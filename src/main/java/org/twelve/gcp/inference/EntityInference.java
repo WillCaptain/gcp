@@ -8,7 +8,6 @@ import org.twelve.gcp.node.expression.EntityNode;
 import org.twelve.gcp.outline.adt.*;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
-import org.twelve.gcp.outline.decorators.Lazy;
 import org.twelve.gcp.outline.decorators.This;
 import org.twelve.gcp.outline.primitive.SYMBOL;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
@@ -21,14 +20,14 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class EntityInference implements Inference<EntityNode> {
     @Override
-    public Outline infer(EntityNode node, Inferences inferences) {
+    public Outline infer(EntityNode node, Inferencer inferencer) {
         Entity entity;
         node.ast().symbolEnv().current().setScopeType(SCOPE_TYPE.IN_PRODUCT_ADT);
         if (node.outline() instanceof UNKNOWN) {//第一次infer
             //infer base
             Outline base = null;
             if (node.base() != null) {
-                base = node.base().infer(inferences);
+                base = node.base().infer(inferencer);
                 if (!(base instanceof Generic)) {
                     if (!(base instanceof ADT)) {
                         GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH);
@@ -51,7 +50,7 @@ public class EntityInference implements Inference<EntityNode> {
         node.ast().symbolEnv().current().setOutline(entity);
         //infer my members
         node.members().forEach((k, v) -> {
-            Outline outline = v.infer(inferences);
+            Outline outline = v.infer(inferencer);
 //            Outline outline = v.inferLazy(inferences);
             entity.addMember(k, outline, v.modifier(), v.mutable(), v.identifier());
         });

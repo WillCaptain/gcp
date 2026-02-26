@@ -1,10 +1,11 @@
 package org.twelve.gcp.node.expression.accessor;
 
-import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.interpreter.Interpreter;
+import org.twelve.gcp.interpreter.value.Value;
 
 /**
  * including array accessor and list accessor
@@ -36,7 +37,12 @@ public class ArrayAccessor extends Accessor {
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
-        return inferences.visit(this);
+    public Outline acceptInfer(Inferencer inferencer) {
+        return inferencer.visit(this);
     }
+    @Override
+    public Value acceptInterpret(Interpreter interpreter) {
+        return interpreter.visit(this);
+    }
+
 }

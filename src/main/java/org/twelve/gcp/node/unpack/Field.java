@@ -1,6 +1,6 @@
 package org.twelve.gcp.node.unpack;
 
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
@@ -20,8 +20,11 @@ public abstract class Field {
 
     public abstract List<Identifier> identifiers();
 
+    /** Returns the nested unpack node if this is a nested-unpack field, otherwise null. */
+    public UnpackNode nestedUnpack() { return null; }
+
     public abstract void assign(LocalSymbolEnvironment env, Outline outline);
 
-    abstract public Outline infer(Inferences inferences);
+    abstract public Outline infer(Inferencer inferencer);
     //abstract Outline outline();
 }

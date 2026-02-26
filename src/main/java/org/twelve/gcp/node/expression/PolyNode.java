@@ -3,10 +3,12 @@ package org.twelve.gcp.node.expression;
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.ast.SimpleLocation;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.stream.Collectors;
+import org.twelve.gcp.interpreter.Interpreter;
+import org.twelve.gcp.interpreter.value.Value;
 
 /**
  * Poly节点
@@ -38,7 +40,12 @@ public class PolyNode extends Expression{
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
-        return inferences.visit(this);
+    public Outline acceptInfer(Inferencer inferencer) {
+        return inferencer.visit(this);
     }
+    @Override
+    public Value acceptInterpret(Interpreter interpreter) {
+        return interpreter.visit(this);
+    }
+
 }

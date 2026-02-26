@@ -1,7 +1,7 @@
 package org.twelve.gcp.node.unpack;
 
 import org.twelve.gcp.ast.AST;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
 import org.twelve.gcp.outline.Outline;
 
@@ -38,8 +38,8 @@ public class SymbolTupleUnpackNode extends TupleUnpackNode implements SymbolUnpa
 //    }
 
     @Override
-    public Outline accept(Inferences inferences) {
-        this.outline = super.accept(inferences);
-        return inferences.visit(this);
+    public Outline acceptInfer(Inferencer inferencer) {
+        this.outline = super.acceptInfer(inferencer);
+        return inferencer.visit(this);
     }
 }

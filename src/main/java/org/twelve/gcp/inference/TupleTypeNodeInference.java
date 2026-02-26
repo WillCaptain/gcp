@@ -8,7 +8,7 @@ import static org.twelve.gcp.common.Tool.cast;
 
 public class TupleTypeNodeInference implements Inference<TupleTypeNode>{
     @Override
-    public Outline infer(TupleTypeNode node, Inferences inferences) {
-        return new Tuple(cast(new EntityTypeNodeInference().infer(node,inferences)));
+    public Outline infer(TupleTypeNode node, Inferencer inferencer) {
+        return new Tuple(cast(new EntityTypeNodeInference().infer(node, inferencer)));
     }
 }

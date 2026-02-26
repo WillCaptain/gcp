@@ -9,9 +9,9 @@ import org.twelve.gcp.outline.Outline;
  */
 public class VariableDeclaratorInference implements Inference<VariableDeclarator> {
     @Override
-    public Outline infer(VariableDeclarator node, Inferences inferences) {
+    public Outline infer(VariableDeclarator node, Inferencer inferencer) {
         for (Assignment assignment : node.assignments()) {
-            assignment.infer(inferences);
+            assignment.infer(inferencer);
         }
         return node.ast().Ignore;
     }

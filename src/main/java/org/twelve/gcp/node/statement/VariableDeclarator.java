@@ -2,13 +2,15 @@ package org.twelve.gcp.node.statement;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.VariableKind;
-import org.twelve.gcp.inference.Inferences;
+import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.outline.Outline;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.twelve.gcp.interpreter.Interpreter;
+import org.twelve.gcp.interpreter.value.Value;
 
 public class VariableDeclarator extends Statement {
     private final VariableKind kind;
@@ -43,9 +45,14 @@ public class VariableDeclarator extends Statement {
     }
 
     @Override
-    public Outline accept(Inferences inferences) {
-        return inferences.visit(this);
+    public Outline acceptInfer(Inferencer inferencer) {
+        return inferencer.visit(this);
     }
+    @Override
+    public Value acceptInterpret(Interpreter interpreter) {
+        return interpreter.visit(this);
+    }
+
     public VariableKind kind() {
         return this.kind;
     }

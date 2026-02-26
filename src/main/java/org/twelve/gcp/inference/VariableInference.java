@@ -13,7 +13,7 @@ import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 public class VariableInference implements Inference<Variable> {
     @Override
-    public Outline infer(Variable node, Inferences inferences) {
+    public Outline infer(Variable node, Inferencer inferencer) {
         LocalSymbolEnvironment oEnv = node.ast().symbolEnv();
         EnvSymbol symbol = oEnv.current().lookupSymbol(node.name());//only check my scope
         if (symbol == null) {
@@ -23,10 +23,10 @@ public class VariableInference implements Inference<Variable> {
                     oEnv.defineSymbol(id.name(), node.ast().unknown(node), false, id);
                 }
                 node.addNode(node.identifier());
-                return node.identifier().infer(inferences);
+                return node.identifier().infer(inferencer);
 //                return node.identifier().outline();//new Unpack(cast(node.identifier()));
             }else {
-                Outline outline = inferDeclared(node.declared(), inferences, node.ast());
+                Outline outline = inferDeclared(node.declared(), inferencer, node.ast());
                 if(outline.containsReference()){
                     GCPErrorReporter.report(node,GCPErrCode.DECLARED_CAN_NOT_BE_GENERIC);
                 }
@@ -43,8 +43,8 @@ public class VariableInference implements Inference<Variable> {
         }
     }
 
-    private Outline inferDeclared(TypeNode declared, Inferences inferences, AST ast) {
+    private Outline inferDeclared(TypeNode declared, Inferencer inferencer, AST ast) {
         if (declared == null) return ast.unknown();
-        return declared.infer(inferences);
+        return declared.infer(inferencer);
     }
 }

@@ -10,7 +10,6 @@ import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.adt.ProductADT;
-import org.twelve.gcp.outline.decorators.This;
 import org.twelve.gcp.outline.primitive.ANY;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.AccessorGeneric;
@@ -43,8 +42,8 @@ import static org.twelve.gcp.common.Tool.cast;
  */
 public class MemberAccessorInference implements Inference<MemberAccessor> {
     @Override
-    public Outline infer(MemberAccessor node, Inferences inferences) {
-        Outline outline = node.host().infer(inferences);
+    public Outline infer(MemberAccessor node, Inferencer inferencer) {
+        Outline outline = node.host().infer(inferencer);
         if (outline instanceof UNKNOWN) return outline; // host not yet inferred; wait for the next pass
 
         // Generic path: host is a type variable (e.g. a lambda parameter); extend its Entity constraint dynamically

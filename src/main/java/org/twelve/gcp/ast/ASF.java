@@ -3,8 +3,10 @@ package org.twelve.gcp.ast;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.exception.GCPRuntimeException;
-import org.twelve.gcp.inference.Inferences;
-import org.twelve.gcp.inference.OutlineInferences;
+import org.twelve.gcp.inference.Inferencer;
+import org.twelve.gcp.inference.OutlineInferencer;
+import org.twelve.gcp.interpreter.OutlineInterpreter;
+import org.twelve.gcp.interpreter.value.Value;
 import org.twelve.gcp.outlineenv.GlobalSymbolEnvironment;
 import org.twelve.gcp.outlineenv.GlobalScope;
 
@@ -25,7 +27,7 @@ import java.util.List;
  */
 public class ASF {
     private List<AST> asts = new ArrayList<>();  // All ASTs in this forest
-    private Inferences inferences = new OutlineInferences();  // Inference rules/utilities
+    private Inferencer inferencer = new OutlineInferencer();  // Inference rules/utilities
     private GlobalSymbolEnvironment globalSymbolEnvironment = new GlobalSymbolEnvironment();  // Shared symbol table
     private int leftTimes = CONSTANTS.MAX_INFER_TIMES;
 
@@ -34,7 +36,7 @@ public class ASF {
      * @return The newly created AST, linked to this ASF's inference and symbol environment.
      */
     public AST newAST() {
-        AST ast = new AST(this.inferences, this);
+        AST ast = new AST(this.inferencer, this);
         this.asts.add(ast);
         return ast;
     }
@@ -97,5 +99,27 @@ public class ASF {
 
     public boolean isLastInfer() {
         return this.leftTimes==1;
+    }
+
+    /**
+     * Interprets all ASTs in this forest using a default {@link OutlineInterpreter}.
+     * <p>
+     * Symmetric counterpart to {@link #infer()}:
+     * <pre>
+     *   asf.infer();       // type inference pass
+     *   asf.interpret();   // execution pass
+     * </pre>
+     * For custom configuration (e.g. {@code registerConstructor}), use
+     * {@code new OutlineInterpreter().run(asf)} directly.
+     *
+     * @return the value produced by the last statement of the last AST module.
+     */
+    public Value interpret() {
+        return new OutlineInterpreter().run(this);
+    }
+
+    /** Returns all ASTs in the forest in insertion order. */
+    public List<AST> asts() {
+        return java.util.Collections.unmodifiableList(this.asts);
     }
 }
