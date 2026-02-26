@@ -55,28 +55,25 @@ public class ASF {
      * 3. Marks unresolved nodes as errors.
      */
     public boolean infer() {
-        // Initialize namespaces and first inference pass
+        // First inference pass + namespace registration
         this.asts.forEach(ast -> {
             String namespaceKey = ast.namespace().lexeme() + "." + ast.name();
             GlobalScope scope = this.globalSymbolEnvironment.createNamespace(namespaceKey);
-            scope.attachModule(ast.infer());  // First inference attempt
+            scope.attachModule(ast.infer());
         });
 
-        // Fixed-point iteration (up to 2 times)
+        // Fixed-point iteration – semantics of leftTimes / isLastInfer() are
+        // preserved exactly so that inference rules that call isLastInfer() keep
+        // working correctly.
         while (!this.inferred()) {
-            for (AST ast : this.asts) {
-                ast.infer();  // Refine inferences
-            }
-            if (this.leftTimes == 0) {
-                // ErrorReporter.report(GCPErrCode.POSSIBLE_ENDLESS_LOOP);
-                break;  // Prevents infinite loops for circular dependencies
-            }
+            for (AST ast : this.asts) ast.infer();
+            if (this.leftTimes == 0) break;
             this.leftTimes--;
         }
 
-        return this.asts.stream().allMatch(a->a.inferred());
-        // Flag unresolved nodes as errors
-        //this.asts.forEach(AST::markUnknowns);
+        // With AbstractNode.fullyInferred caching, this final check is now O(n) with
+        // most nodes being O(1) cache hits, so the redundancy cost is minimal.
+        return this.asts.stream().allMatch(AST::inferred);
     }
 
     /**

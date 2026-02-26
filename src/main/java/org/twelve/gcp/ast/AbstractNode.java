@@ -45,6 +45,21 @@ public abstract class AbstractNode implements Node {
     // Semantic Properties
     protected Outline outline;  // Type/scope information
 
+    /**
+     * Cached result of a full subtree {@link #inferred()} check.
+     * <p>
+     * Once a node's own outline <em>and</em> the outlines of all its descendants
+     * are resolved, this flag is set to {@code true} and never reset.  Type
+     * resolution in Outline is monotonic (UNKNOWN → concrete type), so the cache
+     * is always safe: a fully-resolved subtree will never become unresolved again.
+     * <p>
+     * Without this cache {@link #inferred()} (called inside {@link #infer}) recurses
+     * into the full subtree on every single node visit, making each inference pass
+     * O(n²) for an n-node AST.  With the cache each node is checked at most once
+     * in full; subsequent calls are O(1).
+     */
+    private boolean fullyInferred = false;
+
     protected AbstractNode(AST ast, Location loc, Outline outline) {
         this.id = ast.nodeIndexer().getAndIncrement();
         this.ast = ast;
@@ -161,11 +176,14 @@ public abstract class AbstractNode implements Node {
 
     @Override
     public boolean inferred() {
+        if (fullyInferred) return true;          // fast-path: subtree already fully resolved
         if (!this.outline.inferred()) {
             ast.missInferred().add(this);
             return false;
         }
-        return this.nodes.stream().allMatch(Node::inferred);
+        boolean result = this.nodes.stream().allMatch(Node::inferred);
+        if (result) fullyInferred = true;        // cache: mark subtree as permanently resolved
+        return result;
     }
 
     @Override
