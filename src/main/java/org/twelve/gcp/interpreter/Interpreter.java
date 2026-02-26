@@ -5,6 +5,7 @@ import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.interpreter.value.Value;
 import org.twelve.gcp.interpreter.value.UnitValue;
 import org.twelve.gcp.node.expression.*;
+import org.twelve.gcp.node.expression.OutlineDefinition;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.body.Block;
@@ -20,6 +21,7 @@ import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.statement.*;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -150,4 +152,13 @@ public interface Interpreter {
 
     /** Returns the module-export table for cross-module import resolution. */
     Map<String, Map<String, Value>> moduleExports();
+
+    /**
+     * Returns the runtime type-definition registry populated by {@code outline} declarations.
+     * Used by the interpreter to resolve declared-type annotations (e.g. {@code let x:T = ...})
+     * without depending on the inference pass.
+     */
+    default Map<String, OutlineDefinition> typeDefinitions() {
+        return Collections.emptyMap();
+    }
 }

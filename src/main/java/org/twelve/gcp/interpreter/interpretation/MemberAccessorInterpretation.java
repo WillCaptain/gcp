@@ -4,7 +4,9 @@ import org.twelve.gcp.interpreter.Environment;
 import org.twelve.gcp.interpreter.Interpretation;
 import org.twelve.gcp.interpreter.Interpreter;
 import org.twelve.gcp.interpreter.value.*;
+import org.twelve.gcp.node.expression.LiteralNode;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
+import org.twelve.gcp.outline.primitive.Literal;
 
 public class MemberAccessorInterpretation implements Interpretation<MemberAccessor> {
     @Override
@@ -14,8 +16,16 @@ public class MemberAccessorInterpretation implements Interpretation<MemberAccess
 
         if (target instanceof EntityValue entity) {
             Value member = entity.get(memberName);
-            if (member == null)
+            if (member == null) {
+                // Literal-type fields are not stored in the entity value;
+                // their value is implicitly the literal constant defined in the outline.
+                // Use the MemberAccessor node's own outline (member identifier outline stays UNKNOWN).
+                var memberOutline = node.outline();
+                if (memberOutline instanceof Literal lit && lit.node() instanceof LiteralNode<?> ln) {
+                    return interp.eval(ln);
+                }
                 throw new RuntimeException("Member '" + memberName + "' not found on " + entity);
+            }
             if (member instanceof FunctionValue fv && !fv.isBuiltin()) {
                 Environment methodEnv = new Environment(fv.closure());
                 methodEnv.define("this", entity);

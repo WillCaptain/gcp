@@ -6,6 +6,7 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.inference.OutlineInferencer;
 import org.twelve.gcp.interpreter.interpretation.*;
+import org.twelve.gcp.node.expression.OutlineDefinition;
 import org.twelve.gcp.interpreter.value.*;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
@@ -56,6 +57,9 @@ public class OutlineInterpreter implements Interpreter {
 
     // ── cross-module exports (namespace -> (name -> value)) ──────────────────
     private final Map<String, Map<String, Value>> moduleExports = new LinkedHashMap<>();
+
+    // ── type-definition registry (populated by outline declarations) ─────────
+    private final Map<String, OutlineDefinition> typeDefinitions = new LinkedHashMap<>();
 
     // ── runtime environment ───────────────────────────────────────────────────
     private Environment env = new Environment(null);
@@ -280,6 +284,9 @@ public class OutlineInterpreter implements Interpreter {
         }
         return result;
     }
+
+    @Override
+    public Map<String, OutlineDefinition> typeDefinitions() { return typeDefinitions; }
 
     /** Returns the current environment (for testing / introspection). */
     public Environment currentEnv() { return env; }

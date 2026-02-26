@@ -70,10 +70,16 @@ public abstract class ADT implements Outline {
         if (another instanceof Literal) return false;
 
         //another的每一个成员，this都应有一个member对应，方可满足is关系
+        // 例外：Literal类型字段无需在构造时提供，其值由字面量自动注入
         ProductADT extended = cast(another);
         for (EntityMember member : extended.members()) {
+            if (member.isDefault()) continue;
             Optional<EntityMember> found = this.members().stream().filter(m -> m.name().equals(member.name())).findFirst();
-            if (!found.isPresent() || !found.get().outline().is(member.outline())) {
+            if (!found.isPresent()) {
+                if (member.outline() instanceof Literal) continue;
+                return false;
+            }
+            if (!found.get().outline().is(member.outline())) {
                 return false;
             }
         }

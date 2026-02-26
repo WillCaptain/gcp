@@ -58,6 +58,16 @@ public class Lazy implements Projectable, ReferAble {
         }
     }
 
+    /**
+     * Passive subtype check: a concrete type {@code another} is accepted by this Lazy wrapper
+     * if it is accepted by the resolved (eventual) type.  This allows structural checks like
+     * {@code MaleInstance.is(Lazy{Gender})} to pass when MaleInstance is a variant of Gender.
+     */
+    @Override
+    public boolean tryYouAreMe(Outline another) {
+        return this.eventual().tryYouAreMe(another);
+    }
+
     @Override
     public Outline eventual() {
         this.node.ast().symbolEnv().enter(this.scope);
