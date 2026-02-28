@@ -12,10 +12,19 @@ public class SYMBOL extends Primitive {
     @Override
     public boolean tryIamYou(Outline another) {
         if (another == another.ast().Nothing) return true;
-        if (another instanceof SYMBOL) {
-            return this.toString().equals(another.toString());
-        }
-        return false;
+        return this.toString().equals(another.toString());
+    }
+
+    @Override
+    public boolean tryYouAreMe(Outline another) {
+        return this.toString().equals(another.toString());
+    }
+
+    @Override
+    public boolean is(Outline another) {
+        // Bypass maybe() check: SYMBOL is a symbolic reference matched purely by name.
+        if (this.toString().equals(another.toString())) return true;
+        return super.is(another);
     }
 
     @Override

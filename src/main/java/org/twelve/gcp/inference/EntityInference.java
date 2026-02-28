@@ -10,6 +10,7 @@ import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.outline.adt.*;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
+import org.twelve.gcp.outline.decorators.This;
 import org.twelve.gcp.outline.primitive.Literal;
 import org.twelve.gcp.outline.primitive.SYMBOL;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
@@ -25,8 +26,11 @@ public class EntityInference implements Inference<EntityNode> {
     @Override
     public Outline infer(EntityNode node, Inferencer inferencer) {
         Entity entity;
-        node.ast().symbolEnv().current().setScopeType(SCOPE_TYPE.IN_PRODUCT_ADT);
         if (node.outline() instanceof UNKNOWN) { // first inference
+            // Resolve the base BEFORE setting IN_PRODUCT_ADT on the current scope.
+            // If base is 'this', ThisInference traverses upward looking for IN_PRODUCT_ADT.
+            // Setting our scope to IN_PRODUCT_ADT first (before the base is set) would make
+            // ThisInference stop at THIS (empty) scope instead of the correct outer entity scope.
             Outline base = null;
             if (node.base() != null) {
                 base = node.base().infer(inferencer);
@@ -38,6 +42,25 @@ public class EntityInference implements Inference<EntityNode> {
                 }
                 node.ast().symbolEnv().defineSymbol("base", base, false, null);
             }
+
+            // ── this{field=expr, ...} ─────────────────────────────────────────────────
+            // The static type of  this{...}  is This(outerEntity) — the same type as 'this'.
+            // Field overrides are purely a runtime operation; they do NOT change the compile-time
+            // type.  Creating a new child entity here would introduce circular references through
+            // the updateThis / copy machinery, causing StackOverflows.
+            // We still infer each override expression for error-detection, using the outer
+            // entity as the ambient scope so that field names and generic parameters resolve.
+            if (base instanceof This thisWrapper) {
+                node.ast().symbolEnv().current().setScopeType(SCOPE_TYPE.IN_PRODUCT_ADT);
+                node.ast().symbolEnv().current().setOutline(thisWrapper.eventual());
+                node.members().forEach((k, v) -> v.infer(inferencer));
+                return base; // This(outerEntity)
+            }
+            // ─────────────────────────────────────────────────────────────────────────
+
+            // Set scope type AFTER base resolution so that member inference (below) can
+            // reference 'this' without confusing the scope lookup.
+            node.ast().symbolEnv().current().setScopeType(SCOPE_TYPE.IN_PRODUCT_ADT);
 
             if (base instanceof SYMBOL) {
                 entity = new SymbolEntity(cast(base), Entity.from(node, new ArrayList<>()));
@@ -66,6 +89,7 @@ public class EntityInference implements Inference<EntityNode> {
             }
         } else { // nth inference
             entity = cast(node.outline());
+            node.ast().symbolEnv().current().setScopeType(SCOPE_TYPE.IN_PRODUCT_ADT);
         }
         node.ast().symbolEnv().current().setOutline(entity);
         // For template construction (ApiKey{...}), look up the template entity to check
@@ -88,7 +112,15 @@ public class EntityInference implements Inference<EntityNode> {
                         return;
                     }
                 }
-                entity.addMember(k, outline, v.modifier(), v.mutable(), v.identifier());
+                // For template construction, construction-provided data fields must replace (not
+                // merge with) the template's typed placeholders (e.g. data:[i] → data:[Integer]).
+                // Using replaceMember ensures the template member is removed before the concrete
+                // value is added, preventing spurious Poly unions.
+                if (baseTemplateOutline instanceof ProductADT && entity.getMember(k).isPresent()) {
+                    entity.replaceMember(k, outline);
+                } else {
+                    entity.addMember(k, outline, v.modifier(), v.mutable(), v.identifier());
+                }
             }
         });
         node.members().forEach((k, v) -> {

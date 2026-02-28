@@ -56,7 +56,7 @@ public class UnaryExpression extends Expression {
 
     @Override
     public String lexeme() {
-        if(position==UnaryPosition.POSTFIX){
+        if(position==UnaryPosition.PREFIX){
             return operatorNode.toString()+operand.toString();
         }else{
             return operand.toString()+operatorNode.toString();

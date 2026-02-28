@@ -38,4 +38,12 @@ public abstract class Primitive extends ProductADT {
     public boolean tryYouAreMe(Outline another) {
         return this.getClass().isInstance(another);
     }
+
+    @Override
+    public boolean is(Outline another) {
+        // SYMBOL types are unresolved symbolic references; allow name-based matching so that
+        // SYMBOL("Bool").is(BOOL) and BOOL.is(SYMBOL("Bool")) both return true.
+        if (another instanceof SYMBOL && this.toString().equals(another.toString())) return true;
+        return super.is(another);
+    }
 }

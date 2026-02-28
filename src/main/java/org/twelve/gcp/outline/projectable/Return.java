@@ -157,6 +157,14 @@ public class Return extends Genericable<Return, Node> implements Returnable {
     }
 
     @Override
+    public void updateThis(org.twelve.gcp.outline.adt.ProductADT me) {
+        super.updateThis(me);
+        if (this.supposed != null) {
+            this.supposed.updateThis(me);
+        }
+    }
+
+    @Override
     public boolean equals(Outline another) {
         if (!(another instanceof Return)) return false;
         return this.supposed.equals(((Return) another).supposed);

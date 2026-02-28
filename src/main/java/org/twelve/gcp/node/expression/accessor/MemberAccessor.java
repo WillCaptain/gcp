@@ -1,15 +1,19 @@
 package org.twelve.gcp.node.expression.accessor;
 
 import org.twelve.gcp.ast.Token;
+import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
+
+import java.util.Optional;
 
 import static org.twelve.gcp.common.Tool.cast;
 import org.twelve.gcp.interpreter.Interpreter;
@@ -37,6 +41,16 @@ public class MemberAccessor extends Accessor {
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
         if (this.outline == this.ast().Error) return;
         ProductADT owner = cast(((ProductADT) this.productADT.outline()).eventual());
+        Optional<EntityMember> m = owner.getMember(member.name());
+        if (m.isEmpty()) {
+            GCPErrorReporter.report(this, GCPErrCode.FIELD_NOT_FOUND,
+                    member.name() + " not found in " + this.productADT);
+            return;
+        }
+        if (m.get().mutable() == Mutable.False) {
+            GCPErrorReporter.report(this.member, GCPErrCode.NOT_ASSIGNABLE);
+            return;
+        }
         if (!owner.checkMember(member.name(), inferred)) {
             GCPErrorReporter.report(this, GCPErrCode.FIELD_NOT_FOUND,
                     member.name() + " not found in " + this.productADT);

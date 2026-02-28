@@ -49,7 +49,9 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
         if (!(another instanceof Function)) return false;
         Function you = cast(another);
         //参数逆变，返回值协变
-        return you.argument.is(this.argument) && this.returns.is(you.returns);
+        boolean argOk = you.argument.is(this.argument);
+        boolean retOk = this.returns.is(you.returns);
+        return argOk && retOk;
     }
 
     /**

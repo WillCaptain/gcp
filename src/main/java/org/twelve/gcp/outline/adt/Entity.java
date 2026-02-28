@@ -144,13 +144,16 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
     public Entity copy(Map<Outline, Outline> cache) {
         Entity copied = cast(cache.get(this));
         if (copied == null) {
+            // Register the stub in the cache BEFORE copying members to break cyclic references
+            // (e.g. an entity whose method's return type is the entity itself).
+            copied = new Entity(this.node, this.ast(), this.base, new ArrayList<>());
+            cache.put(this, copied);
             List<EntityMember> members = new ArrayList<>();
             for (EntityMember m : this.members()) {
                 if (m.isDefault()) continue;
                 members.add(EntityMember.from(m.name(), m.outline.copy(cache), m.modifier(), m.mutable() == Mutable.True, m.node(), m.isDefault()));
             }
-            copied = new Entity(this.node, this.ast(), this.base, members);
-            cache.put(this, copied);
+            copied.addMembers(members);
         }
         return copied;
     }
@@ -175,9 +178,19 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
         return this.interact(own, base);
     }
 
+    // Guard against circular type references (e.g. an entity whose method returns 'this{...}').
+    // If we encounter the same entity while checking it, assume it is inferred (break the cycle).
+    private static final ThreadLocal<Set<Long>> INFERRING = ThreadLocal.withInitial(HashSet::new);
+
     @Override
     public boolean inferred() {
-        return this.members().stream().allMatch(m -> m.outline().inferred());
+        if (INFERRING.get().contains(this.id())) return true;
+        INFERRING.get().add(this.id());
+        try {
+            return this.members().stream().allMatch(m -> m.outline().inferred());
+        } finally {
+            INFERRING.get().remove(this.id());
+        }
     }
 
     @Override
@@ -356,11 +369,19 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
         return this;
     }
 
+    // Guard against cyclic this-update (e.g. entity's method return type is the entity itself).
+    private static final ThreadLocal<Set<Long>> UPDATING = ThreadLocal.withInitial(HashSet::new);
+
     @Override
     public void updateThis(ProductADT me) {
-        for (EntityMember member : this.members()) {
-//            member.outline().updateThis(this);
-            member.outline().updateThis(me);
+        if (UPDATING.get().contains(this.id())) return;
+        UPDATING.get().add(this.id());
+        try {
+            for (EntityMember member : this.members()) {
+                member.outline().updateThis(me);
+            }
+        } finally {
+            UPDATING.get().remove(this.id());
         }
     }
 
