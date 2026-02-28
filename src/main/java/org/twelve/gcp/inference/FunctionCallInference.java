@@ -12,6 +12,7 @@ import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.decorators.Lazy;
 import org.twelve.gcp.outline.primitive.ANY;
+import org.twelve.gcp.outline.primitive.Literal;
 import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.projectable.*;
 
@@ -63,6 +64,11 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         }
         if (func == ast.Pending) {// recursive call: return Pending and wait for the next inference pass
             return func;
+        }
+        // Literal-typed callables (e.g. run: #()->this.speed): unwrap to the origin function type
+        // so that call semantics work normally. The Literal wrapper only enforces immutability.
+        if (func instanceof Literal lit && lit.outline() instanceof Function) {
+            func = lit.outline();
         }
 
         Outline result = ast.unknown(node);

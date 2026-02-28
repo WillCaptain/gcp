@@ -24,6 +24,7 @@ public class ThisInference implements Inference<ThisNode> {
             scope = scope.parent();
             if(scope==null){
                 GCPErrorReporter.report(node, GCPErrCode.UNAVAILABLE_THIS);
+                return node.ast().Error;
             }
         }
         if(scope.outline() instanceof Entity) {

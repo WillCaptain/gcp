@@ -6,6 +6,7 @@ import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.expression.typeable.EntityTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.*;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.primitive.Literal;
 import org.twelve.gcp.outline.projectable.Reference;
 
@@ -26,8 +27,10 @@ public class EntityTypeNodeInference implements Inference<EntityTypeNode> {
             Node defaultValueNode = node.getDefault(m.name());
             Outline declared;
             if (defaultValueNode != null) {
-                // `alias: "alice"` — field has String type and a default string value
-                declared = node.ast().String;
+                // Infer the actual type of the default-value expression (lambda, string, entity, etc.)
+                // so that function-typed fields (e.g. run: ()->this.speed) get a callable outline.
+                Outline inferred = defaultValueNode.infer(inferencer);
+                declared = (inferred instanceof UNKNOWN) ? node.ast().Any : inferred;
                 entity.addMemberWithDefault(m.name(), declared, m.modifier(), m.mutable(), m, defaultValueNode);
             } else {
                 declared = m.declared() == null ? node.ast().Any : m.declared().infer(sessionInferencer);

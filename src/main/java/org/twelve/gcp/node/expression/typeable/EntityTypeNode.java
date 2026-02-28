@@ -54,6 +54,9 @@ public class EntityTypeNode extends TypeNode {
     /** Registers a default-value literal node for the given field. */
     public void addDefault(String fieldName, Node defaultValueNode) {
         this.defaults.put(fieldName, defaultValueNode);
+        // Set parent so that scope-chain walking (e.g. ThisInference) can reach this
+        // node's IN_PRODUCT_ADT scope from within the default-value expression's body.
+        defaultValueNode.setParent(this);
     }
 
     public Map<String, Node> defaults() {

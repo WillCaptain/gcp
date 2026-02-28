@@ -6,10 +6,10 @@ import org.twelve.gcp.interpreter.Interpreter;
 import org.twelve.gcp.interpreter.value.EntityValue;
 import org.twelve.gcp.interpreter.value.Value;
 import org.twelve.gcp.node.expression.EntityNode;
-import org.twelve.gcp.node.expression.LiteralNode;
 import org.twelve.gcp.node.expression.OutlineDefinition;
 import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.typeable.EntityTypeNode;
+import org.twelve.gcp.node.expression.typeable.ExtendTypeNode;
 import org.twelve.gcp.node.expression.typeable.LiteralTypeNode;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.statement.MemberNode;
@@ -65,10 +65,11 @@ public class EntityInterpretation implements Interpretation<EntityNode> {
                         fields.put(fieldName, defVal);
                         entityEnv.define(fieldName, defVal);
                     } else if (member.declared() instanceof LiteralTypeNode ltn) {
-                        // literal-type constant field, e.g. issuer: #"GCP-System"
+                        // literal-type constant field, e.g. issuer: #"GCP-System", meta: #{env:"prod"}
+                        // Works for any ValueNode subtype: LiteralNode (primitives), EntityNode, TupleNode, etc.
                         var litOutline = ltn.outline();
-                        if (litOutline instanceof Literal lit && lit.node() instanceof LiteralNode<?> ln) {
-                            Value litVal = interp.eval(ln);
+                        if (litOutline instanceof Literal lit) {
+                            Value litVal = interp.eval(lit.node());
                             fields.put(fieldName, litVal);
                             entityEnv.define(fieldName, litVal);
                         }
@@ -106,6 +107,8 @@ public class EntityInterpretation implements Interpretation<EntityNode> {
         if (!(node.base() instanceof Identifier id)) return null;
         OutlineDefinition def = interp.typeDefinitions().get(id.name());
         if (def != null && def.typeNode() instanceof EntityTypeNode etn) return etn;
+        // outline Man = Human{ age: Int, gender: #Male } → type node is ExtendTypeNode
+        if (def != null && def.typeNode() instanceof ExtendTypeNode ext) return ext.extension();
         return null;
     }
 }
