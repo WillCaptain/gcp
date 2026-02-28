@@ -196,11 +196,14 @@ public abstract class ProductADT extends ADT {
         for (EntityMember member : another) {
             Optional<EntityMember> found = members.stream().filter(m -> m.name().equals(member.name())).findFirst();
             if (found.isPresent()) {
+                // Literal-type (isDefault=true) own members take strict precedence — no Poly union.
+                // This preserves immutable field semantics for outline definitions such as
+                // outline Man = Human{ gender: #Male } where gender must stay Literal(Male),
+                // not become Poly(Gender, Literal(Male)).
+                if (found.get().isDefault()) continue;
                 if (!found.get().outline().equals(member.outline())) {
                     members.remove(found.get());
-//                    Poly overwrite = Poly.from(found.get().node());
                     Poly overwrite = Poly.create(this.ast());
-
                     overwrite.sum(member.outline(), member.mutable().toBool());
                     overwrite.sum(found.get().outline(), found.get().mutable().toBool());
                     members.add(EntityMember.from(member.name(), overwrite, member.modifier()));

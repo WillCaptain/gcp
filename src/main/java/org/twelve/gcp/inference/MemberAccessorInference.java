@@ -3,8 +3,10 @@ package org.twelve.gcp.inference;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.node.expression.ThisNode;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
+import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
@@ -71,6 +73,12 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
                 return member;
             }
         }
+        // A bare type name (SymbolIdentifier, e.g. Human, Gender) is an outline type definition,
+        // not a value. Accessing members of a type definition is forbidden.
+        if (node.host() instanceof SymbolIdentifier) {
+            GCPErrorReporter.report(node.host(), GCPErrCode.OUTLINE_USED_AS_VALUE);
+            return node.ast().Error;
+        }
         // Entity path: host type is fully known; look up the member directly
         if (!(outline instanceof ProductADT)) {
             GCPErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
@@ -89,6 +97,14 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
             GCPErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
             return node.ast().Error;
         } else {
+            // Protected-member check: _-prefixed members (PRIVATE modifier) are only accessible
+            // via 'this' (within the entity itself or its derived types).
+            // Accessing them through an external reference (e.g. a._age) is forbidden.
+            if (found.getFirst().modifier() == Modifier.PRIVATE
+                    && !(node.host() instanceof ThisNode)) {
+                GCPErrorReporter.report(node.member(), GCPErrCode.NOT_ACCESSIBLE);
+                return node.ast().Error;
+            }
             return found.getFirst().outline().eventual();
 //            if(result instanceof Genericable<?,?>){
 //                return ((Genericable<?, ?>) result).guess();//todo:i'm guessing...

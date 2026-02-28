@@ -67,10 +67,9 @@ public class Identifier extends Assignable implements UnpackAble {
         EnvSymbol symbol = lookupSymbol(env,this.name());
         if (symbol == null) return;
         if (!symbol.outline().inferred()) {
-            // Immutable cross-scope re-assignment: symbol lives in an ancestor scope,
-            // not the current scope (e.g. 'age = 20' inside a method body while 'age'
-            // is a let member of the enclosing entity).
-            if (!symbol.mutable() && env.current().lookupSymbol(this.name()) == null) {
+            // Re-assignment to an immutable (let) binding is forbidden unless 'this' node IS the
+            // original declaration node (i.e. this is the initial assignment, not a re-assignment).
+            if (!symbol.mutable() && this != symbol.node()) {
                 GCPErrorReporter.report(this, GCPErrCode.NOT_ASSIGNABLE);
                 return;
             }
@@ -122,8 +121,10 @@ public class Identifier extends Assignable implements UnpackAble {
                 return;
             }
         } else {
-            // Immutable cross-scope: symbol is defined in an ancestor scope, not the current scope.
-            if (!symbol.mutable() && env.current().lookupSymbol(this.name()) == null) {
+            // Re-assignment to an immutable (let) binding is forbidden.
+            // Skip this check only when 'this' is the original declaration node itself
+            // (nth inference pass of the declaration — Variable.assign delegates to super).
+            if (!symbol.mutable() && this != symbol.node()) {
                 GCPErrorReporter.report(this, GCPErrCode.NOT_ASSIGNABLE);
                 return;
             }

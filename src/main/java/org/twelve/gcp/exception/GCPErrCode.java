@@ -67,6 +67,8 @@ public enum GCPErrCode {
 
     // ── Assignability ─────────────────────────────────────────────────────────
     NOT_BE_ASSIGNEDABLE         ("value cannot be assigned to this binding"),
+    OUTLINE_USED_AS_VALUE       ("outline type cannot be used as a value expression"),
+    NOT_ACCESSIBLE              ("member is not accessible from this scope (protected: use 'this' to access _-prefixed members)"),
     OUTLINE_NOT_FOUND           ("outline (type) not found"),
     UNAVAILABLE_THIS            ("'this' is not available in this context"),
 

@@ -3,6 +3,7 @@ package org.twelve.gcp.interpreter.interpretation;
 import org.twelve.gcp.interpreter.Interpretation;
 import org.twelve.gcp.interpreter.Interpreter;
 import org.twelve.gcp.interpreter.value.EntityValue;
+import org.twelve.gcp.interpreter.value.PolyValue;
 import org.twelve.gcp.interpreter.value.Value;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.OutlineDefinition;
@@ -13,6 +14,13 @@ public class AssignmentInterpretation implements Interpretation<Assignment> {
     @Override
     public Value interpret(Assignment node, Interpreter interpreter) {
         Value rhs = interpreter.eval(node.rhs());
+        // If the rhs is a PolyValue and the lhs declares a type annotation,
+        // extract the matching variant — equivalent to "rhs as DeclaredType".
+        // This handles: let ent:{name:String} = db  (same as  let ent = db as {name:String})
+        if (rhs instanceof PolyValue poly && node.lhs() instanceof Variable var && var.declared() != null) {
+            Class<? extends Value> target = AsInterpretation.targetValueClass(var.declared());
+            if (target != null) rhs = poly.extract(target);
+        }
         fillLiteralFields(node.lhs(), rhs, interpreter);
         UnpackBinder.bindAssignable(node.lhs(), rhs, interpreter);
         return rhs;

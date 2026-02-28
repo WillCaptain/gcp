@@ -30,8 +30,11 @@ public class AsInterpretation implements Interpretation<As> {
      * Checks the TypeNode's Java class first (works without inference), then
      * falls back to the inferred outline when available.  Returns {@code null}
      * when the mapping is unknown (caller returns the value as-is).
+     * <p>
+     * Package-visible so that {@link AssignmentInterpretation} can reuse the same
+     * mapping when a declared type annotation is used instead of an explicit {@code as}.
      */
-    private static Class<? extends Value> targetValueClass(TypeNode typeNode) {
+    static Class<? extends Value> targetValueClass(TypeNode typeNode) {
         if (typeNode == null) return null;
 
         // Fast structural check – works without prior inference

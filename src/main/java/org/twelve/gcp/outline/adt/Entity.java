@@ -172,20 +172,7 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
         List<EntityMember> own = super.members();
         List<EntityMember> base = this.baseMembers();
         if (base.isEmpty()) return own;
-        // Standard inheritance: own members take precedence; base fills in the rest.
-        // Using interact() for this would create Poly unions and lose isDefault flags
-        // whenever own and base define the same field with different types (e.g. an
-        // outline Man = Human{ gender: #Male } overriding gender: Gender from Human).
-        java.util.Set<String> ownNames = own.stream()
-                .map(EntityMember::name)
-                .collect(java.util.stream.Collectors.toSet());
-        List<EntityMember> result = new java.util.ArrayList<>(own);
-        for (EntityMember m : base) {
-            if (!ownNames.contains(m.name())) {
-                result.add(m);
-            }
-        }
-        return result;
+        return this.interact(own, base);
     }
 
     @Override
