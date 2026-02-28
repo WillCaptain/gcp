@@ -88,7 +88,24 @@ public class Tuple extends Entity {
 
         Entity ent = Entity.from(this.node(), base, new ArrayList<>());
         if (this.id() == projected.id()) {
-            TupleMatcher matcher = new TupleMatcher(cast(projection));
+            // projection may be a sum type (Option) when the Tuple is a variant of a union ADT.
+            // Unwrap the first Tuple variant so TupleMatcher gets a concrete Tuple.
+            Outline resolvedProjection = projection;
+            if (projection instanceof SumADT sum) {
+                resolvedProjection = sum.options().stream()
+                        .filter(o -> o instanceof Tuple)
+                        .findFirst()
+                        .orElse(projection);
+            }
+            if (!(resolvedProjection instanceof Tuple)) {
+                // Cannot match members to a non-Tuple projection; propagate as-is.
+                for (EntityMember member : this.members()) {
+                    ent.addMember(member.name(), member.outline(), member.modifier(),
+                            member.mutable() == Mutable.True, member.node());
+                }
+                return new Tuple(ent);
+            }
+            TupleMatcher matcher = new TupleMatcher(cast(resolvedProjection));
             for (EntityMember member : this.members()) {
                 Outline me = member.outline();
                 Outline you = matcher.match(Integer.valueOf(member.name()));

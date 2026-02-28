@@ -32,18 +32,30 @@ class EntityField extends Field {
     @Override
     public List<Identifier> identifiers() {
         List<Identifier> ids = new ArrayList<>();
+        // Include the field-name identifier so UnpackNodeInference pre-defines it in the
+        // environment, allowing IdentifierInference to resolve it during pattern inference.
+        if (this.field() != this.as) {
+            ids.add(this.field());
+        }
         ids.add(this.as);
         return ids;
     }
 
     @Override
     public void assign(LocalSymbolEnvironment env, Outline outline) {
+        // Always resolve the field name (e.g. 'age') so its AST node gets a type.
+        this.field().assign(env, outline);
+        // Also resolve the alias binding (e.g. 'a'). When there is no alias, as==field,
+        // so this is a no-op duplicate — harmless.
         this.as.assign(env, outline);
     }
 
     @Override
     public Outline infer(Inferencer inferencer) {
-        return this.field().infer(inferencer);
+        // 'as' is always set (defaults to 'field' when no alias).
+        // After assign(), 'as' is defined in the environment with the field's type,
+        // whereas 'field' (the original name) is only defined if it equals 'as'.
+        return this.as().infer(inferencer);
     }
 
 //    @Override

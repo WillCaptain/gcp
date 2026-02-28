@@ -1,5 +1,6 @@
 package org.twelve.gcp.interpreter.interpretation;
 
+import org.twelve.gcp.interpreter.EntityMethodEnvironment;
 import org.twelve.gcp.interpreter.Environment;
 import org.twelve.gcp.interpreter.Interpretation;
 import org.twelve.gcp.interpreter.Interpreter;
@@ -27,8 +28,7 @@ public class MemberAccessorInterpretation implements Interpretation<MemberAccess
                 throw new RuntimeException("Member '" + memberName + "' not found on " + entity);
             }
             if (member instanceof FunctionValue fv && !fv.isBuiltin()) {
-                Environment methodEnv = new Environment(fv.closure());
-                methodEnv.define("this", entity);
+                EntityMethodEnvironment methodEnv = new EntityMethodEnvironment(fv.closure(), entity);
                 return new FunctionValue(fv.node(), methodEnv);
             }
             return member;

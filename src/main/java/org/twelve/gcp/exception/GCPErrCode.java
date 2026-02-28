@@ -63,6 +63,7 @@ public enum GCPErrCode {
     // ── ADT / Symbols ─────────────────────────────────────────────────────────
     INVALID_SYMBOL              ("invalid symbol"),
     NOT_ENTITY_INHERITED        ("type is not an entity subtype"),
+    MISSING_REQUIRED_FIELD      ("missing required field in entity construction"),
 
     // ── Assignability ─────────────────────────────────────────────────────────
     NOT_BE_ASSIGNEDABLE         ("value cannot be assigned to this binding"),

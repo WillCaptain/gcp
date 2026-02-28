@@ -2,6 +2,7 @@ package org.twelve.gcp.outline.adt;
 
 import com.sun.xml.ws.developer.Serialization;
 import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -171,7 +172,15 @@ public abstract class ProductADT extends ADT {
     }
 
     public boolean addMember(String name, Outline outline, Modifier modifier, Boolean mutable, Identifier node) {
-        return this.addMember(EntityMember.from(name, outline, modifier, mutable, node,false));
+        return this.addMember(EntityMember.from(name, outline, modifier, mutable, node, false));
+    }
+
+    public boolean addMember(String name, Outline outline, Modifier modifier, Boolean mutable, Identifier node, boolean isDefault) {
+        return this.addMember(EntityMember.from(name, outline, modifier, mutable, node, isDefault));
+    }
+
+    public boolean addMemberWithDefault(String name, Outline outline, Modifier modifier, Boolean mutable, Identifier node, org.twelve.gcp.ast.Node defaultValueNode) {
+        return this.addMember(EntityMember.fromWithDefault(name, outline, modifier, mutable, node, defaultValueNode));
     }
 
     public boolean checkMember(String name, Outline outline) {

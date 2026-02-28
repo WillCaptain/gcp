@@ -36,7 +36,7 @@ public class MemberAccessor extends Accessor {
     @Override
     public void assign(LocalSymbolEnvironment env, Outline inferred) {
         if (this.outline == this.ast().Error) return;
-        ProductADT owner = cast(this.productADT.outline());
+        ProductADT owner = cast(((ProductADT) this.productADT.outline()).eventual());
         if (!owner.checkMember(member.name(), inferred)) {
             GCPErrorReporter.report(this, GCPErrCode.FIELD_NOT_FOUND,
                     member.name() + " not found in " + this.productADT);
@@ -65,6 +65,16 @@ public class MemberAccessor extends Accessor {
     public String lexeme() {
 //        return productADT.lexeme().split(":")[0].trim() + "." + member.lexeme();
         return productADT.lexeme().trim() + "." + member.lexeme();
+    }
+
+    @Override
+    public void clearError() {
+        super.clearError();
+        // Also clear stale errors on the member identifier (e.g. FIELD_NOT_FOUND
+        // reported by MemberAccessorInference on node.member()), because the member
+        // identifier is never independently re-inferred and its clearError() is never
+        // called through the normal inference chain.
+        this.member.clearError();
     }
 
     @Override

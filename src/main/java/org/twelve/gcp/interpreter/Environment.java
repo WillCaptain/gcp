@@ -54,16 +54,21 @@ public class Environment {
     public void set(String name, Value value) {
         Environment env = findOwner(name);
         if (env != null) {
-            env.bindings.put(name, value);
+            env.putBinding(name, value);
         } else {
             bindings.put(name, value);
         }
     }
 
-    private Environment findOwner(String name) {
+    protected Environment findOwner(String name) {
         if (bindings.containsKey(name)) return this;
         if (parent != null) return parent.findOwner(name);
         return null;
+    }
+
+    /** Writes a value into this environment's own bindings. Subclasses may override to redirect writes. */
+    protected void putBinding(String name, Value value) {
+        bindings.put(name, value);
     }
 
     /** Creates a child scope for block-level isolation. */

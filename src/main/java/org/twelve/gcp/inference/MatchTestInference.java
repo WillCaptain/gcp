@@ -40,8 +40,12 @@ public class MatchTestInference implements Inference<MatchTest> {
         }
         if (pattern instanceof UnpackNode) {
             ((UnpackNode)pattern).assign(node.ast().symbolEnv(),subject);
-            if(subject instanceof Generic){
-                ((Generic) subject).addHasToBe(pattern.infer(inferencer));
+            // Only propagate the pattern's structure as a hasToBe constraint when the subject
+            // has no declared type. When the subject already has an explicit declaration
+            // (e.g. person: Human), declaredToBe is a concrete type (not ANY), and adding
+            // the partial pattern outline as hasToBe would conflict with that constraint.
+            if (subject instanceof Generic g && g.declaredToBe() instanceof ANY) {
+                g.addHasToBe(pattern.infer(inferencer));
             }
         }
         pattern.infer(inferencer);

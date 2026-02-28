@@ -115,6 +115,18 @@ public class Return extends Genericable<Return, Node> implements Returnable {
                 return result.min();
             }
             if (result.supposedToBe() instanceof NOTHING) {//in higher function, don't return nothing
+                // When a HOF return placeholder (supposed=NOTHING) is projected with a selector function
+                // whose return is a member-access (AccessorGeneric), replace the placeholder with that
+                // accessor. This wires the result of sel(entity) into the pred HOF argument so that
+                // structural constraints (e.g. {points}) can later propagate back through fix #3.
+                // Narrowed to AccessorGeneric returns only to avoid affecting arithmetic HOFs like y(x)
+                // where the projection is x->x+5 (returns INTEGER, not a member accessor).
+                if (projection instanceof FirstOrderFunction) {
+                    Outline funcReturn = ((FirstOrderFunction) projection).returns().supposedToBe();
+                    if (funcReturn instanceof AccessorGeneric) {
+                        return funcReturn;
+                    }
+                }
                 return result;
             } else {
                 return result.supposedToBe();

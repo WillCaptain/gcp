@@ -40,7 +40,9 @@ public class AccessorGeneric extends Genericable<AccessorGeneric, Accessor> {
         if (this.entityOutline().id() == projected.id()) {//project belonged entity
             if (projection instanceof Genericable) {
                 ((Projectable) this.entityOutline()).project(projected, projection, session);
-                return new AccessorGeneric(this.node, projection);
+                AccessorGeneric result = new AccessorGeneric(this.node, projection);
+                result.id = this.id;
+                return result;
 
             } else {
                 Entity entity = cast(projection.eventual());

@@ -217,6 +217,11 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     public void addExtendToBe(Outline outline) {
+        if (outline == null) {
+            System.err.println("[DEBUG addExtendToBe NULL] this=" + this.node());
+            new RuntimeException("addExtendToBe(null)").printStackTrace(System.err);
+            return;
+        }
         if (outline instanceof NOTHING) return;
         // ANY means "unconstrained" – adding it as an upper bound conveys no information
         // and would pollute extendToBe, causing false "mismatch with any" errors downstream.
@@ -256,6 +261,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     public void addHasToBe(Outline outline) {
+        if (outline == null) return;
         if (outline instanceof ANY) return;
         Outline upConstraint = this.declaredToBe == ast().Any ? this.extendToBe : this.declaredToBe;
         Outline downConstraint = this.definedToBe;
@@ -282,6 +288,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
     @Override
     public boolean addDefinedToBe(Outline outline) {
+        if (outline == null) return false;
         if (outline instanceof ANY) return true;
         //find up stream minimum constraint
         Outline upConstraint = this.hasToBe == ast().Any ? this.declaredToBe : this.hasToBe;
@@ -751,10 +758,39 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     protected void projectConstraints(Genericable<?, ?> me, Projectable projected, Outline projection, ProjectSession session) {
-        me.declaredToBe = tryProject(me.declaredToBe, projected, projection, session);
-        me.extendToBe = tryProject(me.extendToBe, projected, projection, session);
-        me.hasToBe = tryProject(me.hasToBe, projected, projection, session);
-        me.definedToBe = tryProject(me.definedToBe, projected, projection, session);
+        Outline tmp;
+        tmp = tryProject(me.declaredToBe, projected, projection, session);
+        if (tmp != null) me.declaredToBe = tmp;
+        tmp = tryProject(me.extendToBe, projected, projection, session);
+        if (tmp != null) me.extendToBe = tmp;
+        tmp = tryProject(me.hasToBe, projected, projection, session);
+        if (tmp != null) me.hasToBe = tmp;
+        tmp = tryProject(me.definedToBe, projected, projection, session);
+        if (tmp != null) me.definedToBe = tmp;
+
+        // When the projection is a Function whose argument's minimum type (min()) shares the same
+        // ID as 'me', it means 'me' and the function argument represent the same generic slot
+        // (linked via AccessorGeneric.doProject ID preservation). Propagate the argument's
+        // structural constraints back to 'me' to enable field-not-found detection at call sites
+        // (e.g. check_pass(alice) after lift(get_score)(is_passing) composition).
+        if (projection instanceof Function) {
+            Outline funcArg = ((Function<?, ?>) projection).argument();
+            Outline funcArgMin = funcArg instanceof Genericable ? ((Genericable<?, ?>) funcArg).min() : funcArg;
+            if (funcArgMin instanceof Genericable && funcArgMin.id() == me.id()) {
+                Genericable<?, ?> funcArgMinG = (Genericable<?, ?>) funcArgMin;
+                // Only propagate structural (entity) constraints, not primitive type constraints.
+                // Primitive constraints (e.g. Number from x->x+5) would incorrectly restrict value
+                // parameters like `x` in `(y,x)->y(x)` when called as f(x->x+5, "10").
+                Outline def = funcArgMinG.definedToBe();
+                if (def != null && !(def instanceof ANY) && def instanceof Entity) {
+                    me.addDefinedToBe(def);
+                }
+                Outline has = funcArgMinG.hasToBe();
+                if (has != null && !(has instanceof ANY) && has instanceof Entity) {
+                    me.addHasToBe(has);
+                }
+            }
+        }
     }
 
     @Override

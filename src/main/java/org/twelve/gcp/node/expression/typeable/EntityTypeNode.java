@@ -1,6 +1,7 @@
 package org.twelve.gcp.node.expression.typeable;
 
 import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.expression.referable.ReferenceNode;
@@ -8,12 +9,15 @@ import org.twelve.gcp.outline.Outline;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class EntityTypeNode extends TypeNode {
     protected final List<Variable> members = new ArrayList<>();
     private final List<ReferenceNode> refs = new ArrayList<>();
     private final long scope;
+    /** field name → default-value literal node (for `alias: "alice"` style declarations) */
+    private final Map<String, Node> defaults = new java.util.LinkedHashMap<>();
 
     public EntityTypeNode(List<Variable> members) {
         this(new ArrayList<>(), members);
@@ -40,6 +44,20 @@ public class EntityTypeNode extends TypeNode {
 
     public List<ReferenceNode> refs() {
         return this.refs;
+    }
+
+    /** Returns the default-value node for the given field, or {@code null} if none. */
+    public Node getDefault(String fieldName) {
+        return this.defaults.get(fieldName);
+    }
+
+    /** Registers a default-value literal node for the given field. */
+    public void addDefault(String fieldName, Node defaultValueNode) {
+        this.defaults.put(fieldName, defaultValueNode);
+    }
+
+    public Map<String, Node> defaults() {
+        return this.defaults;
     }
 
     @Override

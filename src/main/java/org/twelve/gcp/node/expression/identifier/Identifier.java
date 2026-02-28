@@ -67,6 +67,13 @@ public class Identifier extends Assignable implements UnpackAble {
         EnvSymbol symbol = lookupSymbol(env,this.name());
         if (symbol == null) return;
         if (!symbol.outline().inferred()) {
+            // Immutable cross-scope re-assignment: symbol lives in an ancestor scope,
+            // not the current scope (e.g. 'age = 20' inside a method body while 'age'
+            // is a let member of the enclosing entity).
+            if (!symbol.mutable() && env.current().lookupSymbol(this.name()) == null) {
+                GCPErrorReporter.report(this, GCPErrCode.NOT_ASSIGNABLE);
+                return;
+            }
             if (!inferred.canBe(symbol.declared())) {
                 GCPErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
                 return;
@@ -115,7 +122,8 @@ public class Identifier extends Assignable implements UnpackAble {
                 return;
             }
         } else {
-            if (!symbol.mutable() && !inferred.is(this.outline)) {//不可赋值
+            // Immutable cross-scope: symbol is defined in an ancestor scope, not the current scope.
+            if (!symbol.mutable() && env.current().lookupSymbol(this.name()) == null) {
                 GCPErrorReporter.report(this, GCPErrCode.NOT_ASSIGNABLE);
                 return;
             }
