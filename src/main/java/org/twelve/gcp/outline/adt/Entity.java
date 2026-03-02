@@ -230,6 +230,14 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
         Outline base = this.base;
         if (this.base != null && this.base instanceof Projectable) {
             base = ((Projectable) this.base).project(projected, projection, session);
+        } else if ((this.base == null || this.base == this.ast().Any) && projection instanceof Entity) {
+            // When the formal entity has a generic (Any) base, inherit the concrete projection's base.
+            // e.g. Entity{age:AG}(base=Any) projected by "aaa"{age=20}(base=Literal("aaa")) → result has
+            // base=Literal("aaa"), so that the result is recognised as a subtype of String downstream.
+            Outline projBase = ((Entity) projection).base();
+            if (projBase != this.ast().Any) {
+                base = projBase;
+            }
         }
         if (this.id() == projected.id()) {// Scenario 1: self-projection
             Entity outline = Entity.from(this.node(), base, new ArrayList<>());
@@ -322,6 +330,25 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
         List<Reference> refs = new ArrayList<>(this.references);
         refs.remove(reference);
         return new Entity(this.node, this.ast(), base, ms, refs);
+    }
+
+    @Override
+    public boolean maybe(Outline another) {
+        if (another instanceof Entity) {
+            // Both are entities: use the default buildIn comparison (both have Any_ buildIn)
+            return super.maybe(another);
+        }
+        // When `another` is a non-Entity Primitive (e.g. String, Int) — NOT a Genericable
+        // type parameter — an entity with a non-Any base can be a subtype of that primitive
+        // if its base is compatible.
+        // e.g. Entity(base=Literal("aaa"), {age:Int}).is(String) should be true
+        //      because Literal("aaa").is(String) == true.
+        // We must NOT apply this check for Genericable targets (Generic, Return, …) since
+        // those need the original ProductADT.maybe logic (which returns true for non-ProductADT).
+        if (this.base() != this.ast().Any && another instanceof ProductADT) {
+            return this.base().is(another);
+        }
+        return super.maybe(another);
     }
 
     @Override

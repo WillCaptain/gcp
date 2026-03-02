@@ -60,8 +60,15 @@ public class AccessorGeneric extends Genericable<AccessorGeneric, Accessor> {
                                 " no entity member in Poly for member access ." + this.memberName());
                         return this.ast().Error;
                     }
-                } else {
+                } else if (eventual instanceof Entity) {
                     entity = cast(eventual);
+                } else {
+                    // Projection resolved to a non-Entity type (e.g. a primitive like String).
+                    // The declared parameter type may be a primitive with structural member constraints
+                    // (e.g. (value:String)->value.age) — no member can be found on a primitive.
+                    GCPErrorReporter.report(this.node(), GCPErrCode.FIELD_NOT_FOUND,
+                            " member '" + this.memberName() + "' not found on type " + eventual);
+                    return this.ast().Error;
                 }
                 Optional<EntityMember> member = entity.members().stream().filter(m -> m.name().equals(this.memberName())).findFirst();
                 if (member.isPresent()) {

@@ -418,6 +418,21 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     protected Outline projectMySelf(Outline projection, ProjectSession session) {
+        // Poly role dispatch: when a Poly value is passed to a typed parameter,
+        // extract the component that satisfies the declared constraint (role-based dispatch).
+        // e.g. Poly(Int & String & {name:String}) passed to (value:{name:String}) → use entity component.
+        if (projection instanceof Poly polyProj) {
+            Outline minConstraint = this.min();
+            if (!(minConstraint instanceof ANY)) {
+                for (Outline opt : polyProj.options()) {
+                    Outline ev = opt.eventual();
+                    if (ev.is(minConstraint)) {
+                        projection = ev;
+                        break;
+                    }
+                }
+            }
+        }
         boolean projIsThis = projection.is(this);
         if (!projIsThis) {
             GCPErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.node());
