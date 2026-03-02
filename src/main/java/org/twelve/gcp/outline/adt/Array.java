@@ -50,6 +50,8 @@ public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer
         this.createFind(this.members);
         this.createAny(this.members);
         this.createAll(this.members);
+        this.createTakeWhile(this.members);
+        this.createDropWhile(this.members);
         this.createSort(this.members);
         members.put("len",     EntityMember.from("len",     FirstOrderFunction.from(this.ast(), this.ast().Integer,                       this.ast().Unit),    Modifier.PUBLIC, false, null, true));
         members.put("reverse", EntityMember.from("reverse", FirstOrderFunction.from(this.ast(), Array.from(this.ast(), this.itemOutline()),  this.ast().Unit),    Modifier.PUBLIC, false, null, true));
@@ -102,7 +104,7 @@ public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer
     }
 
     /**
-     * forEach: (T → Any) → Unit
+     * each: (T → Any) → Unit
      * Calls the consumer for each element; return value of consumer is ignored.
      */
     private void createForEach(Map<String, EntityMember> members) {
@@ -115,7 +117,7 @@ public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer
         refs.add(consumer_ret);
         Returnable ret = Return.from(ast);
         ret.addReturn(ast.Unit);
-        members.put("forEach", EntityMember.from("forEach", FirstOrderFunction.from(ast, arg, ret, refs), Modifier.PUBLIC, false, null, true));
+        members.put("each", EntityMember.from("each", FirstOrderFunction.from(ast, arg, ret, refs), Modifier.PUBLIC, false, null, true));
     }
 
     /**
@@ -132,29 +134,56 @@ public class Array extends DictOrArray<INTEGER> {//} implements GenericContainer
     }
 
     /**
-     * any: (T → Bool) → Bool
+     * any / some: (T → Bool) → Bool
      * Returns true if at least one element satisfies the predicate.
      */
     private void createAny(Map<String, EntityMember> members) {
-        AST ast = this.ast();
-        FirstOrderFunction predicate = FirstOrderFunction.from(ast, ast.Boolean, this.itemOutline());
-        Generic arg = cast(Generic.from(ast, predicate));
-        Returnable ret = Return.from(ast);
-        ret.addReturn(ast.Boolean);
-        members.put("any", EntityMember.from("any", FirstOrderFunction.from(ast, arg, ret, new ArrayList<>()), Modifier.PUBLIC, false, null, true));
+        members.put("any",  makeBoolPredicate("any",  this.ast()));
+        members.put("some", makeBoolPredicate("some", this.ast()));
     }
 
     /**
-     * all: (T → Bool) → Bool
+     * all / every: (T → Bool) → Bool
      * Returns true if every element satisfies the predicate.
      */
     private void createAll(Map<String, EntityMember> members) {
-        AST ast = this.ast();
+        members.put("all",   makeBoolPredicate("all",   this.ast()));
+        members.put("every", makeBoolPredicate("every", this.ast()));
+    }
+
+    /** Shared factory: (T → Bool) → Bool, fresh objects per call. */
+    private EntityMember makeBoolPredicate(String name, AST ast) {
         FirstOrderFunction predicate = FirstOrderFunction.from(ast, ast.Boolean, this.itemOutline());
         Generic arg = cast(Generic.from(ast, predicate));
         Returnable ret = Return.from(ast);
         ret.addReturn(ast.Boolean);
-        members.put("all", EntityMember.from("all", FirstOrderFunction.from(ast, arg, ret, new ArrayList<>()), Modifier.PUBLIC, false, null, true));
+        return EntityMember.from(name, FirstOrderFunction.from(ast, arg, ret, new ArrayList<>()), Modifier.PUBLIC, false, null, true);
+    }
+
+    /**
+     * take_while: (T → Bool) → [T]
+     * Returns the longest prefix whose elements all satisfy the predicate.
+     */
+    private void createTakeWhile(Map<String, EntityMember> members) {
+        AST ast = this.ast();
+        FirstOrderFunction predicate = FirstOrderFunction.from(ast, ast.Boolean, this.itemOutline());
+        Generic arg = cast(Generic.from(ast, predicate));
+        Returnable ret = Return.from(ast);
+        ret.addReturn(Array.from(ast, this.itemOutline()));
+        members.put("take_while", EntityMember.from("take_while", FirstOrderFunction.from(ast, arg, ret, new ArrayList<>()), Modifier.PUBLIC, false, null, true));
+    }
+
+    /**
+     * drop_while: (T → Bool) → [T]
+     * Drops elements while the predicate holds, returns the remainder.
+     */
+    private void createDropWhile(Map<String, EntityMember> members) {
+        AST ast = this.ast();
+        FirstOrderFunction predicate = FirstOrderFunction.from(ast, ast.Boolean, this.itemOutline());
+        Generic arg = cast(Generic.from(ast, predicate));
+        Returnable ret = Return.from(ast);
+        ret.addReturn(Array.from(ast, this.itemOutline()));
+        members.put("drop_while", EntityMember.from("drop_while", FirstOrderFunction.from(ast, arg, ret, new ArrayList<>()), Modifier.PUBLIC, false, null, true));
     }
 
     /**

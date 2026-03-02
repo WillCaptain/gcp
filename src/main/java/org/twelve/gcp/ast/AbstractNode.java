@@ -221,6 +221,11 @@ public abstract class AbstractNode implements Node {
     public Outline outline() {
         return outline;
     }
+
+    /** Returns the raw outline without any subclass casting, safe to call before inference. */
+    public Outline rawOutline() {
+        return outline;
+    }
     @Override
     public List<Node> nodes() {
 //        return new ArrayList<>(nodes);

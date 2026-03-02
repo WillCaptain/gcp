@@ -7,6 +7,7 @@ import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
+import org.twelve.gcp.outline.adt.Poly;
 
 import java.util.Optional;
 
@@ -45,8 +46,23 @@ public class AccessorGeneric extends Genericable<AccessorGeneric, Accessor> {
                 return result;
 
             } else {
-                Entity entity = cast(projection.eventual());
-//                Entity entity = cast(projection);
+                Outline eventual = projection.eventual();
+                Entity entity;
+                if (eventual instanceof Poly poly) {
+                    // Poly argument: find the entity component for member access
+                    entity = poly.options().stream()
+                            .filter(o -> o.eventual() instanceof Entity)
+                            .map(o -> (Entity) o.eventual())
+                            .findFirst()
+                            .orElse(null);
+                    if (entity == null) {
+                        GCPErrorReporter.report(this.node(), GCPErrCode.PROJECT_FAIL,
+                                " no entity member in Poly for member access ." + this.memberName());
+                        return this.ast().Error;
+                    }
+                } else {
+                    entity = cast(eventual);
+                }
                 Optional<EntityMember> member = entity.members().stream().filter(m -> m.name().equals(this.memberName())).findFirst();
                 if (member.isPresent()) {
                     session.addProjection(this, member.get().outline());

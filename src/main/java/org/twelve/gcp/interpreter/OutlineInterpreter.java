@@ -23,6 +23,13 @@ import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.statement.*;
+import org.twelve.gcp.node.expression.typeable.*;
+import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.Entity;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
+import org.twelve.gcp.outline.primitive.*;
+import org.twelve.gcp.outline.projectable.Function;
+import org.twelve.gcp.outline.projectable.Genericable;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -205,6 +212,21 @@ public class OutlineInterpreter implements Interpreter {
             Environment callEnv = new Environment(fv.closure());
             String paramName = fv.node().argument().name();
             if (!CONSTANTS.UNIT.equals(paramName)) {
+                // For Poly arguments passed to a typed parameter, extract the matching component
+                if (arg instanceof PolyValue polyArg && fv.node() != null) {
+                    Value projected = null;
+                    // Post-inference: use inferred outline type
+                    Outline paramOutline = resolveParamOutline(fv);
+                    if (paramOutline != null) {
+                        projected = extractPolyComponent(polyArg, paramOutline.eventual());
+                    }
+                    // Pre-inference fallback: use declared TypeNode class
+                    if (projected == null) {
+                        TypeNode declared = fv.node().argument().declared();
+                        if (declared != null) projected = extractPolyByTypeNode(polyArg, declared);
+                    }
+                    if (projected != null) arg = projected;
+                }
                 callEnv.define(paramName, arg);
             }
             Environment saved = env;
@@ -218,6 +240,71 @@ public class OutlineInterpreter implements Interpreter {
             }
         }
         throw new RuntimeException("Cannot apply " + fn + " to " + arg);
+    }
+
+    /**
+     * Resolves the outline type for a function's first parameter.
+     * Uses rawOutline() to avoid ClassCastException when inference has not yet run.
+     * Prefers the already-inferred argument outline; falls back to the declared TypeNode's outline.
+     */
+    private Outline resolveParamOutline(FunctionValue fv) {
+        var arg = fv.node().argument();
+        // Post-inference path: argument outline is a concrete Genericable
+        Outline raw = arg.rawOutline();
+        if (raw instanceof Genericable<?,?> && !(raw instanceof UNKNOWN)) {
+            return raw;
+        }
+        // Pre-inference path: use the declared TypeNode's own outline (set during parsing/conversion)
+        TypeNode declared = arg.declared();
+        if (declared == null) return null;
+        Outline declaredOutline = declared.rawOutline();
+        if (declaredOutline != null && !(declaredOutline instanceof UNKNOWN)) {
+            return declaredOutline;
+        }
+        return null;
+    }
+
+    /**
+     * Given a Poly value and the expected parameter outline type, find the component
+     * whose runtime type best matches the declared parameter type (role-based dispatch).
+     * Returns null if no match is found (caller will pass the full PolyValue as-is).
+     */
+    private Value extractPolyComponent(PolyValue poly, Outline expected) {
+        for (Value opt : poly.options()) {
+            if (valueMatchesOutline(opt, expected)) return opt;
+        }
+        return null;
+    }
+
+    /**
+     * Pre-inference fallback: extract the Poly component matching the declared TypeNode class.
+     * Used when inference has not yet run and the argument outline is still UNKNOWN.
+     */
+    private Value extractPolyByTypeNode(PolyValue poly, TypeNode declared) {
+        if (declared instanceof EntityTypeNode) {
+            return poly.options().stream().filter(v -> v instanceof EntityValue).findFirst().orElse(null);
+        }
+        if (declared instanceof IdentifierTypeNode itn) {
+            return switch (itn.name()) {
+                case "Integer", "Long"             -> poly.options().stream().filter(v -> v instanceof IntValue).findFirst().orElse(null);
+                case "Float", "Double", "Number"   -> poly.options().stream().filter(v -> v instanceof FloatValue).findFirst().orElse(null);
+                case "String"                      -> poly.options().stream().filter(v -> v instanceof StringValue).findFirst().orElse(null);
+                case "Bool"                        -> poly.options().stream().filter(v -> v instanceof BoolValue).findFirst().orElse(null);
+                default -> null;
+            };
+        }
+        return null;
+    }
+
+    private boolean valueMatchesOutline(Value v, Outline o) {
+        if (o instanceof Entity)   return v instanceof EntityValue;
+        if (o instanceof LONG)     return v instanceof IntValue;   // INTEGER extends LONG
+        if (o instanceof FLOAT || o instanceof DOUBLE || o instanceof NUMBER)
+                                   return v instanceof FloatValue;
+        if (o instanceof STRING)   return v instanceof StringValue;
+        if (o instanceof BOOL)     return v instanceof BoolValue;
+        if (o instanceof Function) return v instanceof FunctionValue;
+        return false;
     }
 
     // =========================================================================

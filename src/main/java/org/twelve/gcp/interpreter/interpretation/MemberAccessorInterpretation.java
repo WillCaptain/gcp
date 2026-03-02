@@ -55,6 +55,22 @@ public class MemberAccessorInterpretation implements Interpretation<MemberAccess
         if (target instanceof BoolValue bv)    return BuiltinMethods.bool(bv, memberName);
         if (target instanceof DictValue dv)    return BuiltinMethods.dict(dv, memberName);
 
+        if (target instanceof PolyValue poly) {
+            for (Value opt : poly.options()) {
+                if (opt instanceof EntityValue ev) {
+                    Value member = ev.get(memberName);
+                    if (member != null) {
+                        if (member instanceof FunctionValue fv2 && !fv2.isBuiltin()) {
+                            EntityMethodEnvironment methodEnv = new EntityMethodEnvironment(fv2.closure(), ev);
+                            return new FunctionValue(fv2.node(), methodEnv);
+                        }
+                        return member;
+                    }
+                }
+            }
+            throw new RuntimeException("Cannot access member '" + memberName + "' on Poly: no entity component has that member");
+        }
+
         throw new RuntimeException("Cannot access member '" + memberName + "' on " + target);
     }
 }

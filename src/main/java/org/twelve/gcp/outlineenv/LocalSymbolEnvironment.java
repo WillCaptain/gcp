@@ -96,7 +96,13 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         boolean reachedThisScope = false;//only possible to try to find base in the first product adt scope
         while(scope!=null){
             EnvSymbol symbol = scope.lookupSymbol(key, !reachedThisScope);
-            if (symbol != null && !symbols.contains(symbol)) symbols.add(symbol);
+            if (symbol != null && !symbols.contains(symbol)) {
+                symbols.add(symbol);
+                // Stop at the innermost scope that owns this symbol: inner bindings shadow outer ones.
+                // The IN_PRODUCT_ADT base-member lookup is already handled inside
+                // AstScope.lookupSymbol(key, isEntity) — no need to walk further up.
+                break;
+            }
             if(!reachedThisScope && scope.scopeType()== SCOPE_TYPE.IN_PRODUCT_ADT){
                 reachedThisScope = true;
             }

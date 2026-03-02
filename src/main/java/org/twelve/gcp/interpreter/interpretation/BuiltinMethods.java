@@ -47,14 +47,27 @@ public final class BuiltinMethods {
             });
             case "filter"  -> new FunctionValue(fn -> new ArrayValue(
                     arr.elements().stream().filter(e -> interp.apply(fn, e).isTruthy()).collect(Collectors.toList())));
-            case "forEach" -> new FunctionValue(fn -> {
+            case "each", "forEach" -> new FunctionValue(fn -> {
                 arr.elements().forEach(e -> interp.apply(fn, e));
                 return UnitValue.INSTANCE;
             });
-            case "any"     -> new FunctionValue(fn -> BoolValue.of(
+            case "any", "some" -> new FunctionValue(fn -> BoolValue.of(
                     arr.elements().stream().anyMatch(e -> interp.apply(fn, e).isTruthy())));
-            case "all"     -> new FunctionValue(fn -> BoolValue.of(
+            case "all", "every" -> new FunctionValue(fn -> BoolValue.of(
                     arr.elements().stream().allMatch(e -> interp.apply(fn, e).isTruthy())));
+            case "take_while" -> new FunctionValue(fn -> {
+                List<Value> out = new ArrayList<>();
+                for (Value e : arr.elements()) {
+                    if (!interp.apply(fn, e).isTruthy()) break;
+                    out.add(e);
+                }
+                return new ArrayValue(out);
+            });
+            case "drop_while" -> new FunctionValue(fn -> {
+                int i = 0;
+                while (i < arr.size() && interp.apply(fn, arr.get(i)).isTruthy()) i++;
+                return new ArrayValue(new ArrayList<>(arr.elements().subList(i, arr.size())));
+            });
             case "find"    -> new FunctionValue(fn -> arr.elements().stream()
                     .filter(e -> interp.apply(fn, e).isTruthy()).findFirst().orElse(UnitValue.INSTANCE));
             case "sort"    -> new FunctionValue(cmp -> {
