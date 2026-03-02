@@ -7,6 +7,7 @@ import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.*;
 import org.twelve.gcp.outline.builtin.Module;
+import org.twelve.gcp.common.StdLib;
 
 import java.util.*;
 
@@ -41,6 +42,7 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         defineOutline(root,this.ast().Unit);
         defineOutline(root,this.ast().Number);
         defineOutline(root,this.ast().unknown());
+        StdLib.registerAll(this.ast, this);
     }
     private void defineOutline(AstScope root, Outline outline){
         root.defineOutline(outline.name(),outline,null);

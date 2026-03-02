@@ -31,6 +31,10 @@ import org.twelve.gcp.outline.primitive.*;
 import org.twelve.gcp.outline.projectable.Function;
 import org.twelve.gcp.outline.projectable.Genericable;
 
+import org.twelve.gcp.config.GCPConfig;
+import org.twelve.gcp.plugin.PluginLoader;
+
+import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -55,9 +59,13 @@ import java.util.Map;
  *   <li>{@link Environment} – lexical scope chain.</li>
  *   <li>{@code moduleExports} – cross-module exported bindings.</li>
  *   <li>{@code constructors} – registered {@link SymbolConstructor} plugins.</li>
+ *   <li>{@link GCPConfig} – runtime configuration (plugin dir, …).</li>
  * </ul>
  */
 public class OutlineInterpreter implements Interpreter {
+
+    // ── runtime configuration ─────────────────────────────────────────────────
+    private final GCPConfig config;
 
     // ── external plugin registry ─────────────────────────────────────────────
     private final Map<String, SymbolConstructor> constructors = new LinkedHashMap<>();
@@ -113,8 +121,24 @@ public class OutlineInterpreter implements Interpreter {
     // Public entry points
     // =========================================================================
 
+    /**
+     * Creates an interpreter using {@link GCPConfig#load()} — reads {@code gcp.properties}
+     * bundled in the JAR, with system-property and environment-variable overrides.
+     * Plugin JARs are auto-loaded from the configured {@code plugin_dir}.
+     */
     public OutlineInterpreter() {
+        this(GCPConfig.load());
+    }
+
+    /**
+     * Creates an interpreter with the given {@link GCPConfig}.
+     * Plugin JARs are automatically loaded from {@code config.getPath("plugin_dir")}
+     * if that directory exists on the filesystem.
+     */
+    public OutlineInterpreter(GCPConfig config) {
+        this.config = config;
         registerBuiltins();
+        PluginLoader.load(config).forEach(p -> constructors.put(p.id(), p::construct));
     }
 
     /**
@@ -142,6 +166,22 @@ public class OutlineInterpreter implements Interpreter {
      */
     public OutlineInterpreter registerConstructor(String name, SymbolConstructor constructor) {
         constructors.put(name, constructor);
+        return this;
+    }
+
+    /**
+     * Scans {@code dir} for {@code ext_builder_*.jar} files and registers every
+     * {@link org.twelve.gcp.plugin.GCPBuilderPlugin} discovered via {@link java.util.ServiceLoader}.
+     *
+     * <p>The constructor already calls this automatically via {@link PluginLoader#load(GCPConfig)}.
+     * Use this method to dynamically append plugins from an additional directory at runtime.
+     *
+     * @param dir directory to scan (silently ignored if {@code null} or absent)
+     * @return {@code this} for chaining
+     */
+    public OutlineInterpreter loadPlugins(Path dir) {
+        PluginLoader.loadFromDirectory(dir)
+            .forEach(plugin -> constructors.put(plugin.id(), plugin::construct));
         return this;
     }
 
@@ -354,9 +394,18 @@ public class OutlineInterpreter implements Interpreter {
         env.define("false", BoolValue.FALSE);
         env.define("to_str", new FunctionValue(v -> new StringValue(v.display())));
         env.define("print",  new FunctionValue(v -> {
-            System.out.println(v.display());
+            String msg = v.display();
+            org.twelve.gcp.interpreter.stdlib.ConsoleCapture.add(
+                    org.twelve.gcp.interpreter.stdlib.ConsoleCapture.Level.LOG, msg);
+            System.out.println(msg);
             return UnitValue.INSTANCE;
         }));
+        org.twelve.gcp.interpreter.stdlib.StdLibRuntime.registerAll(env);
+
+        // Built-in external builder — same GCPBuilderPlugin contract as JAR plugins;
+        // only the loading mechanism differs (instantiated directly, not discovered from a JAR).
+        ExternalBuilderPlugin externalBuilder = new ExternalBuilderPlugin(this, typeDefinitions);
+        constructors.put(externalBuilder.id(), externalBuilder::construct);
     }
 
     private Map<String, Value> resolveExports(AST ast) {

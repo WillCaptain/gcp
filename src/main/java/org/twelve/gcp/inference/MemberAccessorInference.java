@@ -74,10 +74,17 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
             }
         }
         // A bare type name (SymbolIdentifier, e.g. Human, Gender) is an outline type definition,
-        // not a value. Accessing members of a type definition is forbidden.
-        if (node.host() instanceof SymbolIdentifier) {
-            GCPErrorReporter.report(node.host(), GCPErrCode.OUTLINE_USED_AS_VALUE);
-            return node.ast().Error;
+        // not a value — accessing its members is forbidden.
+        // EXCEPTION: stdlib singleton modules (Math, Date, Console) are also SymbolIdentifiers
+        // but are registered as entity VALUES (their symbol's origin node is null, meaning they
+        // were pre-defined by the runtime rather than declared in user source code).
+        if (node.host() instanceof SymbolIdentifier si) {
+            var sym = node.ast().symbolEnv().lookupAll(si.name());
+            boolean isStdlibValue = sym != null && sym.node() == null && outline instanceof ProductADT;
+            if (!isStdlibValue) {
+                GCPErrorReporter.report(node.host(), GCPErrCode.OUTLINE_USED_AS_VALUE);
+                return node.ast().Error;
+            }
         }
         // Entity path: host type is fully known; look up the member directly
         if (!(outline instanceof ProductADT)) {

@@ -26,12 +26,17 @@ public final class TupleValue implements Value {
     @Override public Object unwrap() { return elements; }
     @Override public boolean isTruthy() { return !elements.isEmpty(); }
 
+    /** Human-readable form: strings are unquoted, elements separated by ", ". */
     @Override
     public String display() {
         return "(" + elements.stream().map(Value::display).collect(Collectors.joining(", ")) + ")";
     }
 
-    @Override public String toString() { return display(); }
+    /** Code-style form: strings are quoted, elements separated by ",". */
+    @Override
+    public String toString() {
+        return "(" + elements.stream().map(Object::toString).collect(Collectors.joining(",")) + ")";
+    }
 
     @Override
     public boolean equals(Object o) {
