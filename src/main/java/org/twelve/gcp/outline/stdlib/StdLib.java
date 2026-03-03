@@ -11,9 +11,9 @@ import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
  *
  * <p>Three singleton module entities are pre-defined and accessible by name without any import:
  * <ul>
- *   <li><b>Date</b>  – date/time factory and inspection</li>
- *   <li><b>Console</b> – I/O utilities</li>
- *   <li><b>Math</b>  – numeric/mathematical constants and functions</li>
+ *   <li><b>date</b>    – date/time factory and inspection</li>
+ *   <li><b>console</b> – I/O utilities</li>
+ *   <li><b>math</b>    – numeric/mathematical constants and functions</li>
  * </ul>
  *
  * <p>The corresponding runtime values are registered by
@@ -25,9 +25,9 @@ public final class StdLib {
 
     /** Register all stdlib modules into the root scope of the given environment. */
     public static void registerAll(AST ast, LocalSymbolEnvironment env) {
-        env.defineSymbol("Date",    buildDate(ast),    false, null);
-        env.defineSymbol("Console", buildConsole(ast), false, null);
-        env.defineSymbol("Math",    buildMath(ast),    false, null);
+        env.defineSymbol("date",    buildDate(ast),    false, null);
+        env.defineSymbol("console", buildConsole(ast), false, null);
+        env.defineSymbol("math",    buildMath(ast),    false, null);
     }
 
     // ── Date ──────────────────────────────────────────────────────────────────
@@ -69,16 +69,16 @@ public final class StdLib {
 
     /**
      * Console module entity:
-     *   log(String)   : String → Unit
-     *   warn(String)  : String → Unit
-     *   error(String) : String → Unit
-     *   read()        : Unit   → String
+     *   log(Any)    : Any → Unit   — accepts any type; runtime calls display()/to_str implicitly
+     *   warn(Any)   : Any → Unit
+     *   error(Any)  : Any → Unit
+     *   read()      : Unit → String
      */
     private static Entity buildConsole(AST ast) {
         Entity c = Entity.from(ast.program());
-        c.addMember("log",   FirstOrderFunction.from(ast, ast.Unit,   ast.String), Modifier.PUBLIC, false, null, false);
-        c.addMember("warn",  FirstOrderFunction.from(ast, ast.Unit,   ast.String), Modifier.PUBLIC, false, null, false);
-        c.addMember("error", FirstOrderFunction.from(ast, ast.Unit,   ast.String), Modifier.PUBLIC, false, null, false);
+        c.addMember("log",   FirstOrderFunction.from(ast, ast.Unit,   ast.Any),    Modifier.PUBLIC, false, null, false);
+        c.addMember("warn",  FirstOrderFunction.from(ast, ast.Unit,   ast.Any),    Modifier.PUBLIC, false, null, false);
+        c.addMember("error", FirstOrderFunction.from(ast, ast.Unit,   ast.Any),    Modifier.PUBLIC, false, null, false);
         c.addMember("read",  FirstOrderFunction.from(ast, ast.String, ast.Unit),   Modifier.PUBLIC, false, null, false);
         return c;
     }

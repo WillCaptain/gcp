@@ -10,6 +10,7 @@ import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
+import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.primitive.ANY;
@@ -17,6 +18,7 @@ import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.AccessorGeneric;
 import org.twelve.gcp.outline.projectable.Genericable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -73,6 +75,13 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
                 return member;
             }
         }
+        // Option path: if every variant in the union has the requested member, return the common
+        // member type (or a union of them when they differ). This enables structural member access
+        // on sum types — e.g. (EntityA|EntityB).field when both variants declare the same field.
+        if (outline instanceof Option optType) {
+            return inferMemberFromOption(node, optType);
+        }
+
         // A bare type name (SymbolIdentifier, e.g. Human, Gender) is an outline type definition,
         // not a value — accessing its members is forbidden.
         // EXCEPTION: stdlib singleton modules (Math, Date, Console) are also SymbolIdentifiers
@@ -119,6 +128,41 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
 //                return result;
 //            }
         }
+    }
+
+    /**
+     * Handles member access on an {@link Option} (union) type.
+     * <p>
+     * A field access {@code expr.field} is valid on a union type when <em>every</em> variant
+     * in the union carries the field. The result type is the union of all per-variant field types,
+     * collapsed to a single type when they are all identical.
+     * <p>
+     * If any variant is not a {@link ProductADT}, or does not carry the field, the access is
+     * reported as {@code FIELD_NOT_FOUND}.
+     */
+    private static Outline inferMemberFromOption(MemberAccessor node, Option optType) {
+        List<Outline> memberTypes = new ArrayList<>();
+        for (Outline option : optType.options()) {
+            Outline opt = option.eventual();
+            if (!(opt instanceof ProductADT)) {
+                GCPErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
+                return node.ast().Error;
+            }
+            ProductADT adt = cast(opt);
+            adt.loadBuiltInMethods();
+            List<EntityMember> found = adt.members().stream()
+                    .filter(m -> m.name().equals(node.member().name()))
+                    .collect(Collectors.toList());
+            if (found.isEmpty()) {
+                GCPErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
+                return node.ast().Error;
+            }
+            memberTypes.add(found.getFirst().outline().eventual());
+        }
+        // Collapse identical types; otherwise build a union of all field types.
+        boolean allSame = memberTypes.stream().allMatch(t -> t.is(memberTypes.getFirst()) && memberTypes.getFirst().is(t));
+        if (allSame) return memberTypes.getFirst();
+        return Option.from(node.member(), node.ast(), memberTypes.toArray(new Outline[0]));
     }
 
     /**

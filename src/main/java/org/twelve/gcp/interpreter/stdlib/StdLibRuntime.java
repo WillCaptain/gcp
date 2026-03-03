@@ -22,9 +22,9 @@ public final class StdLibRuntime {
 
     /** Register all stdlib runtime values into the given interpreter environment. */
     public static void registerAll(Environment env) {
-        env.define("Date",    buildDate());
-        env.define("Console", buildConsole());
-        env.define("Math",    buildMath());
+        env.define("date",    buildDate());
+        env.define("console", buildConsole());
+        env.define("math",    buildMath());
     }
 
     /**

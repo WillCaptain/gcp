@@ -217,11 +217,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     public void addExtendToBe(Outline outline) {
-        if (outline == null) {
-            System.err.println("[DEBUG addExtendToBe NULL] this=" + this.node());
-            new RuntimeException("addExtendToBe(null)").printStackTrace(System.err);
-            return;
-        }
+        if (outline == null) return;
         if (outline instanceof NOTHING) return;
         // ANY means "unconstrained" – adding it as an upper bound conveys no information
         // and would pollute extendToBe, causing false "mismatch with any" errors downstream.

@@ -40,7 +40,11 @@ public class EntityInference implements Inference<EntityNode> {
                         return node.ast().Error;
                     }
                 }
-                node.ast().symbolEnv().defineSymbol("base", base, false, null);
+                // For this{...} updates, store the underlying entity (not the This wrapper)
+                // so that AstScope.lookupSymbol can resolve bare field names via the member-lookup
+                // mechanism (which expects base.outline() instanceof ADT, not This).
+                Outline baseForScope = (base instanceof This t) ? t.eventual() : base;
+                node.ast().symbolEnv().defineSymbol("base", baseForScope, false, null);
             }
 
             // ── this{field=expr, ...} ─────────────────────────────────────────────────
@@ -50,6 +54,8 @@ public class EntityInference implements Inference<EntityNode> {
             // the updateThis / copy machinery, causing StackOverflows.
             // We still infer each override expression for error-detection, using the outer
             // entity as the ambient scope so that field names and generic parameters resolve.
+            // The "base" symbol already points to the underlying entity (see above), enabling
+            // AstScope.lookupSymbol to resolve bare field names like `x` in `this{x = x + dx}`.
             if (base instanceof This thisWrapper) {
                 node.ast().symbolEnv().current().setScopeType(SCOPE_TYPE.IN_PRODUCT_ADT);
                 node.ast().symbolEnv().current().setOutline(thisWrapper.eventual());

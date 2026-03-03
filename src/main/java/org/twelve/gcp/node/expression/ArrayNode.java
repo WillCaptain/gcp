@@ -47,6 +47,14 @@ public class ArrayNode extends Expression {
         this.end = end;
         this.step = step;
         this.values = null;
+        // Register range sub-expressions as children so that each gets a proper parent reference.
+        // Without this, scope() on any sub-expression would NPE when the expression needs
+        // environment lookup (e.g. an identifier like `n` in [1...n]).
+        if (begin != null) this.addNode(begin);
+        this.addNode(end);
+        if (step != null) this.addNode(step);
+        if (processor != null) this.addNode(processor);
+        if (condition != null) this.addNode(condition);
     }
 
     @Override

@@ -436,6 +436,21 @@ public class OutlineInterpreter implements Interpreter {
             if (v instanceof TupleValue tv)  return new IntValue(tv.size());
             throw new RuntimeException("len: unsupported type " + v.getClass().getSimpleName());
         }));
+        env.define("type_of", new FunctionValue(v -> {
+            String name;
+            if      (v instanceof IntValue)      name = "Int";
+            else if (v instanceof FloatValue)    name = "Double";
+            else if (v instanceof StringValue)   name = "String";
+            else if (v instanceof BoolValue)     name = "Bool";
+            else if (v instanceof UnitValue)     name = "Unit";
+            else if (v instanceof ArrayValue)    name = "Array";
+            else if (v instanceof TupleValue)    name = "Tuple";
+            else if (v instanceof DictValue)     name = "Dict";
+            else if (v instanceof EntityValue)   name = "Entity";
+            else if (v instanceof FunctionValue) name = "Function";
+            else                                 name = v.getClass().getSimpleName();
+            return new StringValue(name);
+        }));
         env.define("assert", new FunctionValue(v -> {
             if (!v.isTruthy()) throw new RuntimeException("Assertion failed");
             return UnitValue.INSTANCE;

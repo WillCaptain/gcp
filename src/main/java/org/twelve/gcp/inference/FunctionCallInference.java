@@ -2,6 +2,7 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.AbstractNode;
+import org.twelve.gcp.exception.GCPError;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Expression;
@@ -257,11 +258,29 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      *   <li>Project the return type: derive the concrete return type for this call.</li>
      * </ol>
      *
+     * <p><b>Call-site error redirect</b>: when the actual argument type is incompatible with the
+     * formal parameter (detected before projection), any {@code PROJECT_FAIL} errors that the
+     * deep projection machinery would normally report at the <em>type's origin node</em>
+     * (e.g. the {@code IfExpression} that produced an {@code Integer|String}) are removed and
+     * replaced with a single error at the <em>argument node</em> (the call line).
+     * The projected return type (best-guess from {@code Genericable.guess()}) is still returned
+     * so that downstream inference can continue.
+     *
      * @param function the first-order function with a fully known type
      * @param argument the actual argument node
      * @return the projected return type
      */
     private Outline project(FirstOrderFunction function, AbstractNode argument) {
+        Outline formalMin = function.argument().min();
+        Outline actual    = argument.outline();
+        // Pre-check: detect mismatch so we can redirect any errors after projection.
+        // A mismatch exists when the formal parameter has a declared constraint (not ANY),
+        // the actual type is resolved (not UNKNOWN), and the actual does not satisfy the formal.
+        boolean typeMismatch = !(formalMin instanceof ANY)
+                && !(actual instanceof UNKNOWN)
+                && !actual.is(function.argument());
+        int errCountBefore = typeMismatch ? argument.ast().errors().size() : -1;
+
         ProjectSession session = function.getSession();
         if (session == null) {
             // start a new projection session for this call
@@ -301,6 +320,19 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             }
             if (((Option) result).options().size() == 1) {
                 result = ((Option) result).options().getFirst();
+            }
+        }
+        // Redirect call-site errors: if we pre-detected a mismatch, the deep projection has
+        // (by now) added PROJECT_FAIL at the type's origin node (e.g. the IfExpression that
+        // produced an Integer|String).  Remove those origin-site errors and replace with a
+        // single PROJECT_FAIL at the argument node (the actual call line).
+        if (typeMismatch) {
+            List<GCPError> errors = argument.ast().errors();
+            int errCountAfter = errors.size();
+            if (errCountAfter > errCountBefore) {
+                errors.subList(errCountBefore, errCountAfter).clear();
+                GCPErrorReporter.report(argument, GCPErrCode.PROJECT_FAIL,
+                        actual + " mismatch with " + formalMin);
             }
         }
         return result;
