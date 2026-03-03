@@ -15,12 +15,23 @@ import org.twelve.gcp.interpreter.value.Value;
  * 例如：1|“some”，代表了poly既是Number也是String
  */
 public class PolyNode extends Expression{
-    public PolyNode(Expression e,Expression ... expressions) {
+    private final boolean isOption;
+
+    public PolyNode(Expression e, Expression... expressions) {
+        this(false, e, expressions);
+    }
+
+    public PolyNode(boolean isOption, Expression e, Expression... expressions) {
         super(e.ast(), null);
+        this.isOption = isOption;
         this.addNode(e);
         for (Expression expression : expressions) {
             this.addNode(expression);
         }
+    }
+
+    public boolean isOption() {
+        return isOption;
     }
 
     @Override

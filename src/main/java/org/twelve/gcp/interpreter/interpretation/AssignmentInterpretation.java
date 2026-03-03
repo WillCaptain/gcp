@@ -6,6 +6,7 @@ import org.twelve.gcp.interpreter.value.EntityValue;
 import org.twelve.gcp.interpreter.value.PolyValue;
 import org.twelve.gcp.interpreter.value.Value;
 import org.twelve.gcp.node.expression.*;
+import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.OutlineDefinition;
 import org.twelve.gcp.node.expression.typeable.*;
 import org.twelve.gcp.outline.primitive.Literal;
@@ -20,6 +21,24 @@ public class AssignmentInterpretation implements Interpretation<Assignment> {
         if (rhs instanceof PolyValue poly && node.lhs() instanceof Variable var && var.declared() != null) {
             Class<? extends Value> target = AsInterpretation.targetValueClass(var.declared());
             if (target != null) rhs = poly.extract(target);
+        }
+        // When assigning to a variable that currently holds a PolyValue, replace only the
+        // matching type variant(s) and preserve the rest.
+        // Works for both single-value rhs (db = 100) and poly rhs (db = 200 & "Will1").
+        String varName = assigneeName(node.lhs());
+        if (varName != null) {
+            Value existing = interpreter.env().lookup(varName);
+            if (existing instanceof PolyValue pv) {
+                if (rhs instanceof PolyValue rhsPoly) {
+                    PolyValue merged = pv;
+                    for (Value variant : rhsPoly.options()) {
+                        merged = merged.withReplaced(variant);
+                    }
+                    rhs = merged;
+                } else {
+                    rhs = pv.withReplaced(rhs);
+                }
+            }
         }
         fillLiteralFields(node.lhs(), rhs, interpreter);
         UnpackBinder.bindAssignable(node.lhs(), rhs, interpreter);
@@ -80,6 +99,13 @@ public class AssignmentInterpretation implements Interpretation<Assignment> {
     private static EntityTypeNode lookupEntityType(String typeName, Interpreter interpreter) {
         OutlineDefinition def = interpreter.typeDefinitions().get(typeName);
         if (def != null && def.typeNode() instanceof EntityTypeNode etn) return etn;
+        return null;
+    }
+
+    /** Returns the simple variable name from an assignable LHS, or null for complex targets. */
+    private static String assigneeName(Assignable lhs) {
+        if (lhs instanceof Variable v) return v.name();
+        if (lhs instanceof Identifier id) return id.name();
         return null;
     }
 }

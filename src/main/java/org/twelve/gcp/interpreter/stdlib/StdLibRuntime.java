@@ -27,6 +27,15 @@ public final class StdLibRuntime {
         env.define("Math",    buildMath());
     }
 
+    /**
+     * Reset any per-request stateful stdlib resources (e.g. virtual filesystem).
+     * Called by the playground before each code execution to avoid cross-request state leakage.
+     * No-op in the base implementation; extended runtimes may override via subclassing.
+     */
+    public static void resetFs() {
+        // no virtual-filesystem state in the base runtime
+    }
+
     // ── Date ──────────────────────────────────────────────────────────────────
 
     private static EntityValue buildDateRecord(LocalDateTime dt) {

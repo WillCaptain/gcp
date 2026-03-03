@@ -47,7 +47,7 @@ public abstract class Assignable extends Expression {
                 you.addHasToBe(this.outline);
             }
         }
-        if (!inferred.is(this.outline)) {
+        if (!inferred.canBe(this.outline)) {
             GCPErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH,
                     inferred.node() + CONSTANTS.MISMATCH_STR + this);
         }

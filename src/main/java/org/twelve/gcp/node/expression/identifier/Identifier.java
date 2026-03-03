@@ -104,21 +104,40 @@ public class Identifier extends Assignable implements UnpackAble {
         //定位与判定是否mutable
         if (symbol.outline() instanceof Poly) {
             Poly poly = cast(symbol.outline());
-            //找到poly里匹配的outline
-            Outline matched = poly.match(inferred);
-            if (matched != null) {
-                if (matched == this.ast().Error) {//找到多过一个匹配
-                    GCPErrorReporter.report(this, GCPErrCode.AMBIGUOUS_VARIABLE_REFERENCE);
-                    return;
+            if (inferred instanceof Poly inferredPoly) {
+                // partial/full poly assignment: validate each option independently
+                for (Outline option : inferredPoly.options()) {
+                    Outline matched = poly.match(option);
+                    if (matched == null) {
+                        GCPErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
+                        return;
+                    }
+                    if (matched == this.ast().Error) {
+                        GCPErrorReporter.report(this, GCPErrCode.AMBIGUOUS_VARIABLE_REFERENCE);
+                        return;
+                    }
+                    if (!poly.isMutable(matched, symbol.mutable())) {
+                        GCPErrorReporter.report(this, GCPErrCode.NOT_ASSIGNABLE);
+                        return;
+                    }
                 }
+            } else {
+                //找到poly里匹配的outline
+                Outline matched = poly.match(inferred);
+                if (matched != null) {
+                    if (matched == this.ast().Error) {//找到多过一个匹配
+                        GCPErrorReporter.report(this, GCPErrCode.AMBIGUOUS_VARIABLE_REFERENCE);
+                        return;
+                    }
 
-                if (!poly.isMutable(matched, symbol.mutable())) {//匹配到了，但是不可赋值
-                    GCPErrorReporter.report(this, GCPErrCode.NOT_ASSIGNABLE);
+                    if (!poly.isMutable(matched, symbol.mutable())) {//匹配到了，但是不可赋值
+                        GCPErrorReporter.report(this, GCPErrCode.NOT_ASSIGNABLE);
+                        return;
+                    }
+                } else {//没有找到匹配，说明赋值类型不一致
+                    GCPErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
                     return;
                 }
-            } else {//没有找到匹配，说明赋值类型不一致
-                GCPErrorReporter.report(this.parent(), GCPErrCode.OUTLINE_MISMATCH);
-                return;
             }
         } else {
             // Re-assignment to an immutable (let) binding is forbidden.

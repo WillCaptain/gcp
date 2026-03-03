@@ -127,7 +127,13 @@ public class Poly extends SumADT {
     @Override
     public boolean tryYouCanBeMe(Outline another) {
         if (another instanceof Poly) {
-            return tryYouAreMe(another);
+            // partial poly assignment: every option of `another` must be covered by one of this poly's options
+            for (Outline option : ((Poly) another).options) {
+                if (options.stream().noneMatch(o -> option.canBe(o))) {
+                    return false;
+                }
+            }
+            return true;
         } else {
             return options.stream().anyMatch(o -> another.canBe(o));
         }

@@ -1,5 +1,6 @@
 package org.twelve.gcp.interpreter.value;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,6 +26,22 @@ public class PolyValue implements Value {
     /** All value variants stored in this poly value. */
     public List<Value> options() {
         return options;
+    }
+
+    /**
+     * Return a new PolyValue with the variant whose exact Java type matches
+     * {@code newVariant} replaced by {@code newVariant}.
+     * If no variant with that type exists, the original PolyValue is returned unchanged.
+     */
+    public PolyValue withReplaced(Value newVariant) {
+        List<Value> updated = new ArrayList<>(options);
+        for (int i = 0; i < updated.size(); i++) {
+            if (updated.get(i).getClass() == newVariant.getClass()) {
+                updated.set(i, newVariant);
+                return new PolyValue(updated);
+            }
+        }
+        return this;
     }
 
     /**
