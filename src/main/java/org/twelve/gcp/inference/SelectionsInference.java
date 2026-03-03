@@ -6,6 +6,7 @@ import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Option;
+import org.twelve.gcp.outline.builtin.ERROR;
 import org.twelve.gcp.outline.builtin.UNIT;
 
 import java.util.ArrayList;
@@ -26,6 +27,11 @@ public class SelectionsInference implements Inference<Selections<?>>{
         if(inferred.removeIf(o->o instanceof UNIT)){
 
             GCPErrorReporter.report(node, GCPErrCode.AMBIGUOUS_RETURN);
+        }
+        // Error from an arm is already reported at the arm level; strip it from the union
+        // so it does not pollute Reference/Generic constraints in subsequent inference passes.
+        if (!node.ast().asf().isLastInfer()) {
+            inferred.removeIf(o -> o instanceof ERROR);
         }
         return Option.from(node,inferred.toArray(new Outline[]{}));
     }

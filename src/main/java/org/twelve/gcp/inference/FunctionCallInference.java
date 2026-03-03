@@ -62,8 +62,14 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             GCPErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_DEFINED);
             return ast.Error;
         }
-        if (func == ast.Pending) {// recursive call: return Pending and wait for the next inference pass
-            return func;
+        if (func instanceof UNKNOWN) {// recursive call or unresolved: return Pending and wait for the next inference pass
+            return ast.Pending;
+        }
+        // A Genericable that is not yet a concrete Function (e.g. AccessorGeneric placeholder for a
+        // member access on a generic parameter) cannot be matched against argument types yet.
+        // Return Pending on non-final passes so the inference can converge before reporting errors.
+        if (func instanceof Genericable && !(func instanceof Function) && !ast.asf().isLastInfer()) {
+            return ast.Pending;
         }
         // Literal-typed callables (e.g. run: #()->this.speed): unwrap to the origin function type
         // so that call semantics work normally. The Literal wrapper only enforces immutability.
@@ -71,7 +77,9 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             func = lit.outline();
         }
 
-        Outline result = ast.unknown(node);
+        // Use a fixed sentinel to correctly detect "no match found" via identity comparison
+        final Outline unknownSentinel = ast.unknown(node);
+        Outline result = unknownSentinel;
         // Overloaded function: select the matching version from the Poly union
         if (func instanceof Poly) {
             result = targetOverride(cast(func), node.arguments(), inferencer, node);
@@ -83,7 +91,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
                 result = func;
             }
         }
-        if (result == ast.unknown(node)) {
+        if (result == unknownSentinel) {
             GCPErrorReporter.report(node, GCPErrCode.FUNCTION_NOT_FOUND);
             return result;
         }
@@ -278,9 +286,19 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         if (result instanceof FirstOrderFunction) {
             ((FirstOrderFunction) result).setSession(session);
         }
-        //if this is the final projected, remove generics
+        // Remove unresolved placeholder types from the projected return Option.
+        // After projecting a recursive function with a concrete argument type, the Option may contain:
+        //   - Generic slots (formal type parameters) that were substituted → remove unconditionally
+        //   - Addable nodes (recursive self-referential return branches, e.g. fib(n-1)+fib(n-2))
+        //     that could not be further resolved because they depend on the function's own return type.
+        //     When at least one concrete (non-Projectable) branch is present, the Addable branch is
+        //     guaranteed to resolve to that same concrete type by induction, so it is safe to remove.
         if (result instanceof Option) {
             ((Option) result).options().removeIf(o -> o instanceof Generic);
+            boolean hasConcreteType = ((Option) result).options().stream().anyMatch(o -> !(o instanceof Projectable));
+            if (hasConcreteType) {
+                ((Option) result).options().removeIf(o -> o instanceof Addable);
+            }
             if (((Option) result).options().size() == 1) {
                 result = ((Option) result).options().getFirst();
             }

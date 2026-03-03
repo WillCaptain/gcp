@@ -27,6 +27,31 @@ public final class StdLib {
         env.defineSymbol("Date",    buildDate(ast),    false, null);
         env.defineSymbol("Console", buildConsole(ast), false, null);
         env.defineSymbol("Math",    buildMath(ast),    false, null);
+        registerGlobalFunctions(ast, env);
+    }
+
+    // ── Global built-in functions ─────────────────────────────────────────────
+
+    /**
+     * Global first-class functions available in every module without qualification:
+     * <pre>
+     *   print(x: Any)         → Unit
+     *   to_str(x: Any)        → String
+     *   to_int(x: Any)        → Int
+     *   to_float(x: Any)      → Float
+     *   to_number(x: Any)     → Number
+     *   len(x: Any)           → Int
+     *   assert(cond: Bool)    → Unit
+     * </pre>
+     */
+    private static void registerGlobalFunctions(AST ast, LocalSymbolEnvironment env) {
+        env.defineSymbol("print",     FirstOrderFunction.from(ast, ast.Unit,    ast.Any),     false, null);
+        env.defineSymbol("to_str",    FirstOrderFunction.from(ast, ast.String,  ast.Any),     false, null);
+        env.defineSymbol("to_int",    FirstOrderFunction.from(ast, ast.Integer, ast.Any),     false, null);
+        env.defineSymbol("to_float",  FirstOrderFunction.from(ast, ast.Float,   ast.Any),     false, null);
+        env.defineSymbol("to_number", FirstOrderFunction.from(ast, ast.Number,  ast.Any),     false, null);
+        env.defineSymbol("len",       FirstOrderFunction.from(ast, ast.Integer, ast.Any),     false, null);
+        env.defineSymbol("assert",    FirstOrderFunction.from(ast, ast.Unit,    ast.Boolean), false, null);
     }
 
     // ── Date ──────────────────────────────────────────────────────────────────

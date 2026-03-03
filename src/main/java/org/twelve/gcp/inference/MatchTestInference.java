@@ -36,7 +36,14 @@ public class MatchTestInference implements Inference<MatchTest> {
             return node.ast().Boolean;
         }
         if (pattern instanceof Identifier) {
-            node.ast().symbolEnv().defineSymbol(((Identifier) pattern).name(), subject, false, cast(pattern));
+            if (!(outline instanceof UNKNOWN) && subject instanceof Generic g && g.declaredToBe() instanceof ANY) {
+                // Named-variant pattern (e.g. `Dot -> 0`): treat as a type test and propagate
+                // the variant as a hasToBe constraint on the subject, just like UnpackNode does.
+                g.addHasToBe(outline);
+            } else {
+                // Wildcard or fresh-variable binding (e.g. `_ -> …` or `x -> …`)
+                node.ast().symbolEnv().defineSymbol(((Identifier) pattern).name(), subject, false, cast(pattern));
+            }
         }
         if (pattern instanceof UnpackNode) {
             ((UnpackNode)pattern).assign(node.ast().symbolEnv(),subject);

@@ -83,6 +83,10 @@ public class Addable implements Projectable, OperateAble {
                 if (l instanceof Addable || r instanceof Addable) return this;//not sure
                 return new Addable(node, l, r);
             }
+            // If either operand could not be resolved (UNKNOWN), return this so that
+            // FunctionCallInference.removeIf(Addable) can safely discard it when a
+            // concrete sibling branch is already known (e.g. fib recursive case).
+            if (l.containsUnknown() || r.containsUnknown()) return this;
             return getExactNumberOutline(l, r);
         }
     }

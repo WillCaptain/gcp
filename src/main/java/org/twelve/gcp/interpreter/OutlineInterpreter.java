@@ -392,12 +392,52 @@ public class OutlineInterpreter implements Interpreter {
     private void registerBuiltins() {
         env.define("true",  BoolValue.TRUE);
         env.define("false", BoolValue.FALSE);
-        env.define("to_str", new FunctionValue(v -> new StringValue(v.display())));
-        env.define("print",  new FunctionValue(v -> {
+        // ── Global built-in functions ─────────────────────────────────────────
+        env.define("print", new FunctionValue(v -> {
             String msg = v.display();
             org.twelve.gcp.interpreter.stdlib.ConsoleCapture.add(
                     org.twelve.gcp.interpreter.stdlib.ConsoleCapture.Level.LOG, msg);
             System.out.println(msg);
+            return UnitValue.INSTANCE;
+        }));
+        env.define("to_str", new FunctionValue(v -> new StringValue(v.display())));
+        env.define("to_int", new FunctionValue(v -> {
+            if (v instanceof IntValue iv) return iv;
+            if (v instanceof FloatValue fv) return new IntValue((long) fv.value());
+            if (v instanceof StringValue sv) {
+                try { return new IntValue(Long.parseLong(sv.value().trim())); }
+                catch (NumberFormatException e) { return UnitValue.INSTANCE; }
+            }
+            return UnitValue.INSTANCE;
+        }));
+        env.define("to_float", new FunctionValue(v -> {
+            if (v instanceof FloatValue fv) return fv;
+            if (v instanceof IntValue iv) return new FloatValue((double) iv.value());
+            if (v instanceof StringValue sv) {
+                try { return new FloatValue(Double.parseDouble(sv.value().trim())); }
+                catch (NumberFormatException e) { return UnitValue.INSTANCE; }
+            }
+            return UnitValue.INSTANCE;
+        }));
+        env.define("to_number", new FunctionValue(v -> {
+            if (v instanceof IntValue || v instanceof FloatValue) return v;
+            if (v instanceof StringValue sv) {
+                try { return new IntValue(Long.parseLong(sv.value().trim())); }
+                catch (NumberFormatException ignored) {}
+                try { return new FloatValue(Double.parseDouble(sv.value().trim())); }
+                catch (NumberFormatException e) { return UnitValue.INSTANCE; }
+            }
+            return UnitValue.INSTANCE;
+        }));
+        env.define("len", new FunctionValue(v -> {
+            if (v instanceof StringValue sv) return new IntValue(sv.value().length());
+            if (v instanceof ArrayValue av)  return new IntValue(av.size());
+            if (v instanceof DictValue dv)   return new IntValue(dv.size());
+            if (v instanceof TupleValue tv)  return new IntValue(tv.size());
+            throw new RuntimeException("len: unsupported type " + v.getClass().getSimpleName());
+        }));
+        env.define("assert", new FunctionValue(v -> {
+            if (!v.isTruthy()) throw new RuntimeException("Assertion failed");
             return UnitValue.INSTANCE;
         }));
         org.twelve.gcp.interpreter.stdlib.StdLibRuntime.registerAll(env);

@@ -8,34 +8,43 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.primitive.BOOL;
 import org.twelve.gcp.outline.primitive.LONG;
 import org.twelve.gcp.outline.primitive.NUMBER;
+import org.twelve.gcp.outline.projectable.OperateAble;
 
 public class UnaryExprInference implements Inference<UnaryExpression> {
     @Override
     public Outline infer(UnaryExpression node, Inferencer inferencer) {
-        // Infer the type of the operand
         Outline ol = node.operand().infer(inferencer);
 
-        // Check the operator type and operand type compatibility
         switch (node.operator()) {
             case NEGATE: // -a
-                // Ensure operand is numeric and operator is prefix
                 if (ol instanceof NUMBER && node.position() == UnaryPosition.PREFIX) {
-                    return ol;  // Return type remains the same for negation
+                    return ol;
+                }
+                // unknown/generic operand: constrain to Number and propagate
+                if (ol instanceof OperateAble && node.position() == UnaryPosition.PREFIX) {
+                    ((OperateAble<?>) ol).addDefinedToBe(node.ast().Number);
+                    return ol;
                 }
                 break;
 
             case BANG: // !a
-                // Ensure operand is boolean and operator is prefix
                 if (ol instanceof BOOL && node.position() == UnaryPosition.PREFIX) {
-                    return ol;  // Return type remains Boolean for logical NOT
+                    return ol;
+                }
+                if (ol instanceof OperateAble && node.position() == UnaryPosition.PREFIX) {
+                    ((OperateAble<?>) ol).addDefinedToBe(node.ast().Boolean);
+                    return ol;
                 }
                 break;
 
             case INCREMENT: // ++a or a++
             case DECREMENT: // --a or a--
-                // Ensure operand is a long integer; handle both prefix and postfix positions
                 if (ol instanceof LONG) {
-                    return ol;  // Return type remains LONG for increment/decrement
+                    return ol;
+                }
+                if (ol instanceof OperateAble) {
+                    ((OperateAble<?>) ol).addDefinedToBe(node.ast().Long);
+                    return ol;
                 }
                 break;
 
@@ -43,10 +52,8 @@ public class UnaryExprInference implements Inference<UnaryExpression> {
                 break;
         }
 
-        // Throw an exception for outline type mismatches or invalid positions
-        GCPErrorReporter.report(node.operand(), GCPErrCode.UNSUPPORTED_UNARY_OPERATION,ol.toString()+" is not supported in unary operation.");
-//        GCPErrorReporter.report(node.operatorNode(), GCPErrCode.OUTLINE_MISMATCH);
-        //return node.ast().Error;
+        GCPErrorReporter.report(node.operand(), GCPErrCode.UNSUPPORTED_UNARY_OPERATION,
+                ol.toString() + " is not supported in unary operation.");
         return ol;
     }
 

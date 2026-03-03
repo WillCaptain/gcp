@@ -20,6 +20,10 @@ public class NumOperaInference implements OperatorInference {
         if (left instanceof NUMBER && right instanceof NUMBER) {
             return getExactNumberOutline(left, right);
         }
+        // NumericAble is a deferred arithmetic result on generics – keep deferring
+        if (left instanceof NumericAble || right instanceof NumericAble) {
+            return new NumericAble(left, right, node);
+        }
         //left and right is number or generic
         if (left instanceof NUMBER && right instanceof OperateAble) {
             ((OperateAble<?>) right).addDefinedToBe(ast.Number);

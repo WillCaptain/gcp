@@ -6,6 +6,7 @@ import org.twelve.gcp.node.expression.ArrayNode;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Array;
+import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.projectable.Function;
 import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.ProjectSession;
@@ -76,17 +77,21 @@ public class ArrayNodeInference implements Inference<ArrayNode> {
         Outline outline = node.ast().Any;
         for (Expression value : values) {
             Outline v = value.infer(inferencer);
-//            if (outline == Outline.Nothing) {
-//                outline = v;
-//            } else {
-
-                if (outline.is(v)) continue;
-                if (v.is(outline)) {
-                    outline = v;
-                    continue;
-                }
-                GCPErrorReporter.report(value, GCPErrCode.OUTLINE_MISMATCH, v + " doesn't match " + outline);
-//            }
+            if (outline instanceof org.twelve.gcp.outline.primitive.ANY) {
+                // first concrete element establishes the element type
+                outline = v;
+                continue;
+            }
+            // v is already covered by current element type (outline is broader or equal)
+            if (v.is(outline)) continue;
+            // v is broader than current element type – widen outline
+            if (outline.is(v)) {
+                outline = v;
+                continue;
+            }
+            // Types are unrelated variants – widen to a union type so that heterogeneous
+            // variant arrays (e.g. [Circle{...}, Rect{...}, Dot]) are valid.
+            outline = Option.from(value, outline, v);
         }
         return Array.from(node, outline);
     }

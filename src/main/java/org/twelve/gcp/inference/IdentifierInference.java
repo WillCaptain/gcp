@@ -36,7 +36,8 @@ public class IdentifierInference implements Inference<Identifier> {
             return node.ast().unknown(node);
         }
         if(supposed.outline() instanceof UNKNOWN){
-            if(this.confirmRecursive(node,supposed.node())){
+            boolean recursive = this.confirmRecursive(node,supposed.node());
+            if(recursive){
                 return node.ast().Pending;
             }
         }
@@ -44,12 +45,18 @@ public class IdentifierInference implements Inference<Identifier> {
     }
 
     private boolean confirmRecursive(Identifier me, Identifier source) {
-        if(!(source.parent() instanceof Assignment)) return false;
+        if(!(source.parent() instanceof Assignment)) {
+            return false;
+        }
         Expression rhs = ((Assignment) source.parent()).rhs();
         Node parent = me.parent();
+        int depth = 0;
         while(parent!=me.ast().program()){
             if(parent==rhs) return true;
             parent = parent.parent();
+            if (++depth > 200) {
+                return false;
+            }
         }
         return false;
     }

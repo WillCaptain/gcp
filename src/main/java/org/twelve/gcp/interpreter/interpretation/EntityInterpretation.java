@@ -10,6 +10,7 @@ import org.twelve.gcp.node.expression.OutlineDefinition;
 import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.typeable.EntityTypeNode;
 import org.twelve.gcp.node.expression.typeable.ExtendTypeNode;
+import org.twelve.gcp.interpreter.value.ExternalEntity;
 import org.twelve.gcp.node.expression.typeable.LiteralTypeNode;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.expression.Variable;
@@ -94,6 +95,15 @@ public class EntityInterpretation implements Interpretation<EntityNode> {
         } finally {
             interp.setEnv(saved);
         }
+
+        // If the base is an external plugin entity, delegate the final assembly to it.
+        // This allows plugins (e.g. Entitir's OntologyMemoPlugin) to intercept the
+        // fully-evaluated field map for DB persistence, event emission, and dynamic
+        // edge method wiring — all of which require the correct field values.
+        if (baseVal instanceof ExternalEntity ext) {
+            return ext.extend(new java.util.LinkedHashMap<>(fields));
+        }
+
         return self;
     }
 

@@ -96,13 +96,16 @@ public class Option extends SumADT {
     public boolean tryIamYou(Outline another) {
         if (another instanceof Option) {
             Option o = cast(another);
-            boolean is = true;
-            for (int i = 0; i < this.options.size(); i++) {
-                is = is && this.options.get(i).is(o.options.get(i));
+            // Union subtyping: every variant in this must be covered by some variant in another.
+            for (Outline thisOpt : this.options) {
+                boolean covered = o.options.stream().anyMatch(thatOpt -> thisOpt.is(thatOpt));
+                if (!covered) return false;
             }
-            return is;
+            return true;
         } else {
-            return this.out().is(another);
+            // Union subtyping: A|B is-a X only when every member of the union is-a X.
+            if (this.options.isEmpty()) return false;
+            return this.options.stream().allMatch(o -> o.is(another));
         }
     }
 
@@ -138,7 +141,7 @@ public class Option extends SumADT {
         for (EntityMember m1 : members1) {
             if (m1.isDefault()) continue;
             for (EntityMember m2 : members2) {
-                if (!m1.name().equals(m2)) continue;
+                if (!m1.name().equals(m2.name())) continue;
                 if (m2.isDefault()) continue;
                 ;
                 Outline o = interact(m1.outline(), m2.outline());
@@ -190,6 +193,15 @@ public class Option extends SumADT {
 
     @Override
     public Outline projectMySelf(Outline projection, ProjectSession session) {
+        // When the projection is itself a union, verify subset compatibility and return it directly
+        // rather than trying to match the whole union against a single variant.
+        if (projection instanceof Option) {
+            if (projection.is(this)) {
+                return projection;
+            }
+            GCPErrorReporter.report(this.ast(), this.node(), GCPErrCode.PROJECT_FAIL, projection + " is not " + this);
+            return this.guess();
+        }
         for (Outline option : this.options) {
             if (projection.is(option)) {
                 if (option instanceof Projectable) {
