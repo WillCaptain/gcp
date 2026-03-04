@@ -431,7 +431,14 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         }
         boolean projIsThis = projection.is(this);
         if (!projIsThis) {
-            GCPErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.node());
+            // Skip false-positive mismatch when the projection is a HOF with unresolved (NOTHING)
+            // return type — this indicates incomplete inference (e.g. Church numerals) rather than
+            // a genuine type error. Only report when the projection type is fully resolved.
+            boolean projReturnUnresolved = projection instanceof Function<?, ?>
+                    && ((Function<?, ?>) projection).returns().supposedToBe() instanceof NOTHING;
+            if (!projReturnUnresolved) {
+                GCPErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.node());
+            }
             return this.guess();
         }
         if (projection instanceof Genericable) {

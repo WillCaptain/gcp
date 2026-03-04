@@ -276,8 +276,13 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         // Pre-check: detect mismatch so we can redirect any errors after projection.
         // A mismatch exists when the formal parameter has a declared constraint (not ANY),
         // the actual type is resolved (not UNKNOWN), and the actual does not satisfy the formal.
+        // Functions with unresolved return-type chains (NOTHING/UNKNOWN) indicate incomplete
+        // inference rather than a genuine type error — skip to avoid false-positive PROJECT_FAIL.
+        boolean actualReturnUnresolved = actual instanceof Function<?, ?>
+                && returnChainUnresolved((Function<?, ?>) actual);
         boolean typeMismatch = !(formalMin instanceof ANY)
                 && !(actual instanceof UNKNOWN)
+                && !actualReturnUnresolved
                 && !actual.is(function.argument());
         int errCountBefore = typeMismatch ? argument.ast().errors().size() : -1;
 
@@ -337,5 +342,21 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         }
         return result;
 
+    }
+
+    /**
+     * Returns true when the function argument is ANY and its return-type chain contains NOTHING at
+     * any depth — a hallmark of an incompletely inferred HOF (e.g. Church-encoded numerals).
+     * NOTHING in the return chain (rather than the argument) is the stable indicator across
+     * all inference passes; once NOTHING appears there it never gets fully resolved for such HOFs.
+     */
+    private boolean returnChainUnresolved(Function<?, ?> func) {
+        Outline ret = func.returns().supposedToBe();
+        if (ret instanceof NOTHING || ret instanceof UNKNOWN) return true;
+        // Unresolved type variables (Generic) or return-type containers (Return) in the chain
+        // indicate that HOF inference did not fully converge — treat as incomplete.
+        if (ret instanceof Generic || ret instanceof Return) return true;
+        if (ret instanceof Function) return returnChainUnresolved((Function<?, ?>) ret);
+        return false;
     }
 }

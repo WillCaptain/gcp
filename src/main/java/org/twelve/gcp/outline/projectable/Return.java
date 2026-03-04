@@ -140,7 +140,13 @@ public class Return extends Genericable<Return, Node> implements Returnable {
             this.projectConstraints(result, projected, projection, session);
             // ANY supposed return type means "unconstrained" — skip the consistency check to
             // avoid false-positive "mismatch with any" errors on valid higher-order projections.
+            // Also skip when the projection is a function with unresolved (NOTHING) return type:
+            // this indicates incomplete HOF inference (e.g. Church numerals) and cannot be
+            // reliably validated against formal constraints — reporting here would be a false positive.
+            boolean projectionReturnUnresolved = projection instanceof Function<?, ?>
+                    && ((Function<?, ?>) projection).returns().supposedToBe() instanceof NOTHING;
             if (!(this.supposedToBe() instanceof UNKNOWN) && !(this.supposedToBe() instanceof ANY)
+                    && !projectionReturnUnresolved
                     && (!result.max().is(result.supposedToBe()) || !result.supposedToBe().is(result.min()))) {
                 GCPErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.supposed);
             }

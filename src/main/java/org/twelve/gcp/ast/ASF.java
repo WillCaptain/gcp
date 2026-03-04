@@ -50,17 +50,31 @@ public class ASF {
 
     /**
      * Performs iterative type inference across all ASTs:
-     * 1. Initializes namespaces for each AST.
-     * 2. Runs inference in rounds (max 4 iterations) until no further progress is made.
-     * 3. Marks unresolved nodes as errors.
+     * <ol>
+     *   <li><b>Phase 1 – Pre-registration</b>: every module's empty {@code Module} shell is
+     *       registered in the global symbol environment <em>before</em> any inference begins.
+     *       Because {@link org.twelve.gcp.outlineenv.LocalSymbolEnvironment} creates the
+     *       {@code Module} in its constructor, {@code ast.symbolEnv().module()} returns the
+     *       same object that {@code ast.infer()} will later populate via {@code exportSymbol}.
+     *       Pre-registering it breaks the chicken-and-egg deadlock of mutual imports.</li>
+     *   <li><b>Phase 2 – First inference pass</b>: all ASTs run inference; exports fill the
+     *       pre-registered modules.  Symbols from not-yet-inferred modules become
+     *       {@link org.twelve.gcp.outline.decorators.LazyModuleSymbol} placeholders.</li>
+     *   <li><b>Phase 3 – Fixed-point iteration</b>: repeated until all nodes are resolved or
+     *       the round limit is reached.  Lazy placeholders resolve as modules get populated.</li>
+     * </ol>
      */
     public boolean infer() {
-        // First inference pass + namespace registration
+        // Phase 1: pre-register all module shells so ImportInference can always find them,
+        // even when the source module has not been inferred yet (mutual-import support).
         this.asts.forEach(ast -> {
             String namespaceKey = ast.namespace().lexeme() + "." + ast.name();
             GlobalScope scope = this.globalSymbolEnvironment.createNamespace(namespaceKey);
-            scope.attachModule(ast.infer());
+            scope.attachModule(ast.symbolEnv().module());
         });
+
+        // Phase 2: first inference pass – populates the pre-registered modules via exports.
+        this.asts.forEach(AST::infer);
 
         // Fixed-point iteration – semantics of leftTimes / isLastInfer() are
         // preserved exactly so that inference rules that call isLastInfer() keep

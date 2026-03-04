@@ -28,6 +28,9 @@ public final class StdLib {
         env.defineSymbol("date",    buildDate(ast),    false, null);
         env.defineSymbol("console", buildConsole(ast), false, null);
         env.defineSymbol("math",    buildMath(ast),    false, null);
+        env.defineSymbol("io",      buildIo(ast),      false, null);
+        env.defineSymbol("json",    buildJson(ast),    false, null);
+        env.defineSymbol("http",    buildHttp(ast),    false, null);
     }
 
     // ── Date ──────────────────────────────────────────────────────────────────
@@ -81,6 +84,56 @@ public final class StdLib {
         c.addMember("error", FirstOrderFunction.from(ast, ast.Unit,   ast.Any),    Modifier.PUBLIC, false, null, false);
         c.addMember("read",  FirstOrderFunction.from(ast, ast.String, ast.Unit),   Modifier.PUBLIC, false, null, false);
         return c;
+    }
+
+    // ── IO ────────────────────────────────────────────────────────────────────
+
+    /**
+     * IO module entity:
+     *   read(path: String)                  : String → String
+     *   write(path: String)(content: String): String → String → Unit  (curried)
+     *   exists(path: String)                : String → Bool
+     *   delete(path: String)                : String → Bool
+     */
+    private static Entity buildIo(AST ast) {
+        Entity io = Entity.from(ast.program());
+        io.addMember("read",   FirstOrderFunction.from(ast, ast.String,  ast.String),              Modifier.PUBLIC, false, null, false);
+        io.addMember("write",  FirstOrderFunction.from(ast, ast.Unit,    ast.String, ast.String),  Modifier.PUBLIC, false, null, false);
+        io.addMember("exists", FirstOrderFunction.from(ast, ast.Boolean, ast.String),              Modifier.PUBLIC, false, null, false);
+        io.addMember("delete", FirstOrderFunction.from(ast, ast.Boolean, ast.String),              Modifier.PUBLIC, false, null, false);
+        return io;
+    }
+
+    // ── JSON ──────────────────────────────────────────────────────────────────
+
+    /**
+     * JSON module entity:
+     *   stringify(value: Any)  : Any    → String
+     *   parse(text: String)    : String → Any
+     */
+    private static Entity buildJson(AST ast) {
+        Entity json = Entity.from(ast.program());
+        json.addMember("stringify", FirstOrderFunction.from(ast, ast.String, ast.Any),    Modifier.PUBLIC, false, null, false);
+        json.addMember("parse",     FirstOrderFunction.from(ast, ast.Any,    ast.String), Modifier.PUBLIC, false, null, false);
+        return json;
+    }
+
+    // ── HTTP ──────────────────────────────────────────────────────────────────
+
+    /**
+     * HTTP module entity:
+     *   get(url: String)                   : String → String
+     *   post(url: String)(body: String)    : String → String → String  (curried)
+     *   put(url: String)(body: String)     : String → String → String  (curried)
+     *   delete(url: String)                : String → String
+     */
+    private static Entity buildHttp(AST ast) {
+        Entity http = Entity.from(ast.program());
+        http.addMember("get",    FirstOrderFunction.from(ast, ast.String, ast.String),              Modifier.PUBLIC, false, null, false);
+        http.addMember("post",   FirstOrderFunction.from(ast, ast.String, ast.String, ast.String),  Modifier.PUBLIC, false, null, false);
+        http.addMember("put",    FirstOrderFunction.from(ast, ast.String, ast.String, ast.String),  Modifier.PUBLIC, false, null, false);
+        http.addMember("delete", FirstOrderFunction.from(ast, ast.String, ast.String),              Modifier.PUBLIC, false, null, false);
+        return http;
     }
 
     // ── Math ──────────────────────────────────────────────────────────────────

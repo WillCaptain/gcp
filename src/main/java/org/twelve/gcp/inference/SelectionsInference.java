@@ -23,9 +23,7 @@ public class SelectionsInference implements Inference<Selections<?>>{
             inferred.add(node.ast().Ignore);
         }
         //calculate return outline
-//        if(inferred.stream().allMatch(o->o instanceof UNIT)) return Outline.Ignore;//can't be assigned and will not be return statement
         if(inferred.removeIf(o->o instanceof UNIT)){
-
             GCPErrorReporter.report(node, GCPErrCode.AMBIGUOUS_RETURN);
         }
         // Error from an arm is already reported at the arm level; strip it from the union

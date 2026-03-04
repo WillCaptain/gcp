@@ -29,8 +29,12 @@ public abstract class ImportExportSpecifier extends AbstractNode {
 
     @Override
     public boolean inferred() {
-        boolean result =  !(this.outline() instanceof UNKNOWN);
-        if(!result) ast().missInferred().add(this);
+        // Use outline.inferred() instead of a plain !UNKNOWN check so that
+        // LazyModuleSymbol placeholders (which override inferred() → false) keep
+        // this specifier in the "not yet resolved" state until the import
+        // re-evaluation replaces the placeholder with the concrete type.
+        boolean result = !(this.outline() instanceof UNKNOWN) && this.outline().inferred();
+        if (!result) ast().missInferred().add(this);
         return result;
     }
 }

@@ -33,9 +33,17 @@ public class GlobalSymbolEnvironment implements SymbolEnvironment {
     public Module lookup(String namespace, Identifier moduleSymbol) {
         GlobalScope scope = root;
         for (String name : namespace.split("\\.")) {
-            scope = scope.getNamespace(name);
+            scope = scope == null ? null : scope.getNamespace(name);
+        }
+        if (scope == null) {
+            GCPErrorReporter.report(moduleSymbol, GCPErrCode.MODULE_NOT_DEFINED);
+            return null;
         }
         scope = scope.getNamespace(moduleSymbol.name());//last level is the module level
+        if (scope == null) {
+            GCPErrorReporter.report(moduleSymbol, GCPErrCode.MODULE_NOT_DEFINED);
+            return null;
+        }
         Module module = scope.module();
         if(module==null){
             GCPErrorReporter.report(moduleSymbol, GCPErrCode.MODULE_NOT_DEFINED);

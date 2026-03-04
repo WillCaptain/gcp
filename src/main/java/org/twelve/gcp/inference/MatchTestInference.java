@@ -5,6 +5,8 @@ import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.LiteralNode;
+import org.twelve.gcp.node.expression.conditions.MatchArm;
+import org.twelve.gcp.node.expression.conditions.MatchExpression;
 import org.twelve.gcp.node.expression.conditions.MatchTest;
 import org.twelve.gcp.node.unpack.UnpackNode;
 import org.twelve.gcp.outline.Outline;
@@ -37,9 +39,13 @@ public class MatchTestInference implements Inference<MatchTest> {
         }
         if (pattern instanceof Identifier) {
             if (!(outline instanceof UNKNOWN) && subject instanceof Generic g && g.declaredToBe() instanceof ANY) {
-                // Named-variant pattern (e.g. `Dot -> 0`): treat as a type test and propagate
-                // the variant as a hasToBe constraint on the subject, just like UnpackNode does.
-                g.addHasToBe(outline);
+                // Named-variant pattern (e.g. `Sat -> true`): treat as a type test and add the
+                // variant as a hasToBe constraint — but only when the enclosing match is
+                // non-exhaustive (no wildcard arm). A wildcard makes the match accept any input,
+                // so narrowing the parameter with specific variants would be wrong.
+                if (!parentMatchHasWildcard(node)) {
+                    g.addHasToBe(outline);
+                }
             } else {
                 // Wildcard or fresh-variable binding (e.g. `_ -> …` or `x -> …`)
                 node.ast().symbolEnv().defineSymbol(((Identifier) pattern).name(), subject, false, cast(pattern));
@@ -63,6 +69,14 @@ public class MatchTestInference implements Inference<MatchTest> {
             }
         }
         return node.ast().Boolean;
+    }
+
+    /** Returns true when the MatchTest's parent MatchExpression contains a wildcard (_) arm. */
+    private static boolean parentMatchHasWildcard(MatchTest node) {
+        if (node.parent() instanceof MatchArm arm && arm.parent() instanceof MatchExpression expr) {
+            return expr.containsElse();
+        }
+        return false;
     }
 
     private boolean tryGeneric(Outline target, Outline pattern){

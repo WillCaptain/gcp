@@ -68,7 +68,7 @@ public class HigherOrderFunction extends Function<Node, Outline> {
     public boolean tryYouAreMe(Outline another) {
         if (!(another instanceof Function<?, ?>)) return false;
         Function<?, ?> you = cast(another);
-        return this.argument.is(you.argument) && (this.returns.toString().equals("`null`") || you.returns.is(this.returns));
+        return this.argument.is(you.argument) && you.returns.is(this.returns);
     }
 
     @Override

@@ -4,10 +4,17 @@ import org.twelve.gcp.common.StdLib;
 import org.twelve.gcp.interpreter.Environment;
 import org.twelve.gcp.interpreter.value.*;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * Runtime implementations of the stdlib built-in entity modules.
@@ -25,6 +32,9 @@ public final class StdLibRuntime {
         env.define("date",    buildDate());
         env.define("console", buildConsole());
         env.define("math",    buildMath());
+        env.define("io",      buildIo());
+        env.define("json",    buildJson());
+        env.define("http",    buildHttp());
     }
 
     /**
@@ -148,5 +158,132 @@ public final class StdLibRuntime {
         if (v instanceof IntValue iv)   return (double) iv.value();
         if (v instanceof FloatValue fv) return fv.value();
         throw new RuntimeException("Expected numeric value, got: " + v);
+    }
+
+    // ── IO ────────────────────────────────────────────────────────────────────
+
+    private static EntityValue buildIo() {
+        LinkedHashMap<String, Value> fields = new LinkedHashMap<>();
+        fields.put("read", new FunctionValue(v -> {
+            try {
+                return new StringValue(Files.readString(Path.of(((StringValue) v).value())));
+            } catch (Exception e) {
+                return new StringValue("");
+            }
+        }));
+        fields.put("write", new FunctionValue(pathV -> new FunctionValue(contentV -> {
+            try {
+                Files.writeString(Path.of(((StringValue) pathV).value()), ((StringValue) contentV).value());
+            } catch (Exception ignored) {}
+            return UnitValue.INSTANCE;
+        })));
+        fields.put("exists", new FunctionValue(v ->
+                BoolValue.of(Files.exists(Path.of(((StringValue) v).value())))));
+        fields.put("delete", new FunctionValue(v -> {
+            try {
+                return BoolValue.of(Files.deleteIfExists(Path.of(((StringValue) v).value())));
+            } catch (Exception e) {
+                return BoolValue.FALSE;
+            }
+        }));
+        return new EntityValue(fields);
+    }
+
+    // ── JSON ──────────────────────────────────────────────────────────────────
+
+    private static EntityValue buildJson() {
+        LinkedHashMap<String, Value> fields = new LinkedHashMap<>();
+        fields.put("stringify", new FunctionValue(v -> new StringValue(valueToJson(v))));
+        fields.put("parse",     new FunctionValue(v -> jsonToValue(((StringValue) v).value().trim())));
+        return new EntityValue(fields);
+    }
+
+    private static String valueToJson(Value v) {
+        if (v instanceof StringValue sv)  return "\"" + sv.value().replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
+        if (v instanceof IntValue iv)     return String.valueOf(iv.value());
+        if (v instanceof FloatValue fv)   return String.valueOf(fv.value());
+        if (v instanceof BoolValue bv)    return bv.value() ? "true" : "false";
+        if (v instanceof UnitValue)       return "null";
+        if (v instanceof ArrayValue av) {
+            var sb = new StringBuilder("[");
+            List<Value> elems = av.elements();
+            for (int i = 0; i < elems.size(); i++) {
+                if (i > 0) sb.append(",");
+                sb.append(valueToJson(elems.get(i)));
+            }
+            return sb.append("]").toString();
+        }
+        if (v instanceof EntityValue ev) {
+            var sb = new StringBuilder("{");
+            boolean first = true;
+            for (var entry : ev.ownFields().entrySet()) {
+                if (!first) sb.append(",");
+                sb.append("\"").append(entry.getKey()).append("\":").append(valueToJson(entry.getValue()));
+                first = false;
+            }
+            return sb.append("}").toString();
+        }
+        return "\"" + v.display().replace("\"", "\\\"") + "\"";
+    }
+
+    private static Value jsonToValue(String json) {
+        if (json.equals("null"))  return UnitValue.INSTANCE;
+        if (json.equals("true"))  return BoolValue.TRUE;
+        if (json.equals("false")) return BoolValue.FALSE;
+        if (json.startsWith("\"") && json.endsWith("\""))
+            return new StringValue(json.substring(1, json.length() - 1)
+                    .replace("\\\"", "\"").replace("\\n", "\n").replace("\\\\", "\\"));
+        try { return new IntValue(Long.parseLong(json)); } catch (NumberFormatException ignored) {}
+        try { return new FloatValue(Double.parseDouble(json)); } catch (NumberFormatException ignored) {}
+        return new StringValue(json);
+    }
+
+    // ── HTTP ──────────────────────────────────────────────────────────────────
+
+    private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+
+    private static EntityValue buildHttp() {
+        LinkedHashMap<String, Value> fields = new LinkedHashMap<>();
+        fields.put("get", new FunctionValue(urlV -> {
+            try {
+                HttpRequest req = HttpRequest.newBuilder(URI.create(((StringValue) urlV).value())).GET().build();
+                return new StringValue(HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString()).body());
+            } catch (Exception e) {
+                return new StringValue("");
+            }
+        }));
+        fields.put("post", new FunctionValue(urlV -> new FunctionValue(bodyV -> {
+            try {
+                HttpRequest req = HttpRequest.newBuilder(URI.create(((StringValue) urlV).value()))
+                        .POST(HttpRequest.BodyPublishers.ofString(((StringValue) bodyV).value()))
+                        .header("Content-Type", "application/json")
+                        .build();
+                return new StringValue(HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString()).body());
+            } catch (Exception e) {
+                return new StringValue("");
+            }
+        })));
+        fields.put("put", new FunctionValue(urlV -> new FunctionValue(bodyV -> {
+            try {
+                HttpRequest req = HttpRequest.newBuilder(URI.create(((StringValue) urlV).value()))
+                        .PUT(HttpRequest.BodyPublishers.ofString(((StringValue) bodyV).value()))
+                        .header("Content-Type", "application/json")
+                        .build();
+                return new StringValue(HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString()).body());
+            } catch (Exception e) {
+                return new StringValue("");
+            }
+        })));
+        fields.put("delete", new FunctionValue(urlV -> {
+            try {
+                HttpRequest req = HttpRequest.newBuilder(URI.create(((StringValue) urlV).value()))
+                        .DELETE()
+                        .build();
+                return new StringValue(HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString()).body());
+            } catch (Exception e) {
+                return new StringValue("");
+            }
+        }));
+        return new EntityValue(fields);
     }
 }
