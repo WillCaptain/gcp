@@ -12,6 +12,7 @@ import org.twelve.gcp.outlineenv.GlobalScope;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Abstract Syntax Forest (ASF) - A root container for multiple ASTs (Abstract Syntax Trees).
@@ -149,6 +150,19 @@ public class ASF {
      */
     public boolean hasErrors() {
         return this.asts.stream().anyMatch(a -> !a.errors().isEmpty());
+    }
+
+    /**
+     * JavaDoc-like metadata for all modules. Returns a map with key {@code "modules"}
+     * containing a list of per-module metadata (name, namespace, imports, exports,
+     * variables, functions, descriptions from comments). Suitable for JSON export.
+     */
+    public Map<String, Object> meta() {
+        List<Map<String, Object>> modules = new ArrayList<>();
+        for (AST ast : this.asts) {
+            modules.add(ast.meta());
+        }
+        return Map.of("modules", modules);
     }
 
     /**

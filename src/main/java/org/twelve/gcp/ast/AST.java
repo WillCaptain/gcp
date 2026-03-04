@@ -14,6 +14,7 @@ import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.builtin.*;
 import org.twelve.gcp.outline.builtin.Module;
 import org.twelve.gcp.outline.primitive.*;
+import org.twelve.gcp.meta.MetaExtractor;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 import java.util.*;
@@ -63,6 +64,7 @@ public class AST {
     public final NUMBER Number;
     public final Option StringOrNumber;
     private List<Node> missInferred = new ArrayList<>();
+    private String sourceCode;
     public final UNKNOWN unknown(Node node){
         return new UNKNOWN((AbstractNode) node);
     }
@@ -226,5 +228,26 @@ public class AST {
     }
     public List<Node> missInferred() {
         return this.missInferred;
+    }
+
+    /**
+     * Source code for this module. Set by {@link org.twelve.outline.OutlineParser}
+     * when parsing from a string. Used by {@link #meta()} to extract comments.
+     */
+    public void setSourceCode(String code) {
+        this.sourceCode = code;
+    }
+
+    public String sourceCode() {
+        return this.sourceCode;
+    }
+
+    /**
+     * JavaDoc-like metadata: module name, namespace, imports, exports, variables,
+     * functions, each with optional descriptions from preceding comments.
+     * Suitable for JSON export; see {@link MetaExtractor}.
+     */
+    public Map<String, Object> meta() {
+        return MetaExtractor.extract(this);
     }
 }
