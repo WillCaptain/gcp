@@ -48,12 +48,13 @@ public class MemberAccessorInterpretation implements Interpretation<MemberAccess
             return BuiltinMethods.tuple(tv, memberName);
         }
 
-        if (target instanceof ArrayValue arr)  return BuiltinMethods.array(arr, memberName, interp);
-        if (target instanceof StringValue sv)  return BuiltinMethods.string(sv, memberName);
-        if (target instanceof IntValue iv)     return BuiltinMethods.integer(iv, memberName);
-        if (target instanceof FloatValue fv)   return BuiltinMethods.floatingPoint(fv, memberName);
-        if (target instanceof BoolValue bv)    return BuiltinMethods.bool(bv, memberName);
-        if (target instanceof DictValue dv)    return BuiltinMethods.dict(dv, memberName);
+        if (target instanceof ArrayValue arr)   return BuiltinMethods.array(arr, memberName, interp);
+        if (target instanceof StringValue sv)   return BuiltinMethods.string(sv, memberName);
+        if (target instanceof IntValue iv)      return BuiltinMethods.integer(iv, memberName);
+        if (target instanceof FloatValue fv)    return BuiltinMethods.floatingPoint(fv, memberName);
+        if (target instanceof BoolValue bv)     return BuiltinMethods.bool(bv, memberName);
+        if (target instanceof DictValue dv)     return BuiltinMethods.dict(dv, memberName);
+        if (target instanceof PromiseValue pv)  return BuiltinMethods.promise(pv, memberName, interp);
 
         if (target instanceof PolyValue poly) {
             for (Value opt : poly.options()) {

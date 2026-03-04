@@ -153,16 +153,19 @@ public class ASF {
     }
 
     /**
-     * JavaDoc-like metadata for all modules. Returns a map with key {@code "modules"}
-     * containing a list of per-module metadata (name, namespace, imports, exports,
-     * variables, functions, descriptions from comments). Suitable for JSON export.
+     * Navigable, typed metadata for all modules.
+     * <pre>
+     * asf.meta().modules()               → List of ModuleMeta
+     * asf.meta().find("geo").outlines()   → outline declarations in "geo" module
+     * asf.meta().toMap()                  → JSON-serializable Map
+     * </pre>
      */
-    public Map<String, Object> meta() {
-        List<Map<String, Object>> modules = new ArrayList<>();
+    public org.twelve.gcp.meta.ForestMeta meta() {
+        List<org.twelve.gcp.meta.ModuleMeta> modules = new ArrayList<>();
         for (AST ast : this.asts) {
             modules.add(ast.meta());
         }
-        return Map.of("modules", modules);
+        return new org.twelve.gcp.meta.ForestMeta(modules);
     }
 
     /**

@@ -11,6 +11,8 @@ import org.twelve.gcp.outline.projectable.Reference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -70,7 +72,15 @@ public class This extends ProductADT implements ReferAble {
 
     @Override
     public void updateThis(ProductADT me) {
-        if (this.origin.id() != me.id() && me.is(this.origin)) {
+        if (this.origin.id() == me.id()) return;
+        Set<String> myNames = this.origin.members().stream()
+                .filter(m -> !m.isDefault())
+                .map(m -> m.name())
+                .collect(Collectors.toSet());
+        Set<String> theirNames = me.members().stream()
+                .map(m -> m.name())
+                .collect(Collectors.toSet());
+        if (theirNames.containsAll(myNames)) {
             this.origin = me;
         }
     }
@@ -84,5 +94,10 @@ public class This extends ProductADT implements ReferAble {
     public Outline project(List<OutlineWrapper> projections) {
         this.referencesProjections = projections;
         return this;
+    }
+
+    @Override
+    public Outline project(Reference reference, OutlineWrapper projection) {
+        return new This(this.origin);
     }
 }

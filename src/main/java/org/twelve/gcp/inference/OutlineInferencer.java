@@ -1,5 +1,7 @@
 package org.twelve.gcp.inference;
 
+import org.twelve.gcp.node.expression.AsyncNode;
+import org.twelve.gcp.node.expression.AwaitNode;
 import org.twelve.gcp.node.expression.body.WithExpression;
 import org.twelve.gcp.node.expression.conditions.*;
 import org.twelve.gcp.node.expression.identifier.Identifier;
@@ -326,5 +328,15 @@ public class OutlineInferencer implements Inferencer {
     @Override
     public Outline visit(ExtendTypeNode extendTypeNode) {
         return new ExtendTypeNodeInference().infer(extendTypeNode,this);
+    }
+
+    @Override
+    public Outline visit(AsyncNode asyncNode) {
+        return new AsyncInference().infer(asyncNode, this);
+    }
+
+    @Override
+    public Outline visit(AwaitNode awaitNode) {
+        return new AwaitInference().infer(awaitNode, this);
     }
 }

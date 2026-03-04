@@ -36,6 +36,10 @@ public class AstScope implements Scope {
         return this.scopeId;
     }
 
+    public AbstractNode node() {
+        return this.node;
+    }
+
     public Outline outline() {
         return this.outline;
     }
@@ -106,5 +110,13 @@ public class AstScope implements Scope {
 
     public EnvSymbol lookupOutline(String key) {
         return outlines.get(key);
+    }
+
+    public Map<String, EnvSymbol> symbols() {
+        return java.util.Collections.unmodifiableMap(this.symbols);
+    }
+
+    public Map<String, EnvSymbol> outlineDefinitions() {
+        return java.util.Collections.unmodifiableMap(this.outlines);
     }
 }

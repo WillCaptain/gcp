@@ -243,11 +243,18 @@ public class AST {
     }
 
     /**
-     * JavaDoc-like metadata: module name, namespace, imports, exports, variables,
-     * functions, each with optional descriptions from preceding comments.
-     * Suitable for JSON export; see {@link MetaExtractor}.
+     * Navigable, typed metadata tree for this module.
+     * <pre>
+     * ast.meta()                     → ModuleMeta
+     * ast.meta().nodes()             → all declarations (outlines, variables, functions)
+     * ast.meta().outlines()          → outline declarations with fields/methods
+     * ast.meta().variables()         → let/var declarations with type info
+     * ast.meta().find("Country")     → lookup by name
+     * ast.meta().toMap()             → JSON-serializable Map
+     * </pre>
+     * See {@link MetaExtractor}.
      */
-    public Map<String, Object> meta() {
+    public org.twelve.gcp.meta.ModuleMeta meta() {
         return MetaExtractor.extract(this);
     }
 }

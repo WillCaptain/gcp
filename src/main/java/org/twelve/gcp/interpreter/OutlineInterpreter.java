@@ -6,6 +6,8 @@ import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.inference.OutlineInferencer;
 import org.twelve.gcp.interpreter.interpretation.*;
+import org.twelve.gcp.node.expression.AsyncNode;
+import org.twelve.gcp.node.expression.AwaitNode;
 import org.twelve.gcp.node.expression.OutlineDefinition;
 import org.twelve.gcp.interpreter.value.*;
 import org.twelve.gcp.node.expression.*;
@@ -116,6 +118,8 @@ public class OutlineInterpreter implements Interpreter {
     private final OutlineDeclaratorInterpretation outlineDeclI      = new OutlineDeclaratorInterpretation();
     private final ImportInterpretation            importI           = new ImportInterpretation();
     private final ExportInterpretation            exportI           = new ExportInterpretation();
+    private final AsyncInterpretation             asyncI            = new AsyncInterpretation();
+    private final AwaitInterpretation             awaitI            = new AwaitInterpretation();
 
     // =========================================================================
     // Public entry points
@@ -384,6 +388,8 @@ public class OutlineInterpreter implements Interpreter {
     @Override public Value visit(OutlineDeclarator node)      { return outlineDeclI.interpret(node, this); }
     @Override public Value visit(Import node)                 { return importI.interpret(node, this); }
     @Override public Value visit(Export node)                 { return exportI.interpret(node, this); }
+    @Override public Value visit(AsyncNode node)              { return asyncI.interpret(node, this); }
+    @Override public Value visit(AwaitNode node)              { return awaitI.interpret(node, this); }
 
     // =========================================================================
     // Helpers

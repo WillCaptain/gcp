@@ -104,6 +104,10 @@ public class EnvSymbol {
         return this.declared;
     }
 
+    public SYMBOL_CATEGORY category() {
+        return this.category;
+    }
+
     @Override
     public String toString() {
         return this.name + ":" + this.outline.toString();

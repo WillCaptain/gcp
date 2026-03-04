@@ -3,6 +3,8 @@ package org.twelve.gcp.interpreter.interpretation;
 import org.twelve.gcp.interpreter.Interpreter;
 import org.twelve.gcp.interpreter.value.*;
 
+import java.util.concurrent.CompletableFuture;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -230,6 +232,50 @@ public final class BuiltinMethods {
             case "to_str"      -> new FunctionValue(u -> new StringValue(tv.display()));
             default -> throw new RuntimeException("Unknown tuple method: " + method);
         };
+    }
+
+    // -------------------------------------------------------------------------
+    // Promise
+    // -------------------------------------------------------------------------
+
+    /**
+     * Built-in callback methods for {@link PromiseValue}.
+     *
+     * <pre>
+     *   then  : (T      -&gt; b) -&gt; Unit   – invoked when the computation succeeds
+     *   catch : (String -&gt; b) -&gt; Unit   – invoked when the computation throws
+     * </pre>
+     *
+     * Both methods return {@link UnitValue#INSTANCE} immediately; the callback is
+     * wired via {@link CompletableFuture#thenAccept} / {@link CompletableFuture#exceptionally}
+     * so it fires asynchronously when the future resolves.
+     *
+     * <p>Note: {@code "catch"} is a Java keyword but is perfectly valid as a string value
+     * in switch expressions and as a GCP member name.
+     */
+    public static Value promise(PromiseValue pv, String method, Interpreter interp) {
+        return switch (method) {
+            case "then"  -> new FunctionValue(callback ->
+                    registerThen(pv, callback, interp));
+            case "catch" -> new FunctionValue(callback ->
+                    registerCatch(pv, callback, interp));
+            case "to_str" -> new FunctionValue(u -> new StringValue(pv.display()));
+            default -> throw new RuntimeException("Unknown promise method: " + method);
+        };
+    }
+
+    private static Value registerThen(PromiseValue pv, Value callback, Interpreter interp) {
+        pv.future().thenAccept(result -> interp.apply(callback, result));
+        return UnitValue.INSTANCE;
+    }
+
+    private static Value registerCatch(PromiseValue pv, Value callback, Interpreter interp) {
+        pv.future().exceptionally(ex -> {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "async error";
+            interp.apply(callback, new StringValue(msg));
+            return null;
+        });
+        return UnitValue.INSTANCE;
     }
 
     // -------------------------------------------------------------------------

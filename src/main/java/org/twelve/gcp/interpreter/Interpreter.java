@@ -5,6 +5,8 @@ import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.interpreter.value.Value;
 import org.twelve.gcp.interpreter.value.UnitValue;
 import org.twelve.gcp.node.expression.*;
+import org.twelve.gcp.node.expression.AsyncNode;
+import org.twelve.gcp.node.expression.AwaitNode;
 import org.twelve.gcp.node.expression.OutlineDefinition;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
@@ -124,6 +126,13 @@ public interface Interpreter {
 
     Value visit(Import node);
     Value visit(Export node);
+
+    // =========================================================================
+    // Async / Await
+    // =========================================================================
+
+    Value visit(AsyncNode node);
+    Value visit(AwaitNode node);
 
     // =========================================================================
     // State-access methods for use by Interpretation classes

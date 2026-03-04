@@ -137,6 +137,10 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         return this.current;
     }
 
+    public Collection<AstScope> allScopes() {
+        return scopes.values();
+    }
+
     public EnvSymbol lookupOutline(String key) {
         AstScope scope = this.current;
         while(scope!=null){

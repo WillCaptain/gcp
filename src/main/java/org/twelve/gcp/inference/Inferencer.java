@@ -1,6 +1,8 @@
 package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.node.expression.AsyncNode;
+import org.twelve.gcp.node.expression.AwaitNode;
 import org.twelve.gcp.node.expression.body.WithExpression;
 import org.twelve.gcp.node.expression.conditions.*;
 import org.twelve.gcp.node.expression.identifier.Identifier;
@@ -105,5 +107,8 @@ public interface Inferencer {
 
     Outline visit(ThisTypeNode thisTypeNode);
     Outline visit(ExtendTypeNode extendTypeNode);
+
+    Outline visit(AsyncNode asyncNode);
+    Outline visit(AwaitNode awaitNode);
 
 }

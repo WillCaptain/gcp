@@ -2,198 +2,355 @@ package org.twelve.gcp.meta;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Location;
-import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.ast.Node;
-import org.twelve.gcp.node.expression.Assignable;
-import org.twelve.gcp.node.expression.Expression;
 import org.twelve.gcp.node.expression.identifier.Identifier;
-import org.twelve.gcp.node.expression.typeable.TypeNode;
 import org.twelve.gcp.node.function.Argument;
-import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.ExportSpecifier;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.imexport.ImportSpecifier;
-import org.twelve.gcp.node.statement.Statement;
-import org.twelve.gcp.node.statement.VariableDeclarator;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.Entity;
+import org.twelve.gcp.outline.adt.EntityMember;
+import org.twelve.gcp.outline.adt.ProductADT;
+import org.twelve.gcp.outline.projectable.Function;
+import org.twelve.gcp.outlineenv.AstScope;
+import org.twelve.gcp.outlineenv.EnvSymbol;
+import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
+import org.twelve.gcp.outlineenv.SYMBOL_CATEGORY;
+import org.twelve.gcp.outlineenv.SYMBOL_CATEGORY;
 
 import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.twelve.gcp.common.Tool.cast;
 
 /**
- * Extracts JavaDoc-like metadata from an AST module.
+ * Extracts a navigable, typed metadata tree from a module's symbol environment.
  * <p>
- * Produces a schema structure suitable for JSON export, including module info,
- * imports, exports, variables, and functions, each with optional descriptions
- * derived from preceding comments in the source.
+ * The primary source of truth is {@link LocalSymbolEnvironment} which holds
+ * all scopes and their resolved symbols after type inference. The AST is only
+ * used to supplement with comments (via source code), positions (via node locations),
+ * and structural info (imports/exports).
+ * <p>
+ * Produces {@link ModuleMeta} (from {@link AST}) and {@link ForestMeta}
+ * (from {@link org.twelve.gcp.ast.ASF}), suitable for JSON export,
+ * LLM indexing, and IDE autocomplete.
  */
 public final class MetaExtractor {
 
-    /**
-     * Builds metadata for a single AST. Returns a Map suitable for JSON serialization.
-     */
-    public static Map<String, Object> extract(AST ast) {
-        Map<String, Object> meta = new LinkedHashMap<>();
+    public static ModuleMeta extract(AST ast) {
         String source = ast.sourceCode();
+        LocalSymbolEnvironment env = ast.symbolEnv();
 
-        // Module
-        meta.put("name", ast.name());
-        meta.put("namespace", ast.namespace().lexeme());
-        meta.put("description", moduleDescription(ast, source));
+        String name = ast.name();
+        String namespace = ast.namespace().lexeme();
+        String description = moduleDescription(ast, source);
 
-        // Imports
-        List<Map<String, Object>> imports = new ArrayList<>();
+        List<ImportMeta> imports = extractImports(ast, source);
+        List<ExportMeta> exports = extractExports(ast, source);
+        List<SchemaMeta> nodes = extractNodes(env, source);
+        List<ScopeMeta> scopes = extractScopes(env, source);
+
+        return new ModuleMeta(name, namespace, description, imports, exports, nodes, scopes);
+    }
+
+    // ── Imports (structural AST info, not in symbol env) ────────────────────
+
+    private static List<ImportMeta> extractImports(AST ast, String source) {
+        List<ImportMeta> result = new ArrayList<>();
         for (Import imp : ast.program().body().imports()) {
             for (ImportSpecifier spec : imp.specifiers()) {
-                Map<String, Object> m = new LinkedHashMap<>();
-                m.put("symbol", spec.imported().name());
+                String symbol = spec.imported().name();
                 String local = spec.local().name();
-                if (!local.equals(spec.imported().name())) {
-                    m.put("as", local);
-                }
-                m.put("from", imp.source().name().name());
-                putDescription(m, imp.loc(), source);
-                imports.add(m);
+                String as = local.equals(symbol) ? null : local;
+                String from = imp.source().name().name();
+                String desc = descriptionFor(imp.loc(), source);
+                result.add(new ImportMeta(symbol, as, from, desc));
             }
         }
-        meta.put("imports", imports);
+        return result;
+    }
 
-        // Exports
-        List<Map<String, Object>> exports = new ArrayList<>();
+    // ── Exports (structural AST info, not in symbol env) ────────────────────
+
+    private static List<ExportMeta> extractExports(AST ast, String source) {
+        List<ExportMeta> result = new ArrayList<>();
         for (Export exp : ast.program().body().exports()) {
             for (ExportSpecifier spec : exp.specifiers()) {
-                Map<String, Object> m = new LinkedHashMap<>();
-                m.put("name", spec.local().name());
-                if (spec.exported() != spec.local()) {
-                    m.put("as", spec.exported().name());
-                }
-                putDescription(m, exp.loc(), source);
-                exports.add(m);
+                String localName = spec.local().name();
+                String exportedAs = (spec.exported() != spec.local()) ? spec.exported().name() : null;
+                String desc = descriptionFor(exp.loc(), source);
+                result.add(new ExportMeta(localName, exportedAs, desc));
             }
         }
-        meta.put("exports", exports);
+        return result;
+    }
 
-        // Variables and functions from statements
-        List<Map<String, Object>> variables = new ArrayList<>();
-        List<Map<String, Object>> functions = new ArrayList<>();
+    // ── Top-level declarations from root scope ──────────────────────────────
 
-        for (Statement stmt : ast.program().body().statements()) {
-            if (stmt instanceof VariableDeclarator vd) {
-                for (org.twelve.gcp.node.expression.Assignment a : vd.assignments()) {
-                    Map<String, Object> m = varMeta(a, vd.kind().name(), source, vd.loc());
-                    if (m != null) variables.add(m);
-                }
+    private static List<SchemaMeta> extractNodes(LocalSymbolEnvironment env, String source) {
+        List<SchemaMeta> nodes = new ArrayList<>();
+        AstScope root = env.root();
+
+        Set<String> outlineNames = new HashSet<>();
+
+        for (EnvSymbol sym : root.outlineDefinitions().values()) {
+            if (sym.node() == null) continue;
+            nodes.add(buildOutlineMeta(sym, source));
+            outlineNames.add(sym.name());
+        }
+
+        for (EnvSymbol sym : root.symbols().values()) {
+            if (sym.node() == null) continue;
+            if (!outlineNames.contains(sym.name()) && isOutlineDeclaration(sym)) {
+                nodes.add(buildOutlineMeta(sym, source));
+                continue;
+            }
+            Outline outline = sym.outline();
+            if (outline != null && outline.eventual() instanceof Function<?, ?>) {
+                nodes.add(buildFunctionMeta(sym, env, source));
+            } else {
+                nodes.add(buildVariableMeta(sym, source));
             }
         }
 
-        // Function nodes may be inside VariableDeclarator (let f = x -> ...)
-        for (Statement stmt : ast.program().body().statements()) {
-            if (stmt instanceof VariableDeclarator vd) {
-                for (org.twelve.gcp.node.expression.Assignment a : vd.assignments()) {
-                    Expression rhs = a.rhs();
-                    if (rhs instanceof FunctionNode fn) {
-                        String funcName = (a.lhs() instanceof Identifier i) ? i.name() : null;
-                        if (funcName == null) continue;
-                        Map<String, Object> m = funcMeta(funcName, fn, source, vd.loc());
-                        if (m != null) functions.add(m);
-                    }
-                }
+        return nodes;
+    }
+
+    // ── Outline meta ────────────────────────────────────────────────────────
+
+    private static OutlineMeta buildOutlineMeta(EnvSymbol sym, String source) {
+        String name = sym.name();
+        Outline outline = sym.outline();
+        String type = outlineTypeText(outline);
+        String desc = descriptionForSymbol(sym, source);
+        List<FieldMeta> allFields = extractEntityFields(outline, source);
+        return new OutlineMeta(name, type, desc, allFields);
+    }
+
+    private static List<FieldMeta> extractEntityFields(Outline outline, String source) {
+        List<FieldMeta> result = new ArrayList<>();
+        if (outline instanceof Entity entity) {
+            Set<String> baseMemberNames = baseMemberNames(entity);
+            for (EntityMember member : entity.members()) {
+                String mType = member.outline() != null ? member.outline().toString() : "?";
+                String desc = memberDescription(member, source);
+                String origin = memberOrigin(member, baseMemberNames);
+                result.add(new FieldMeta(member.name(), mType, desc, origin));
             }
         }
+        return result;
+    }
 
-        meta.put("variables", variables);
-        meta.put("functions", functions);
+    private static Set<String> baseMemberNames(Entity entity) {
+        Set<String> names = new HashSet<>();
+        Outline base = entity.base();
+        if (base instanceof ProductADT basePadt && base != entity.ast().Any) {
+            for (EntityMember m : basePadt.members()) {
+                names.add(m.name());
+            }
+        }
+        return names;
+    }
 
-        return meta;
+    private static String memberOrigin(EntityMember member, Set<String> baseMemberNames) {
+        if (member.isDefault() && !member.hasDefaultValue() && member.node() == null) {
+            return "builtin";
+        }
+        if (baseMemberNames.contains(member.name())) {
+            return "base";
+        }
+        return "own";
+    }
+
+    private static String memberDescription(EntityMember member, String source) {
+        if (source == null || member.node() == null) return null;
+        if (member.node().loc() == null) return null;
+        long offset = member.node().loc().start();
+        if (offset <= 0) return null;
+        return CommentExtractor.precedingComment(source, offset);
+    }
+
+    // ── Variable meta ───────────────────────────────────────────────────────
+
+    private static VariableMeta buildVariableMeta(EnvSymbol sym, String source) {
+        String type = outlineTypeText(sym.outline());
+        String desc = descriptionForSymbol(sym, source);
+        return new VariableMeta(sym.name(), sym.mutable() ? "var" : "let", type, sym.mutable(), desc);
+    }
+
+    // ── Function meta ───────────────────────────────────────────────────────
+
+    private static FunctionMeta buildFunctionMeta(EnvSymbol sym, LocalSymbolEnvironment env, String source) {
+        String type = outlineTypeText(sym.outline());
+        String desc = descriptionForSymbol(sym, source);
+
+        List<FieldMeta> params = new ArrayList<>();
+        for (AstScope scope : env.allScopes()) {
+            if (scope == env.root()) continue;
+            if (scope.parent() != env.root()) continue;
+            for (EnvSymbol s : scope.symbols().values()) {
+                if (s.node() instanceof Argument) {
+                    String argType = outlineTypeText(s.outline());
+                    params.add(new FieldMeta(s.name(), argType, null));
+                }
+            }
+            if (!params.isEmpty()) break;
+        }
+
+        String returns = null;
+        Outline outline = sym.outline();
+        if (outline != null) {
+            String s = outline.toString();
+            if (s != null && !s.contains("Unknown")) returns = s;
+        }
+
+        return new FunctionMeta(sym.name(), type, desc, params, returns);
+    }
+
+    // ── Scopes from symbol environment ──────────────────────────────────────
+
+    static List<ScopeMeta> extractScopes(LocalSymbolEnvironment env, String source) {
+        List<ScopeMeta> result = new ArrayList<>();
+
+        for (AstScope scope : env.allScopes()) {
+            long scopeId = scope.id();
+            Long parentScopeId = (scope.parent() != null) ? scope.parent().id() : null;
+            if (Objects.equals(scopeId, parentScopeId)) parentScopeId = null;
+
+            long minStart = Long.MAX_VALUE;
+            long maxEnd = Long.MIN_VALUE;
+
+            Node scopeNode = scope.node();
+            if (scopeNode != null && scopeNode.loc() != null) {
+                Location loc = scopeNode.loc();
+                if (!(loc.start() == 0 && loc.end() == 0)) {
+                    minStart = loc.start();
+                    maxEnd = loc.end();
+                }
+            }
+
+            List<SymbolMeta> symbols = new ArrayList<>();
+
+            for (EnvSymbol sym : scope.outlineDefinitions().values()) {
+                if (sym.node() == null) continue;
+                expandRange(sym.node(), minStart, maxEnd);
+                long[] range = expandRange(sym.node(), minStart, maxEnd);
+                minStart = range[0]; maxEnd = range[1];
+                symbols.add(new SymbolMeta(sym.name(), outlineTypeText(sym.outline()), "outline", false));
+            }
+
+            for (EnvSymbol sym : scope.symbols().values()) {
+                if (sym.node() == null) continue;
+                long[] range = expandRange(sym.node(), minStart, maxEnd);
+                minStart = range[0]; maxEnd = range[1];
+                String kind;
+                if (sym.node() instanceof Argument) {
+                    kind = "parameter";
+                } else if (sym.outline() != null && sym.outline().eventual() instanceof Function<?, ?>) {
+                    kind = "function";
+                } else {
+                    kind = "variable";
+                }
+                symbols.add(new SymbolMeta(sym.name(), outlineTypeText(sym.outline()), kind, sym.mutable()));
+            }
+
+            long s = (minStart == Long.MAX_VALUE) ? 0 : minStart;
+            long e = (maxEnd == Long.MIN_VALUE) ? 0 : maxEnd;
+
+            if (parentScopeId != null && source != null) {
+                e = extendToStatementEnd(source, e);
+            }
+
+            result.add(new ScopeMeta(scopeId, s, e, parentScopeId, List.copyOf(symbols)));
+        }
+
+        return result;
+    }
+
+    private static long[] expandRange(Identifier node, long minStart, long maxEnd) {
+        if (node != null && node.loc() != null) {
+            Location loc = node.loc();
+            if (!(loc.start() == 0 && loc.end() == 0)) {
+                if (loc.start() < minStart) minStart = loc.start();
+                if (loc.end() > maxEnd) maxEnd = loc.end();
+            }
+        }
+        return new long[]{minStart, maxEnd};
+    }
+
+    private static long extendToStatementEnd(String source, long maxEnd) {
+        if (maxEnd >= source.length()) return maxEnd;
+        int pos = (int) maxEnd;
+        while (pos < source.length()) {
+            char c = source.charAt(pos);
+            if (c == ';' || c == '}') return pos;
+            pos++;
+        }
+        return maxEnd;
+    }
+
+    private static boolean isOutlineDeclaration(EnvSymbol sym) {
+        if (sym.category() == SYMBOL_CATEGORY.OUTLINE) return true;
+        if (sym.node() == null) return false;
+        Node node = sym.node();
+        while (node != null) {
+            if (node instanceof org.twelve.gcp.node.statement.OutlineDeclarator) return true;
+            node = node.parent();
+        }
+        return false;
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+
+    private static String outlineTypeText(Outline outline) {
+        if (outline == null) return "?";
+        String s = outline.toString();
+        return (s == null || s.contains("Unknown")) ? "?" : s;
     }
 
     private static String moduleDescription(AST ast, String source) {
         if (source == null) return null;
-        // Use first content offset so block comment preceding "module" is found
-        // (namespace.loc() points at "org.example" etc., after "module ", missing the comment)
         long offset = CommentExtractor.startOfFirstContent(source);
         return CommentExtractor.precedingComment(source, offset);
     }
 
-    private static void putDescription(Map<String, Object> m, Location loc, String source) {
-        if (source == null) return;
-        long offset = loc != null ? loc.start() : 0;
-        if (offset <= 0) return;
+    private static String descriptionForSymbol(EnvSymbol sym, String source) {
+        if (source == null || sym.node() == null) return null;
+        Location loc = sym.node().loc();
+        if (loc == null) return null;
+
+        // Walk up to the statement node to find the comment preceding the full statement
+        Node stmtNode = sym.node();
+        while (stmtNode.parent() != null && !(stmtNode.parent() instanceof org.twelve.gcp.node.expression.body.ProgramBody)) {
+            stmtNode = stmtNode.parent();
+        }
+        long offset = stmtNode.loc() != null ? stmtNode.loc().start() : loc.start();
+        if (offset <= 0) {
+            offset = loc.start();
+        }
+
         String desc = CommentExtractor.precedingComment(source, offset);
-        if (desc != null && !desc.isEmpty()) {
-            m.put("description", desc);
-        }
+        if (desc != null && !desc.isEmpty()) return desc;
+
+        return descriptionBySearch(sym.name(), source);
     }
 
-    /** Fallback when loc is (0,0): search for "let name" or "var name" in source. */
-    private static void putDescriptionFromSearch(Map<String, Object> m, String name, String kind, String source) {
-        if (source == null || name == null || kind == null) return;
-        String needle = kind.toLowerCase().equals("var") ? "var " + name : "let " + name;
-        int idx = source.indexOf(needle);
-        if (idx >= 0) {
-            String desc = CommentExtractor.precedingComment(source, idx);
-            if (desc != null && !desc.isEmpty()) m.put("description", desc);
-        }
-    }
-
-    private static Map<String, Object> varMeta(org.twelve.gcp.node.expression.Assignment a, String kind, String source, Location stmtLoc) {
-        Assignable lhs = a.lhs();
-        if (!(lhs instanceof org.twelve.gcp.node.expression.Variable)) return null;
-        org.twelve.gcp.node.expression.Variable var = cast(lhs);
-
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("name", var.name());
-        m.put("kind", kind.toLowerCase());
-        m.put("mutable", var.mutable());
-
-        TypeNode typeNode = var.declared();
-        if (typeNode != null && typeNode.outline() != null) {
-            m.put("type", typeNode.outline().toString());
-        } else {
-            Outline out = lhs.outline();
-            if (out != null && !out.toString().contains("Unknown")) {
-                m.put("type", out.toString());
+    private static String descriptionBySearch(String name, String source) {
+        if (source == null || name == null) return null;
+        for (String prefix : new String[]{"let " + name, "var " + name, "outline " + name}) {
+            int idx = source.indexOf(prefix);
+            if (idx >= 0) {
+                String desc = CommentExtractor.precedingComment(source, idx);
+                if (desc != null && !desc.isEmpty()) return desc;
             }
         }
-
-        putDescription(m, stmtLoc, source);
-        if (!m.containsKey("description")) {
-            putDescriptionFromSearch(m, var.name(), kind, source);
-        }
-        return m;
+        return null;
     }
 
-    private static Map<String, Object> funcMeta(String name, FunctionNode fn, String source, Location stmtLoc) {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("name", name);
-
-        List<Map<String, Object>> params = new ArrayList<>();
-        Argument arg = fn.argument();
-        if (arg != null && arg.token() != Token.unit()) {
-            String argName = arg.name();
-            if (argName != null && !argName.isEmpty()) {
-                Map<String, Object> p = new LinkedHashMap<>();
-                p.put("name", argName);
-                if (arg.declared() != null && arg.declared().outline() != null) {
-                    p.put("type", arg.declared().outline().toString());
-                }
-                params.add(p);
-            }
-        }
-        m.put("parameters", params);
-
-        Outline ret = fn.outline();
-        if (ret != null && !ret.toString().contains("Unknown")) {
-            m.put("returns", ret.toString());
-        }
-
-        putDescription(m, stmtLoc, source);
-        if (!m.containsKey("description")) {
-            putDescriptionFromSearch(m, name, "let", source);
-        }
-        return m;
+    private static String descriptionFor(Location loc, String source) {
+        if (source == null) return null;
+        long offset = loc != null ? loc.start() : 0;
+        if (offset <= 0) return null;
+        String desc = CommentExtractor.precedingComment(source, offset);
+        return (desc != null && !desc.isEmpty()) ? desc : null;
     }
 }
