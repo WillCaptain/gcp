@@ -12,12 +12,16 @@ import org.twelve.gcp.node.imexport.ImportSpecifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
+import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.ProductADT;
+import org.twelve.gcp.outline.builtin.UNKNOWN;
+import org.twelve.gcp.outline.primitive.ANY;
 import org.twelve.gcp.outline.projectable.Function;
+import org.twelve.gcp.outline.projectable.Genericable;
+import org.twelve.gcp.outline.projectable.Returnable;
 import org.twelve.gcp.outlineenv.AstScope;
 import org.twelve.gcp.outlineenv.EnvSymbol;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
-import org.twelve.gcp.outlineenv.SYMBOL_CATEGORY;
 import org.twelve.gcp.outlineenv.SYMBOL_CATEGORY;
 
 import java.util.*;
@@ -108,7 +112,7 @@ public final class MetaExtractor {
             if (outline != null && outline.eventual() instanceof Function<?, ?>) {
                 nodes.add(buildFunctionMeta(sym, env, source));
             } else {
-                nodes.add(buildVariableMeta(sym, source));
+                nodes.add(buildVariableMeta(sym, env, source));
             }
         }
 
@@ -126,15 +130,38 @@ public final class MetaExtractor {
         return new OutlineMeta(name, type, desc, allFields);
     }
 
+    /**
+     * Extracts {@link FieldMeta} for all members of the given outline.
+     * Handles:
+     * <ul>
+     *   <li>{@link ProductADT} (Entity, Array, Dict, …) — loads built-in methods,
+     *       extracts own / base / builtin members.</li>
+     *   <li>{@link Option} — merges members from all option arms (deduplicating by name).</li>
+     * </ul>
+     */
     private static List<FieldMeta> extractEntityFields(Outline outline, String source) {
+        if (outline instanceof Option opt) {
+            Map<String, FieldMeta> seen = new LinkedHashMap<>();
+            for (Outline arm : opt.options()) {
+                for (FieldMeta f : extractEntityFields(arm.eventual(), source)) {
+                    seen.putIfAbsent(f.name(), f);
+                }
+            }
+            return new ArrayList<>(seen.values());
+        }
         List<FieldMeta> result = new ArrayList<>();
-        if (outline instanceof Entity entity) {
-            Set<String> baseMemberNames = baseMemberNames(entity);
-            for (EntityMember member : entity.members()) {
-                String mType = member.outline() != null ? member.outline().toString() : "?";
-                String desc = memberDescription(member, source);
-                String origin = memberOrigin(member, baseMemberNames);
-                result.add(new FieldMeta(member.name(), mType, desc, origin));
+        if (outline instanceof ProductADT padt) {
+            try { padt.loadBuiltInMethods(); } catch (Exception ignored) {}
+            Set<String> baseMemberNames = (padt instanceof Entity entity)
+                    ? baseMemberNames(entity)
+                    : Set.of();
+            for (EntityMember member : padt.members()) {
+                try {
+                    String mType = member.outline() != null ? member.outline().toString() : "?";
+                    String desc = memberDescription(member, source);
+                    String origin = memberOrigin(member, baseMemberNames);
+                    result.add(new FieldMeta(member.name(), mType, desc, origin));
+                } catch (Exception ignored) {}
             }
         }
         return result;
@@ -171,8 +198,8 @@ public final class MetaExtractor {
 
     // ── Variable meta ───────────────────────────────────────────────────────
 
-    private static VariableMeta buildVariableMeta(EnvSymbol sym, String source) {
-        String type = outlineTypeText(sym.outline());
+    private static VariableMeta buildVariableMeta(EnvSymbol sym, LocalSymbolEnvironment env, String source) {
+        String type = resolveTypeName(sym.outline(), env);
         String desc = descriptionForSymbol(sym, source);
         return new VariableMeta(sym.name(), sym.mutable() ? "var" : "let", type, sym.mutable(), desc);
     }
@@ -189,7 +216,7 @@ public final class MetaExtractor {
             if (scope.parent() != env.root()) continue;
             for (EnvSymbol s : scope.symbols().values()) {
                 if (s.node() instanceof Argument) {
-                    String argType = outlineTypeText(s.outline());
+                    String argType = resolveTypeName(s.outline(), env);
                     params.add(new FieldMeta(s.name(), argType, null));
                 }
             }
@@ -235,7 +262,7 @@ public final class MetaExtractor {
                 expandRange(sym.node(), minStart, maxEnd);
                 long[] range = expandRange(sym.node(), minStart, maxEnd);
                 minStart = range[0]; maxEnd = range[1];
-                symbols.add(new SymbolMeta(sym.name(), outlineTypeText(sym.outline()), "outline", false));
+                symbols.add(new SymbolMeta(sym.name(), resolveTypeName(sym.outline(), env), "outline", false));
             }
 
             for (EnvSymbol sym : scope.symbols().values()) {
@@ -250,7 +277,7 @@ public final class MetaExtractor {
                 } else {
                     kind = "variable";
                 }
-                symbols.add(new SymbolMeta(sym.name(), outlineTypeText(sym.outline()), kind, sym.mutable()));
+                symbols.add(new SymbolMeta(sym.name(), resolveTypeName(sym.outline(), env), kind, sym.mutable()));
             }
 
             long s = (minStart == Long.MAX_VALUE) ? 0 : minStart;
@@ -299,7 +326,172 @@ public final class MetaExtractor {
         return false;
     }
 
+    // ── Public outline resolution API ────────────────────────────────────────
+
+    /**
+     * Resolves any {@link Returnable} or {@link Genericable} wrapper to its concrete
+     * underlying type, recursively.
+     *
+     * <ul>
+     *   <li>{@link Returnable} (e.g. result of {@code countries.first()}) →
+     *       {@code ret.supposedToBe()} which holds the actual return type ({@code Country}).</li>
+     *   <li>{@link Genericable} (e.g. lambda parameter {@code c} in
+     *       {@code filter(c->c.)}) → {@code g.guess()} which extracts the best
+     *       concrete type from the four constraint dimensions.</li>
+     * </ul>
+     *
+     * Callers (playground completion services, LLM tools) should use this method
+     * instead of duplicating the resolution logic.
+     */
+    public static Outline resolveOutline(Outline outline) {
+        if (outline == null) return null;
+        if (outline instanceof Returnable ret) {
+            Outline supposed = ret.supposedToBe();
+            if (supposed != null && !(supposed instanceof UNKNOWN) && !(supposed instanceof ANY)) {
+                return resolveOutline(supposed.eventual());
+            }
+        }
+        if (outline instanceof Genericable<?, ?> g) {
+            // For meta/completions purposes we prefer the upper bound (max() = extendToBe,
+            // i.e. the actual concrete type that was passed/inferred at the call site) over
+            // the lower bound (min() = definedToBe, the minimal structural usage).
+            // Example: lambda param `c` in `filter(c -> c.code == "CN")` has
+            //   extendToBe = Country  (from filter's (a->Bool) instantiated with a=Country)
+            //   definedToBe = {code:String}  (structural access pattern)
+            // guess() would return the lower bound {code:String}, losing the full Country type.
+            // Using max() restores the complete Country type for LLM and IDE use.
+            Outline upper = g.max();
+            if (upper != null && !(upper instanceof Genericable)
+                    && !(upper instanceof UNKNOWN) && !(upper instanceof ANY)
+                    && !(upper instanceof org.twelve.gcp.outline.primitive.NOTHING)) {
+                return resolveOutline(upper);
+            }
+            Outline guessed = g.guess();
+            if (guessed != null && !(guessed instanceof Genericable) && !(guessed instanceof UNKNOWN)) {
+                return resolveOutline(guessed);
+            }
+        }
+        return outline.eventual();
+    }
+
+    /**
+     * Returns the {@link FieldMeta} list for any {@link Outline} — resolving
+     * {@link Genericable} and {@link Returnable} wrappers first.
+     *
+     * <p>This is the canonical entry point for dot-completion:
+     * instead of each service reimplementing type unwrapping, callers do:
+     * <pre>
+     *   List&lt;FieldMeta&gt; members = MetaExtractor.fieldsOf(expr.outline());
+     * </pre>
+     *
+     * @param source the module source code used to extract field documentation
+     *               (may be {@code null} — documentation is omitted when absent)
+     */
+    public static List<FieldMeta> fieldsOf(Outline outline, String source) {
+        Outline resolved = resolveOutline(outline);
+        if (resolved == null) return List.of();
+        return extractEntityFields(resolved, source);
+    }
+
+    /** Convenience overload when source code is not available. */
+    public static List<FieldMeta> fieldsOf(Outline outline) {
+        return fieldsOf(outline, null);
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────
+
+    /**
+     * Resolves an outline to a human-readable type name, aware of the current
+     * module's symbol environment so that named outlines ({@code Country},
+     * {@code Countries}, …) are returned by name rather than by structural
+     * {@code toString()} ({@code {code:String,name:String}}).
+     *
+     * <p>Resolution order:
+     * <ol>
+     *   <li>Unwrap {@link Returnable}/{@link Genericable} via
+     *       {@link #resolveOutline(Outline)}.</li>
+     *   <li>Look up the resolved type's id in the environment's outline
+     *       definitions to get the declared name.</li>
+     *   <li>Fall back to {@link #outlineTypeText(Outline)} (structural
+     *       toString).</li>
+     * </ol>
+     */
+    private static String resolveTypeName(Outline outline, LocalSymbolEnvironment env) {
+        if (outline == null) return "?";
+        Outline resolved = resolveOutline(outline);
+        if (resolved != outline) {
+            String name = lookupOutlineName(resolved, env);
+            if (name != null) return name;
+            return outlineTypeText(resolved);
+        }
+        String name = lookupOutlineName(outline, env);
+        if (name != null) return name;
+        return outlineTypeText(outline);
+    }
+
+    /**
+     * Searches all scopes in {@code env} for an outline definition whose
+     * resolved {@code id()} matches the given outline.  Returns the declared
+     * name (e.g. {@code "Country"}) or {@code null} if not found.
+     */
+    /**
+     * Searches all scopes in {@code env} for a named outline whose type matches the given outline.
+     *
+     * <h3>Storage layout</h3>
+     * <ul>
+     *   <li>{@link AstScope#outlineDefinitions()} — built-in primitive types registered via
+     *       {@code defineOutline()} (Integer, String, …).</li>
+     *   <li>{@link AstScope#symbols()} — BOTH user-declared outline types
+     *       ({@code outline Country = {…}}) AND regular variables ({@code let countries = …}).
+     *       The Outline parser uses {@code defineSymbol()} for outline declarations, so they
+     *       share the same map as variables.  Both a type like {@code Countries} and its
+     *       variable {@code countries} will have the same entity id after inference.</li>
+     * </ul>
+     *
+     * <h3>Match + selection strategy</h3>
+     * <ol>
+     *   <li>Collect all candidates whose entity id matches (or whose structural toString matches).
+     *   <li>Prefer a candidate whose name starts with an <em>uppercase</em> letter — this is the
+     *       Outline language convention for type declarations (PascalCase), distinguishing
+     *       {@code "Countries"} (type) from {@code "countries"} (variable).</li>
+     * </ol>
+     */
+    private static String lookupOutlineName(Outline outline, LocalSymbolEnvironment env) {
+        if (outline == null || env == null) return null;
+        long id = outline.id();
+        String structural = (outline instanceof ProductADT) ? outline.toString() : null;
+        String best = null;
+        for (AstScope scope : env.allScopes()) {
+            // ① built-in type definitions (defineOutline map)
+            for (Map.Entry<String, EnvSymbol> entry : scope.outlineDefinitions().entrySet()) {
+                best = pickBetter(best, entry.getKey(), entry.getValue().outline(), id, structural);
+            }
+            // ② all symbols: contains both outline declarations AND variables
+            for (Map.Entry<String, EnvSymbol> entry : scope.symbols().entrySet()) {
+                best = pickBetter(best, entry.getKey(), entry.getValue().outline(), id, structural);
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Returns the "better" name between {@code current} and {@code candidate}, given that
+     * {@code candidateOutline} matches the target id / structural toString.
+     * A name starting with an uppercase letter (type declaration convention) wins over a
+     * lowercase name (variable convention) to correctly choose "Countries" over "countries".
+     */
+    private static String pickBetter(String current, String candidate, Outline candidateOutline,
+                                     long targetId, String structural) {
+        if (candidateOutline == null) return current;
+        boolean matches = candidateOutline.id() == targetId
+                || (structural != null && structural.equals(candidateOutline.toString()));
+        if (!matches) return current;
+        if (current == null) return candidate;
+        // Prefer uppercase-starting name (type declaration convention)
+        boolean candidateIsType = !candidate.isEmpty() && Character.isUpperCase(candidate.charAt(0));
+        boolean currentIsType   = !current.isEmpty()   && Character.isUpperCase(current.charAt(0));
+        return (candidateIsType && !currentIsType) ? candidate : current;
+    }
 
     private static String outlineTypeText(Outline outline) {
         if (outline == null) return "?";

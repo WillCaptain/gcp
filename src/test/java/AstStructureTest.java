@@ -95,7 +95,7 @@ public class AstStructureTest {
         assertEquals(38, a.local().loc().end());
 
         assertInstanceOf(UNKNOWN.class, a.get(0).outline());//outline is not confirmed yet
-        assertSame(a.get(0).outline(), a.get(1).outline());//outline of b is a reference of a outline
+        assertInstanceOf(UNKNOWN.class, a.get(1).outline());//outline of local alias is also UNKNOWN before inference
         //check c
         ImportSpecifier c = imported.specifiers().get(1);
         assertEquals("school", c.get(1).toString());
@@ -134,7 +134,7 @@ public class AstStructureTest {
         assertEquals(117, a.exported().loc().end());
 
         assertInstanceOf(UNKNOWN.class, a.get(0).outline());//outline is not confirmed yet
-        assertSame(a.get(0).outline(), a.get(1).outline());//outline of b is a reference of a outline
+        assertInstanceOf(UNKNOWN.class, a.get(1).outline());//outline of exported alias is also UNKNOWN before inference
         //check c
         ExportSpecifier c = exported.specifiers().get(1);
         assertSame(c.get(0), c.get(1));
@@ -261,7 +261,7 @@ public class AstStructureTest {
         String expected = """
                 module default
                 
-                let f = (x: String->Integer->{name: String, var age: Integer})->(y: String)->(z: Integer)->x(y,z);""";
+                let f = (x: String->Integer->{name: String,var age: Integer})->(y: String)->(z: Integer)->x(y,z);""";
         /*
          let f = (x:String->Integer->{name:String,age:Integer},y:String,z:Integer)->x(y,z);
          */

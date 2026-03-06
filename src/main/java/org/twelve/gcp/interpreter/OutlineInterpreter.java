@@ -37,7 +37,9 @@ import org.twelve.gcp.config.GCPConfig;
 import org.twelve.gcp.plugin.PluginLoader;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -282,6 +284,28 @@ public class OutlineInterpreter implements Interpreter {
             } finally {
                 env = saved;
             }
+        }
+        if (fn instanceof PolyValue pv) {
+            // Apply the argument to every variant of the poly, collecting successful results.
+            List<Value> results = new ArrayList<>();
+            for (Value variant : pv.options()) {
+                try {
+                    results.add(apply(variant, arg));
+                } catch (Exception ignored) {}
+            }
+            if (results.isEmpty()) {
+                throw new RuntimeException("Cannot apply " + fn + " to " + arg);
+            }
+            // Overload resolution: if exactly one variant produced a concrete (non-function)
+            // value, that variant "won" — return its result directly rather than boxing
+            // everything back into a PolyValue.  This is the standard poly-dispatch rule:
+            // once an overload's argument list is exhausted it wins over still-partial ones.
+            List<Value> concrete = results.stream()
+                    .filter(v -> !(v instanceof FunctionValue) && !(v instanceof PolyValue))
+                    .toList();
+            if (concrete.size() == 1) return concrete.get(0);
+            if (results.size() == 1) return results.get(0);
+            return new PolyValue(results);
         }
         throw new RuntimeException("Cannot apply " + fn + " to " + arg);
     }

@@ -158,19 +158,54 @@ public final class ModuleMeta {
 
     /**
      * Get members for a type name by looking up a matching OutlineMeta in this module.
-     * Matches by outline name (substring check) or by exact type text equality.
+     *
+     * <h3>Two-pass strategy</h3>
+     * <ol>
+     *   <li><b>Structural inline types</b> — if the (normalised) type text looks like
+     *       {@code {field1: Type1, field2: Type2}} (e.g. a lambda parameter inferred via
+     *       structural typing), it is parsed directly.  Skipping the name-based lookup avoids
+     *       false substring matches such as {@code "String" ⊆ "{code: String}"}.</li>
+     *   <li><b>Named types</b> — otherwise we search {@code nodes} for an {@link OutlineMeta}
+     *       whose name is a substring of {@code typeName}, or whose declared type text matches
+     *       exactly.</li>
+     * </ol>
      */
     List<FieldMeta> membersOfType(String typeName) {
         if (typeName == null) return List.of();
+        // Normalise: strip backtick wrapping produced by Genericable.toString() ("`{code: String}`")
+        String t = typeName.startsWith("`") && typeName.endsWith("`")
+                ? typeName.substring(1, typeName.length() - 1) : typeName;
+        // Fast path: structural type — parse fields directly, no OutlineMeta lookup
+        if (t.startsWith("{") && t.endsWith("}")) {
+            return parseStructuralFields(t);
+        }
         for (SchemaMeta n : nodes) {
             if (n instanceof OutlineMeta om) {
-                if (typeName.contains(om.name())
-                        || (om.type() != null && typeName.equals(om.type()))) {
+                if (t.contains(om.name())
+                        || (om.type() != null && (t.equals(om.type()) || typeName.equals(om.type())))) {
                     return om.members();
                 }
             }
         }
         return List.of();
+    }
+
+    /**
+     * Parses inline structural type notation {@code {field1: Type1, field2: Type2}} into
+     * {@link FieldMeta} entries.  Used as a fallback for lambda parameters and other
+     * symbols whose type was resolved via structural inference rather than a named outline.
+     */
+    private static List<FieldMeta> parseStructuralFields(String structural) {
+        String inner = structural.substring(1, structural.length() - 1).trim();
+        if (inner.isEmpty()) return List.of();
+        List<FieldMeta> fields = new ArrayList<>();
+        for (String part : inner.split(",")) {
+            String[] kv = part.trim().split(":", 2);
+            if (kv.length == 2) {
+                fields.add(new FieldMeta(kv[0].trim(), kv[1].trim(), null, "inferred"));
+            }
+        }
+        return fields;
     }
 
     public Map<String, Object> toMap() {

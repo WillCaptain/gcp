@@ -1510,7 +1510,7 @@ public class ASTHelper {
         VariableDeclaratorBuilder r = builder.buildVariableDeclarator(VariableKind.LET);
         FunctionNode rd = builder.buildFunc().buildReference("a")
                 .buildArg("x", builder.buildDictType(builder.buildIdType("String"), builder.buildIdType("a")))
-                .buildStatement(builder.buildVariableDeclarator(VariableKind.LET,false).declare("b",builder.buildDict().add(builder.buildLiteral("Will"),builder.buildLiteral(30)).build()).get())
+                .buildStatement(builder.buildVariableDeclarator(VariableKind.VAR,false).declare("b",builder.buildDict().add(builder.buildLiteral("Will"),builder.buildLiteral(30)).build()).get())
                 .buildStatement(builder.buildAssignment("b","x"))
                 .buildStatement(builder.buildVariableDeclarator(VariableKind.LET,false).declare("c",builder.buildIdType("a"),builder.buildArrayAccessor(builder.buildId("x"),builder.buildLiteral("Will") )).get())
                 .returns(builder.buildId("c"));
