@@ -679,8 +679,8 @@ public class GCPInference {
         assertEquals("""
                 module default
                 
-                let f = (a:`any`)->(x:`any->{name: String|Number,age: String|Number}`)->(y:`any->{name: String|Number,age: String|Number}`)->(z:`any->{name: String|Number,age: String|Number}`)->{
-                  x = (a:`any`)->{
+                let f = a->x->y->z->{
+                  x = a->{
                     name = a,
                     age = 20
                   };
@@ -688,19 +688,19 @@ public class GCPInference {
                   x = z;
                   x(a).name+x(a).age
                 };
-                let g = f("Will") : (String->{name: String|Number,age: String|Number})->(String->{name: String|Number,age: String|Number})->(String->{name: String|Number,age: String|Number})->String|Number;
-                let h = g((a:`any`)->{
+                let g = f("Will");
+                let h = g(a->{
                   name = a,
                   age = 20
-                }) : (String->{name: String,age: Integer})->(String->{name: String,age: Integer})->String;
-                let i = h((a:`any`)->{
+                });
+                let i = h(a->{
                   name = a,
                   gender = "male"
-                }) : (String->{name: String,age: Integer})->String;
-                i((a:`any`)->{
+                });
+                i(a->{
                   name = a,
                   age = 20
-                }) : String""",ast.toString());
+                })""",ast.toString());
     }
 
     @Test
@@ -953,8 +953,8 @@ public class GCPInference {
         Node will = ast.program().body().statements().get(3).nodes().getFirst().nodes().getFirst();
         Node age = ast.program().body().statements().get(4).nodes().getFirst().nodes().getFirst();
 
-        assertEquals("{0: {0: Integer,1: String},1: <b>}",g.outline().toString());
-        assertEquals("{0: {0: String,1: String},1: Integer}",h.outline().toString());
+        assertEquals("((Integer,String),<b>)",g.outline().toString());
+        assertEquals("((String,String),Integer)",h.outline().toString());
         assertEquals("String",will.outline().toString());
         assertEquals("Integer",age.outline().toString());
         assertEquals(1,ast.errors().size());

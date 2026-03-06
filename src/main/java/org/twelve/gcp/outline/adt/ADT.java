@@ -51,17 +51,17 @@ public abstract class ADT implements Outline {
     }
 
     public Optional<EntityMember> getMember(String name) {
-        return this.members().stream().filter(m -> m.name().equals(name)).findFirst();
+        return Optional.ofNullable(members.get(name));
     }
 
     @Override
     public boolean containsUnknown() {
-        return this.members().stream().anyMatch(m -> m.outline.containsUnknown());
+        return members.values().stream().anyMatch(m -> m.outline.containsUnknown());
     }
 
     @Override
     public boolean containsIgnore() {
-        return this.members().stream().anyMatch(m -> m.outline.containsIgnore());
+        return members.values().stream().anyMatch(m -> m.outline.containsIgnore());
     }
 
     @Override
@@ -74,12 +74,12 @@ public abstract class ADT implements Outline {
         ProductADT extended = cast(another);
         for (EntityMember member : extended.members()) {
             if (member.isDefault()) continue;
-            Optional<EntityMember> found = this.members().stream().filter(m -> m.name().equals(member.name())).findFirst();
-            if (!found.isPresent()) {
+            EntityMember found = this.members.get(member.name());
+            if (found == null) {
                 if (member.outline() instanceof Literal) continue;
                 return false;
             }
-            if (!found.get().outline().is(member.outline())) {
+            if (!found.outline().is(member.outline())) {
                 return false;
             }
         }
