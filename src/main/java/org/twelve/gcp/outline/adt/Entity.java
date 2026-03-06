@@ -170,6 +170,20 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
         return this.base == null ? this.ast().Any : this.base;
     }
 
+    /**
+     * O(depth) lookup: check own members first, then delegate to base.
+     * This correctly handles inherited members without building the merged list.
+     */
+    @Override
+    public Optional<EntityMember> getMember(String name) {
+        Optional<EntityMember> own = super.getMember(name);
+        if (own.isPresent()) return own;
+        if (this.base instanceof ProductADT base) {
+            return base.getMember(name);
+        }
+        return Optional.empty();
+    }
+
     @Override
     public List<EntityMember> members() {
         List<EntityMember> own = super.members();
