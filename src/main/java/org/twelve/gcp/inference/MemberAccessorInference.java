@@ -21,7 +21,6 @@ import org.twelve.gcp.outline.projectable.Genericable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -108,7 +107,7 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
         host.loadBuiltInMethods();
         host = cast(host.eventual());
 
-        List<EntityMember> found = host.members().stream().filter(m -> m.name().equals(node.member().name())).collect(Collectors.toList());
+        Optional<EntityMember> found = host.getMember(node.member().name());
         if (found.isEmpty()) {
             GCPErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
             return node.ast().Error;
@@ -116,12 +115,12 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
             // Protected-member check: _-prefixed members (PRIVATE modifier) are only accessible
             // via 'this' (within the entity itself or its derived types).
             // Accessing them through an external reference (e.g. a._age) is forbidden.
-            if (found.getFirst().modifier() == Modifier.PRIVATE
+            if (found.get().modifier() == Modifier.PRIVATE
                     && !(node.host() instanceof ThisNode)) {
                 GCPErrorReporter.report(node.member(), GCPErrCode.NOT_ACCESSIBLE);
                 return node.ast().Error;
             }
-            return found.getFirst().outline().eventual();
+            return found.get().outline().eventual();
 //            if(result instanceof Genericable<?,?>){
 //                return ((Genericable<?, ?>) result).guess();//todo:i'm guessing...
 //            }else{
@@ -150,14 +149,12 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
             }
             ProductADT adt = cast(opt);
             adt.loadBuiltInMethods();
-            List<EntityMember> found = adt.members().stream()
-                    .filter(m -> m.name().equals(node.member().name()))
-                    .collect(Collectors.toList());
+            Optional<EntityMember> found = adt.getMember(node.member().name());
             if (found.isEmpty()) {
                 GCPErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);
                 return node.ast().Error;
             }
-            memberTypes.add(found.getFirst().outline().eventual());
+            memberTypes.add(found.get().outline().eventual());
         }
         // Collapse identical types; otherwise build a union of all field types.
         boolean allSame = memberTypes.stream().allMatch(t -> t.is(memberTypes.getFirst()) && memberTypes.getFirst().is(t));
@@ -178,7 +175,7 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
      * @return the Outline type of the member
      */
     private static Outline addMember(MemberAccessor node, Entity defined, Genericable<?,?> generic) {
-        Optional<EntityMember> member = defined.members().stream().filter(m -> m.name().equals(node.member().name())).findFirst();
+        Optional<EntityMember> member = defined.getMember(node.member().name());
         if(member.isPresent()){
             return member.get().outline();
         }else {

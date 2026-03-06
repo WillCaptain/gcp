@@ -88,11 +88,73 @@ public final class MetaExtractor {
         return result;
     }
 
+    // ── Outline name index ───────────────────────────────────────────────────
+
+    /**
+     * Inverse index built once per meta-extraction call.
+     * Maps outline id → declared name (PascalCase preferred) and structural
+     * toString → name for ProductADT types, so {@link #lookupOutlineName(Outline, OutlineNameIndex)}
+     * runs in O(1) instead of the previous O(scopes × symbols) full scan.
+     */
+    private record OutlineNameIndex(Map<Long, String> byId, Map<String, String> byStructural) {
+
+        static OutlineNameIndex build(LocalSymbolEnvironment env) {
+            Map<Long, String> byId  = new HashMap<>();
+            Map<String, String> bySt = new HashMap<>();
+            for (AstScope scope : env.allScopes()) {
+                addToIndex(byId, bySt, scope.outlineDefinitions());
+                addToIndex(byId, bySt, scope.symbols());
+            }
+            return new OutlineNameIndex(byId, bySt);
+        }
+
+        private static void addToIndex(Map<Long, String> byId, Map<String, String> bySt,
+                                       Map<String, EnvSymbol> symbols) {
+            for (Map.Entry<String, EnvSymbol> entry : symbols.entrySet()) {
+                Outline o = entry.getValue().outline();
+                if (o == null) continue;
+                String name = entry.getKey();
+                boolean newIsType = !name.isEmpty() && Character.isUpperCase(name.charAt(0));
+                // id index
+                String existing = byId.get(o.id());
+                boolean oldIsType = existing != null && !existing.isEmpty()
+                        && Character.isUpperCase(existing.charAt(0));
+                if (existing == null || (newIsType && !oldIsType)) {
+                    byId.put(o.id(), name);
+                }
+                // structural index for ProductADT (handles generic instantiation id mismatch)
+                if (o instanceof ProductADT) {
+                    String structural = o.toString();
+                    if (structural != null) {
+                        String existingS = bySt.get(structural);
+                        boolean oldIsTypeS = existingS != null && !existingS.isEmpty()
+                                && Character.isUpperCase(existingS.charAt(0));
+                        if (existingS == null || (newIsType && !oldIsTypeS)) {
+                            bySt.put(structural, name);
+                        }
+                    }
+                }
+            }
+        }
+
+        String lookup(Outline outline) {
+            if (outline == null) return null;
+            String name = byId.get(outline.id());
+            if (name != null) return name;
+            if (outline instanceof ProductADT) {
+                String structural = outline.toString();
+                return structural != null ? byStructural.get(structural) : null;
+            }
+            return null;
+        }
+    }
+
     // ── Top-level declarations from root scope ──────────────────────────────
 
     private static List<SchemaMeta> extractNodes(LocalSymbolEnvironment env, String source) {
         List<SchemaMeta> nodes = new ArrayList<>();
         AstScope root = env.root();
+        OutlineNameIndex nameIndex = OutlineNameIndex.build(env);
 
         Set<String> outlineNames = new HashSet<>();
 
@@ -110,9 +172,9 @@ public final class MetaExtractor {
             }
             Outline outline = sym.outline();
             if (outline != null && outline.eventual() instanceof Function<?, ?>) {
-                nodes.add(buildFunctionMeta(sym, env, source));
+                nodes.add(buildFunctionMeta(sym, env, nameIndex, source));
             } else {
-                nodes.add(buildVariableMeta(sym, env, source));
+                nodes.add(buildVariableMeta(sym, nameIndex, source));
             }
         }
 
@@ -198,15 +260,16 @@ public final class MetaExtractor {
 
     // ── Variable meta ───────────────────────────────────────────────────────
 
-    private static VariableMeta buildVariableMeta(EnvSymbol sym, LocalSymbolEnvironment env, String source) {
-        String type = resolveTypeName(sym.outline(), env);
+    private static VariableMeta buildVariableMeta(EnvSymbol sym, OutlineNameIndex nameIndex, String source) {
+        String type = resolveTypeName(sym.outline(), nameIndex);
         String desc = descriptionForSymbol(sym, source);
         return new VariableMeta(sym.name(), sym.mutable() ? "var" : "let", type, sym.mutable(), desc);
     }
 
     // ── Function meta ───────────────────────────────────────────────────────
 
-    private static FunctionMeta buildFunctionMeta(EnvSymbol sym, LocalSymbolEnvironment env, String source) {
+    private static FunctionMeta buildFunctionMeta(EnvSymbol sym, LocalSymbolEnvironment env,
+                                                   OutlineNameIndex nameIndex, String source) {
         String type = outlineTypeText(sym.outline());
         String desc = descriptionForSymbol(sym, source);
 
@@ -216,7 +279,7 @@ public final class MetaExtractor {
             if (scope.parent() != env.root()) continue;
             for (EnvSymbol s : scope.symbols().values()) {
                 if (s.node() instanceof Argument) {
-                    String argType = resolveTypeName(s.outline(), env);
+                    String argType = resolveTypeName(s.outline(), nameIndex);
                     params.add(new FieldMeta(s.name(), argType, null));
                 }
             }
@@ -237,6 +300,7 @@ public final class MetaExtractor {
 
     static List<ScopeMeta> extractScopes(LocalSymbolEnvironment env, String source) {
         List<ScopeMeta> result = new ArrayList<>();
+        OutlineNameIndex nameIndex = OutlineNameIndex.build(env);
 
         for (AstScope scope : env.allScopes()) {
             long scopeId = scope.id();
@@ -262,7 +326,7 @@ public final class MetaExtractor {
                 expandRange(sym.node(), minStart, maxEnd);
                 long[] range = expandRange(sym.node(), minStart, maxEnd);
                 minStart = range[0]; maxEnd = range[1];
-                symbols.add(new SymbolMeta(sym.name(), resolveTypeName(sym.outline(), env), "outline", false));
+                symbols.add(new SymbolMeta(sym.name(), resolveTypeName(sym.outline(), nameIndex), "outline", false));
             }
 
             for (EnvSymbol sym : scope.symbols().values()) {
@@ -277,7 +341,7 @@ public final class MetaExtractor {
                 } else {
                     kind = "variable";
                 }
-                symbols.add(new SymbolMeta(sym.name(), resolveTypeName(sym.outline(), env), kind, sym.mutable()));
+                symbols.add(new SymbolMeta(sym.name(), resolveTypeName(sym.outline(), nameIndex), kind, sym.mutable()));
             }
 
             long s = (minStart == Long.MAX_VALUE) ? 0 : minStart;
@@ -416,6 +480,21 @@ public final class MetaExtractor {
      *       toString).</li>
      * </ol>
      */
+    /** Fast O(1) path using a pre-built name index. */
+    private static String resolveTypeName(Outline outline, OutlineNameIndex nameIndex) {
+        if (outline == null) return "?";
+        Outline resolved = resolveOutline(outline);
+        if (resolved != outline) {
+            String name = nameIndex.lookup(resolved);
+            if (name != null) return name;
+            return outlineTypeText(resolved);
+        }
+        String name = nameIndex.lookup(outline);
+        if (name != null) return name;
+        return outlineTypeText(outline);
+    }
+
+    /** Slow O(scopes×symbols) fallback — kept for callers that don't have a pre-built index. */
     private static String resolveTypeName(Outline outline, LocalSymbolEnvironment env) {
         if (outline == null) return "?";
         Outline resolved = resolveOutline(outline);
