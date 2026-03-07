@@ -27,7 +27,7 @@ public final class BuiltinMethods {
 
     public static Value array(ArrayValue arr, String method, Interpreter interp) {
         return switch (method) {
-            case "len", "size", "count" -> new FunctionValue(u -> new IntValue(arr.size()));
+            case "len", "size", "count" -> new FunctionValue(u -> IntValue.of(arr.size()));
             case "first"   -> new FunctionValue(u -> arr.size() > 0 ? arr.get(0) : UnitValue.INSTANCE);
             case "last"    -> new FunctionValue(u -> arr.size() > 0 ? arr.get(arr.size() - 1) : UnitValue.INSTANCE);
             case "reverse" -> new FunctionValue(u -> new ArrayValue(reversed(arr.elements())));
@@ -106,13 +106,13 @@ public final class BuiltinMethods {
     public static Value string(StringValue sv, String method) {
         String s = sv.value();
         return switch (method) {
-            case "len", "size", "length" -> new FunctionValue(u -> new IntValue(s.length()));
+            case "len", "size", "length" -> new FunctionValue(u -> IntValue.of(s.length()));
             case "to_str"      -> new FunctionValue(u -> sv);
             case "trim"        -> new FunctionValue(u -> new StringValue(s.trim()));
             case "to_upper"    -> new FunctionValue(u -> new StringValue(s.toUpperCase()));
             case "to_lower"    -> new FunctionValue(u -> new StringValue(s.toLowerCase()));
             case "to_int"      -> new FunctionValue(u -> {
-                try { return new IntValue(Long.parseLong(s.trim())); }
+                try { return IntValue.of(Long.parseLong(s.trim())); }
                 catch (NumberFormatException e) { return UnitValue.INSTANCE; }
             });
             case "to_number"   -> new FunctionValue(u -> {
@@ -130,7 +130,7 @@ public final class BuiltinMethods {
             case "contains"    -> new FunctionValue(sub -> BoolValue.of(s.contains(((StringValue) sub).value())));
             case "starts_with" -> new FunctionValue(pre -> BoolValue.of(s.startsWith(((StringValue) pre).value())));
             case "ends_with"   -> new FunctionValue(suf -> BoolValue.of(s.endsWith(((StringValue) suf).value())));
-            case "index_of"    -> new FunctionValue(sub -> new IntValue(s.indexOf(((StringValue) sub).value())));
+            case "index_of"    -> new FunctionValue(sub -> IntValue.of(s.indexOf(((StringValue) sub).value())));
             case "sub_str"     -> new FunctionValue(start -> new FunctionValue(end ->
                     new StringValue(s.substring((int) toLong(start), (int) toLong(end)))));
             case "replace"     -> new FunctionValue(old -> new FunctionValue(neo ->
@@ -148,10 +148,10 @@ public final class BuiltinMethods {
         long n = iv.value();
         return switch (method) {
             case "to_str"   -> new FunctionValue(u -> new StringValue(String.valueOf(n)));
-            case "abs"      -> new FunctionValue(u -> new IntValue(Math.abs(n)));
-            case "ceil"     -> new FunctionValue(u -> new IntValue(n));
-            case "floor"    -> new FunctionValue(u -> new IntValue(n));
-            case "round"    -> new FunctionValue(u -> new IntValue(n));
+            case "abs"      -> new FunctionValue(u -> IntValue.of(Math.abs(n)));
+            case "ceil"     -> new FunctionValue(u -> IntValue.of(n));
+            case "floor"    -> new FunctionValue(u -> IntValue.of(n));
+            case "round"    -> new FunctionValue(u -> IntValue.of(n));
             case "to_int"   -> new FunctionValue(u -> iv);
             case "to_float" -> new FunctionValue(u -> new FloatValue((double) n));
             case "sqrt"     -> new FunctionValue(u -> new FloatValue(Math.sqrt(n)));
@@ -171,10 +171,10 @@ public final class BuiltinMethods {
         return switch (method) {
             case "to_str"   -> new FunctionValue(u -> new StringValue(String.valueOf(d)));
             case "abs"      -> new FunctionValue(u -> new FloatValue(Math.abs(d)));
-            case "ceil"     -> new FunctionValue(u -> new IntValue((long) Math.ceil(d)));
-            case "floor"    -> new FunctionValue(u -> new IntValue((long) Math.floor(d)));
-            case "round"    -> new FunctionValue(u -> new IntValue(Math.round(d)));
-            case "to_int"   -> new FunctionValue(u -> new IntValue((long) d));
+            case "ceil"     -> new FunctionValue(u -> IntValue.of((long) Math.ceil(d)));
+            case "floor"    -> new FunctionValue(u -> IntValue.of((long) Math.floor(d)));
+            case "round"    -> new FunctionValue(u -> IntValue.of(Math.round(d)));
+            case "to_int"   -> new FunctionValue(u -> IntValue.of((long) d));
             case "to_float" -> new FunctionValue(u -> fv);
             case "sqrt"     -> new FunctionValue(u -> new FloatValue(Math.sqrt(d)));
             case "pow"      -> new FunctionValue(exp -> new FloatValue(Math.pow(d, toDouble(exp))));
@@ -205,7 +205,7 @@ public final class BuiltinMethods {
 
     public static Value dict(DictValue dv, String method) {
         return switch (method) {
-            case "len", "size", "count" -> new FunctionValue(u -> new IntValue(dv.size()));
+            case "len", "size", "count" -> new FunctionValue(u -> IntValue.of(dv.size()));
             case "to_str"       -> new FunctionValue(u -> new StringValue(dv.display()));
             case "keys"         -> new FunctionValue(u -> new ArrayValue(new ArrayList<>(dv.keys())));
             case "values"       -> new FunctionValue(u -> new ArrayValue(new ArrayList<>(dv.values())));
@@ -228,7 +228,7 @@ public final class BuiltinMethods {
 
     public static Value tuple(TupleValue tv, String method) {
         return switch (method) {
-            case "len", "size" -> new FunctionValue(u -> new IntValue(tv.size()));
+            case "len", "size" -> new FunctionValue(u -> IntValue.of(tv.size()));
             case "to_str"      -> new FunctionValue(u -> new StringValue(tv.display()));
             default -> throw new RuntimeException("Unknown tuple method: " + method);
         };

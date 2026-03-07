@@ -15,26 +15,26 @@ public class UnaryInterpretation implements Interpretation<UnaryExpression> {
         Value operand = interpreter.eval(node.operand());
         return switch (node.operator().symbol()) {
             case "-" -> {
-                if (operand instanceof IntValue iv)   yield new IntValue(-iv.value());
+                if (operand instanceof IntValue iv)   yield IntValue.of(-iv.value());
                 if (operand instanceof FloatValue fv) yield new FloatValue(-fv.value());
                 throw new RuntimeException("Cannot negate: " + operand);
             }
             case "!" -> BoolValue.of(!operand.isTruthy());
             case "~" -> {
-                if (operand instanceof IntValue iv) yield new IntValue(~iv.value());
+                if (operand instanceof IntValue iv) yield IntValue.of(~iv.value());
                 throw new RuntimeException("Cannot bitwise-not: " + operand);
             }
             case "++" -> {
                 if (!(operand instanceof IntValue iv))
                     throw new RuntimeException("Cannot increment: " + operand);
-                IntValue newVal = new IntValue(iv.value() + 1);
+                IntValue newVal = IntValue.of(iv.value() + 1);
                 writeBack(node.operand(), newVal, interpreter);
                 yield node.position() == UnaryPosition.PREFIX ? newVal : iv;
             }
             case "--" -> {
                 if (!(operand instanceof IntValue iv))
                     throw new RuntimeException("Cannot decrement: " + operand);
-                IntValue newVal = new IntValue(iv.value() - 1);
+                IntValue newVal = IntValue.of(iv.value() - 1);
                 writeBack(node.operand(), newVal, interpreter);
                 yield node.position() == UnaryPosition.PREFIX ? newVal : iv;
             }

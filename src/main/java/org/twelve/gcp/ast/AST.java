@@ -42,6 +42,7 @@ public class AST {
     private final AtomicLong scopeIndexer = new AtomicLong(-1);
 
     private List<GCPError> errors = new ArrayList<>();  // Compilation errors
+    private Set<String> errorKeys = new HashSet<>();    // O(1) dedup guard for addError()
     private final Inferencer inferencer;  // Type inference rules
     private final LocalSymbolEnvironment symbolEnv;  // Local symbol table
     private ASF asf;  // Parent Abstract Syntax Forest
@@ -144,14 +145,40 @@ public class AST {
 
     public GCPError addError(GCPError error) {
         if(error.node()==null) return error;
-        // Deduplicate errors by node ID and error code
-        if (errors.stream().noneMatch(e ->
-                Objects.equals(e.node().id(), error.node().id()) &&
-                        e.errorCode() == error.errorCode())) {
+        // O(1) dedup: key = nodeId + ":" + errorCode ordinal
+        String key = error.node().id() + ":" + error.errorCode().ordinal();
+        if (errorKeys.add(key)) {
             this.errors.add(error);
             return error;
         }
         return null;
+    }
+
+    /** Removes all errors for the given node id, clearing both the list and the dedup set. */
+    public void clearNodeErrors(Long nodeId) {
+        if (errors.isEmpty()) return;
+        errors.removeIf(e -> {
+            if (e.node() != null && Objects.equals(e.node().id(), nodeId)) {
+                errorKeys.remove(nodeId + ":" + e.errorCode().ordinal());
+                return true;
+            }
+            return false;
+        });
+    }
+
+    /**
+     * Removes errors in range [from, to) from the list AND purges their dedup keys.
+     * Use this instead of errors().subList(from, to).clear() so that errorKeys stays in sync.
+     */
+    public void clearErrors(int from, int to) {
+        if (from >= to || errors.isEmpty()) return;
+        List<GCPError> toRemove = new ArrayList<>(errors.subList(from, to));
+        errors.subList(from, to).clear();
+        for (GCPError e : toRemove) {
+            if (e.node() != null) {
+                errorKeys.remove(e.node().id() + ":" + e.errorCode().ordinal());
+            }
+        }
     }
     // Program Structure Manipulation
 

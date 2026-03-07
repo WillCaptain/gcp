@@ -75,14 +75,16 @@ public class EntityValue implements Value {
 
     /** Looks up a field by name; delegates to base if not found locally. */
     public Value get(String name) {
-        if (fields.containsKey(name)) return fields.get(name);
+        Value v = fields.get(name);
+        if (v != null) return v;
         if (base != null) return base.get(name);
         return null;
     }
 
     /** Checks whether the field exists (own or inherited). */
     public boolean has(String name) {
-        return fields.containsKey(name) || (base != null && base.has(name));
+        if (fields.get(name) != null) return true;
+        return base != null && base.has(name);
     }
 
     /** Sets (or adds) a field in the own fields map. */

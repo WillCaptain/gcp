@@ -2,7 +2,7 @@ package org.twelve.gcp.interpreter;
 
 import org.twelve.gcp.interpreter.value.Value;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public class Environment {
 
-    private final Map<String, Value> bindings = new LinkedHashMap<>();
+    private final Map<String, Value> bindings = new HashMap<>();
     private final Environment parent;
 
     /** Root (global) environment. */
@@ -33,9 +33,11 @@ public class Environment {
     /**
      * Looks up a variable by name, walking the scope chain.
      * Returns {@code null} if not found anywhere.
+     * Uses a single map lookup (null is reserved for "not present"; no Value is ever stored as null).
      */
     public Value lookup(String name) {
-        if (bindings.containsKey(name)) return bindings.get(name);
+        Value v = bindings.get(name);
+        if (v != null) return v;
         if (parent != null) return parent.lookup(name);
         return null;
     }
@@ -61,7 +63,7 @@ public class Environment {
     }
 
     protected Environment findOwner(String name) {
-        if (bindings.containsKey(name)) return this;
+        if (bindings.get(name) != null) return this;
         if (parent != null) return parent.findOwner(name);
         return null;
     }

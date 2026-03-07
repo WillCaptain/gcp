@@ -433,9 +433,9 @@ public class OutlineInterpreter implements Interpreter {
         env.define("to_str", new FunctionValue(v -> new StringValue(v.display())));
         env.define("to_int", new FunctionValue(v -> {
             if (v instanceof IntValue iv) return iv;
-            if (v instanceof FloatValue fv) return new IntValue((long) fv.value());
+            if (v instanceof FloatValue fv) return IntValue.of((long) fv.value());
             if (v instanceof StringValue sv) {
-                try { return new IntValue(Long.parseLong(sv.value().trim())); }
+                try { return IntValue.of(Long.parseLong(sv.value().trim())); }
                 catch (NumberFormatException e) { return UnitValue.INSTANCE; }
             }
             return UnitValue.INSTANCE;
@@ -452,7 +452,7 @@ public class OutlineInterpreter implements Interpreter {
         env.define("to_number", new FunctionValue(v -> {
             if (v instanceof IntValue || v instanceof FloatValue) return v;
             if (v instanceof StringValue sv) {
-                try { return new IntValue(Long.parseLong(sv.value().trim())); }
+                try { return IntValue.of(Long.parseLong(sv.value().trim())); }
                 catch (NumberFormatException ignored) {}
                 try { return new FloatValue(Double.parseDouble(sv.value().trim())); }
                 catch (NumberFormatException e) { return UnitValue.INSTANCE; }
@@ -460,10 +460,10 @@ public class OutlineInterpreter implements Interpreter {
             return UnitValue.INSTANCE;
         }));
         env.define("len", new FunctionValue(v -> {
-            if (v instanceof StringValue sv) return new IntValue(sv.value().length());
-            if (v instanceof ArrayValue av)  return new IntValue(av.size());
-            if (v instanceof DictValue dv)   return new IntValue(dv.size());
-            if (v instanceof TupleValue tv)  return new IntValue(tv.size());
+            if (v instanceof StringValue sv) return IntValue.of(sv.value().length());
+            if (v instanceof ArrayValue av)  return IntValue.of(av.size());
+            if (v instanceof DictValue dv)   return IntValue.of(dv.size());
+            if (v instanceof TupleValue tv)  return IntValue.of(tv.size());
             throw new RuntimeException("len: unsupported type " + v.getClass().getSimpleName());
         }));
         env.define("type_of", new FunctionValue(v -> {

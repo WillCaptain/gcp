@@ -24,22 +24,22 @@ public class BinaryInterpretation implements Interpretation<BinaryExpression> {
         if (left instanceof IntValue && right instanceof IntValue) {
             long l = ((IntValue) left).value(), r = ((IntValue) right).value();
             return switch (op) {
-                case "+"  -> new IntValue(l + r);
-                case "-"  -> new IntValue(l - r);
-                case "*"  -> new IntValue(l * r);
-                case "/"  -> new IntValue(l / r);
-                case "%"  -> new IntValue(l % r);
+                case "+"  -> IntValue.of(l + r);
+                case "-"  -> IntValue.of(l - r);
+                case "*"  -> IntValue.of(l * r);
+                case "/"  -> IntValue.of(l / r);
+                case "%"  -> IntValue.of(l % r);
                 case "==" -> BoolValue.of(l == r);
                 case "!=" -> BoolValue.of(l != r);
                 case ">"  -> BoolValue.of(l > r);
                 case "<"  -> BoolValue.of(l < r);
                 case ">=" -> BoolValue.of(l >= r);
                 case "<=" -> BoolValue.of(l <= r);
-                case "&"  -> new IntValue(l & r);
-                case "|"  -> new IntValue(l | r);
-                case "^"  -> new IntValue(l ^ r);
-                case "<<" -> new IntValue(l << r);
-                case ">>" -> new IntValue(l >> r);
+                case "&"  -> IntValue.of(l & r);
+                case "|"  -> IntValue.of(l | r);
+                case "^"  -> IntValue.of(l ^ r);
+                case "<<" -> IntValue.of(l << r);
+                case ">>" -> IntValue.of(l >> r);
                 default   -> throw new RuntimeException("Unknown int op: " + op);
             };
         }

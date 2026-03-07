@@ -2,7 +2,6 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.AbstractNode;
-import org.twelve.gcp.exception.GCPError;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Expression;
@@ -332,10 +331,9 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
         // produced an Integer|String).  Remove those origin-site errors and replace with a
         // single PROJECT_FAIL at the argument node (the actual call line).
         if (typeMismatch) {
-            List<GCPError> errors = argument.ast().errors();
-            int errCountAfter = errors.size();
+            int errCountAfter = argument.ast().errors().size();
             if (errCountAfter > errCountBefore) {
-                errors.subList(errCountBefore, errCountAfter).clear();
+                argument.ast().clearErrors(errCountBefore, errCountAfter);
                 GCPErrorReporter.report(argument, GCPErrCode.PROJECT_FAIL,
                         actual + " mismatch with " + formalMin);
             }

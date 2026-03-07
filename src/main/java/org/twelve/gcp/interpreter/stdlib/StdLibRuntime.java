@@ -50,12 +50,12 @@ public final class StdLibRuntime {
 
     private static EntityValue buildDateRecord(LocalDateTime dt) {
         LinkedHashMap<String, Value> fields = new LinkedHashMap<>();
-        fields.put("year",   new IntValue(dt.getYear()));
-        fields.put("month",  new IntValue(dt.getMonthValue()));
-        fields.put("day",    new IntValue(dt.getDayOfMonth()));
-        fields.put("hour",   new IntValue(dt.getHour()));
-        fields.put("minute", new IntValue(dt.getMinute()));
-        fields.put("second", new IntValue(dt.getSecond()));
+        fields.put("year",   IntValue.of(dt.getYear()));
+        fields.put("month",  IntValue.of(dt.getMonthValue()));
+        fields.put("day",    IntValue.of(dt.getDayOfMonth()));
+        fields.put("hour",   IntValue.of(dt.getHour()));
+        fields.put("minute", IntValue.of(dt.getMinute()));
+        fields.put("second", IntValue.of(dt.getSecond()));
         fields.put("format", new FunctionValue(fmtVal -> {
             String pattern = ((StringValue) fmtVal).value()
                     .replace("YYYY", "yyyy")
@@ -138,12 +138,12 @@ public final class StdLibRuntime {
         fields.put("e",      new FloatValue(Math.E));
         fields.put("sqrt",   new FunctionValue(v -> new FloatValue(Math.sqrt(toDouble(v)))));
         fields.put("abs",    new FunctionValue(v -> {
-            if (v instanceof IntValue iv) return new IntValue(Math.abs(iv.value()));
+            if (v instanceof IntValue iv) return IntValue.of(Math.abs(iv.value()));
             return new FloatValue(Math.abs(toDouble(v)));
         }));
-        fields.put("floor",  new FunctionValue(v -> new IntValue((long) Math.floor(toDouble(v)))));
-        fields.put("ceil",   new FunctionValue(v -> new IntValue((long) Math.ceil(toDouble(v)))));
-        fields.put("round",  new FunctionValue(v -> new IntValue(Math.round(toDouble(v)))));
+        fields.put("floor",  new FunctionValue(v -> IntValue.of((long) Math.floor(toDouble(v)))));
+        fields.put("ceil",   new FunctionValue(v -> IntValue.of((long) Math.ceil(toDouble(v)))));
+        fields.put("round",  new FunctionValue(v -> IntValue.of(Math.round(toDouble(v)))));
         fields.put("max",    new FunctionValue(a -> new FunctionValue(b ->
                 toDouble(a) >= toDouble(b) ? a : b)));
         fields.put("min",    new FunctionValue(a -> new FunctionValue(b ->

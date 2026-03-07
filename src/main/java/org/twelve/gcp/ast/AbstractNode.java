@@ -149,7 +149,7 @@ public abstract class AbstractNode implements Node {
     }
     @Override
     public void clearError() {
-        this.ast().errors().removeIf(e -> e.node() == this);
+        this.ast().clearNodeErrors(this.id());
 //        for (Node node : this.nodes()) {
 //            node.clearError();
 //        }

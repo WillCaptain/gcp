@@ -17,7 +17,7 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
     private final AST ast;
     private AstScope current;
     private final Module module;
-    private Stack<AstScope> scopeStack = new Stack<>();
+    private final ArrayDeque<AstScope> scopeStack = new ArrayDeque<>();
 
     public LocalSymbolEnvironment(AST ast) {
         this.ast = ast;
@@ -76,7 +76,7 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
 
     public void exit() {
         scopeStack.pop();
-        this.current = scopeStack.getLast();
+        this.current = scopeStack.peek();
     }
 
     public EnvSymbol lookupSymbol(String key){
