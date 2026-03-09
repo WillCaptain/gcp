@@ -13,6 +13,7 @@ import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.adt.ProductADT;
+import org.twelve.gcp.outline.decorators.Lazy;
 import org.twelve.gcp.outline.primitive.ANY;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.projectable.AccessorGeneric;
@@ -93,6 +94,13 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
                 GCPErrorReporter.report(node.host(), GCPErrCode.OUTLINE_USED_AS_VALUE);
                 return node.ast().Error;
             }
+        }
+        // Resolve Lazy wrappers (e.g. return types of edge-navigation methods stored as
+        // Lazy{SymbolIdentifier} in the world preamble) before the ProductADT check.
+        // Without this, member access on the result of calls like s.students() fails
+        // when the return type is still wrapped in a Lazy reference.
+        if (outline instanceof Lazy) {
+            outline = outline.eventual();
         }
         // Entity path: host type is fully known; look up the member directly
         if (!(outline instanceof ProductADT)) {
