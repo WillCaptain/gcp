@@ -5,33 +5,38 @@ import org.twelve.gcp.interpreter.Environment;
 import org.twelve.gcp.interpreter.Interpretation;
 import org.twelve.gcp.interpreter.Interpreter;
 import org.twelve.gcp.interpreter.value.*;
+
+import java.util.function.BiFunction;
 import org.twelve.gcp.node.expression.LiteralNode;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.outline.primitive.Literal;
 
 public class MemberAccessorInterpretation implements Interpretation<MemberAccessor> {
+
+    // Shared ctor lambda – stateless, so one instance per interpreter is enough
+    private static final BiFunction<FunctionValue, EntityValue, FunctionValue> BIND_METHOD =
+            (fv, self) -> new FunctionValue(fv.node(), new EntityMethodEnvironment(fv.closure(), self));
+
     @Override
     public Value interpret(MemberAccessor node, Interpreter interp) {
         Value target = interp.eval(node.host());
         String memberName = node.member().name();
 
         if (target instanceof EntityValue entity) {
-            Value member = entity.get(memberName);
-            if (member == null) {
-                // Literal-type fields are not stored in the entity value;
-                // their value is implicitly the literal constant defined in the outline.
-                // Use the MemberAccessor node's own outline (member identifier outline stays UNKNOWN).
+            // Fast path: non-function fields skip cache lookup
+            Value raw = entity.get(memberName);
+            if (raw == null) {
                 var memberOutline = node.outline();
                 if (memberOutline instanceof Literal lit && lit.node() instanceof LiteralNode<?> ln) {
                     return interp.eval(ln);
                 }
                 throw new RuntimeException("Member '" + memberName + "' not found on " + entity);
             }
-            if (member instanceof FunctionValue fv && !fv.isBuiltin()) {
-                EntityMethodEnvironment methodEnv = new EntityMethodEnvironment(fv.closure(), entity);
-                return new FunctionValue(fv.node(), methodEnv);
+            if (raw instanceof FunctionValue fv && !fv.isBuiltin()) {
+                // Inline cache: reuse the EntityMethodEnvironment-wrapped FunctionValue
+                return entity.getBoundMethod(memberName, entity, BIND_METHOD);
             }
-            return member;
+            return raw;
         }
 
         if (target instanceof TupleValue tv) {

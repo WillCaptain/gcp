@@ -15,7 +15,9 @@ import java.util.Map;
  */
 public class Environment {
 
-    private final Map<String, Value> bindings = new HashMap<>();
+    // Most function scopes hold ≤ 8 variables; initial capacity 8 avoids
+    // the default 16-bucket allocation while rarely requiring a resize.
+    private final Map<String, Value> bindings = new HashMap<>(8);
     private final Environment parent;
 
     /** Root (global) environment. */

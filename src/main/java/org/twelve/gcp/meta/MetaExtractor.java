@@ -416,26 +416,43 @@ public final class MetaExtractor {
             }
         }
         if (outline instanceof Genericable<?, ?> g) {
-            // For meta/completions purposes we prefer the upper bound (max() = extendToBe,
-            // i.e. the actual concrete type that was passed/inferred at the call site) over
-            // the lower bound (min() = definedToBe, the minimal structural usage).
-            // Example: lambda param `c` in `filter(c -> c.code == "CN")` has
-            //   extendToBe = Country  (from filter's (a->Bool) instantiated with a=Country)
-            //   definedToBe = {code:String}  (structural access pattern)
-            // guess() would return the lower bound {code:String}, losing the full Country type.
-            // Using max() restores the complete Country type for LLM and IDE use.
-            Outline upper = g.max();
-            if (upper != null && !(upper instanceof Genericable)
-                    && !(upper instanceof UNKNOWN) && !(upper instanceof ANY)
-                    && !(upper instanceof org.twelve.gcp.outline.primitive.NOTHING)) {
-                return resolveOutline(upper);
-            }
-            Outline guessed = g.guess();
-            if (guessed != null && !(guessed instanceof Genericable) && !(guessed instanceof UNKNOWN)) {
-                return resolveOutline(guessed);
-            }
+            // Priority order for member resolution (IDE dot-completion / LLM tooling):
+            //   1. extendToBe     — upper bound from actual assigned/projected value
+            //   2. projectedType  — concrete entity recorded by projectEntity (lambda params);
+            //                       not part of the inference constraint chain, safe to read here
+            //   3. declaredToBe   — explicit programmer annotation  (e.g. (c: Country) -> ...)
+            //   4. hasToBe        — usage constraint from surrounding context
+            //   5. definedToBe    — structural access pattern (e.g. c was accessed as {code:String})
+            Outline ext = g.extendToBe();
+            if (isConcrete(ext)) return resolveOutline(ext);
+
+            Outline proj = g.projectedType();
+            if (isConcrete(proj)) return resolveOutline(proj);
+
+            Outline decl = g.declaredToBe();
+            if (isConcrete(decl)) return resolveOutline(decl);
+
+            Outline has = g.hasToBe();
+            if (isConcrete(has)) return resolveOutline(has);
+
+            Outline def = g.definedToBe();
+            if (isConcrete(def)) return resolveOutline(def);
         }
         return outline.eventual();
+    }
+
+    /**
+     * Returns {@code true} when {@code o} represents a concrete, usable type —
+     * i.e. not null, not an unresolved wrapper, not a trivial top/bottom type.
+     * Used by {@link #resolveOutline} to decide whether a constraint dimension
+     * carries enough information to drive dot-completion.
+     */
+    private static boolean isConcrete(Outline o) {
+        return o != null
+                && !(o instanceof Genericable)
+                && !(o instanceof UNKNOWN)
+                && !(o instanceof ANY)
+                && !(o instanceof org.twelve.gcp.outline.primitive.NOTHING);
     }
 
     /**

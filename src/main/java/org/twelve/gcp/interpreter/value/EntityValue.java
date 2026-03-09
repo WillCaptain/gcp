@@ -73,6 +73,34 @@ public class EntityValue implements Value {
 
     public boolean hasSymbol() { return symbolTag != null; }
 
+    // ── method-binding cache (monomorphic inline cache) ───────────────────────
+    // Stores FunctionValue instances already wrapped with EntityMethodEnvironment
+    // so repeated calls to the same method on the same entity avoid re-allocation.
+    // Lazy: null until the first method is accessed.
+    private HashMap<String, FunctionValue> boundMethodCache;
+
+    /**
+     * Returns a {@link FunctionValue} already bound to {@code self} as {@code this}.
+     * On the first access the binding is created and cached; subsequent accesses
+     * on the same entity instance return the cached object directly.
+     *
+     * @param name   the method name
+     * @param self   the entity to bind as {@code this} (always the outermost/derived entity)
+     * @param ctor   factory to build the bound environment; called only on cache miss
+     * @return the bound {@link FunctionValue}, or {@code null} if the field is absent
+     */
+    public FunctionValue getBoundMethod(String name, EntityValue self,
+                                        java.util.function.BiFunction<FunctionValue, EntityValue, FunctionValue> ctor) {
+        Value raw = get(name);
+        if (!(raw instanceof FunctionValue fv) || fv.isBuiltin()) return (FunctionValue) raw;
+        if (boundMethodCache == null) boundMethodCache = new HashMap<>(4);
+        FunctionValue cached = boundMethodCache.get(name);
+        if (cached != null) return cached;
+        FunctionValue bound = ctor.apply(fv, self);
+        boundMethodCache.put(name, bound);
+        return bound;
+    }
+
     /** Looks up a field by name; delegates to base if not found locally. */
     public Value get(String name) {
         Value v = fields.get(name);
@@ -87,9 +115,10 @@ public class EntityValue implements Value {
         return base != null && base.has(name);
     }
 
-    /** Sets (or adds) a field in the own fields map. */
+    /** Sets (or adds) a field in the own fields map; invalidates the method-binding cache. */
     public void setField(String name, Value value) {
         fields.put(name, value);
+        if (boundMethodCache != null) boundMethodCache.remove(name);
     }
 
     /** Returns own fields only. */

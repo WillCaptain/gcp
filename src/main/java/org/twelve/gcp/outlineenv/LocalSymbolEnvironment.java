@@ -133,6 +133,30 @@ public class LocalSymbolEnvironment implements SymbolEnvironment {
         this.module.defineSymbol(name, outline);
     }
 
+    /**
+     * Seeds all symbols and outline types from the root scope of {@code world}
+     * into this environment's root scope.  Existing entries are <em>not</em>
+     * overwritten, so stdlib names already registered by {@link #initOutlines}
+     * are preserved.
+     *
+     * <p>Intended for <em>incremental compilation</em>: parse only the user
+     * snippet into a fresh AST, call this method before inference, and the
+     * world-declared names ({@code schools}, {@code students}, entity outline
+     * types, …) become visible in the user AST's scope without having to
+     * re-parse the entire world preamble.
+     *
+     * @param world the already-inferred world AST's symbol environment
+     */
+    public void seedFrom(LocalSymbolEnvironment world) {
+        for (var e : world.root().symbols().entrySet()) {
+            this.root.defineSymbol(e.getKey(), e.getValue().outline(),
+                                   e.getValue().mutable(), null);
+        }
+        for (var e : world.root().outlineDefinitions().entrySet()) {
+            this.root.defineOutline(e.getKey(), e.getValue().outline(), null);
+        }
+    }
+
     public AstScope current() {
         return this.current;
     }

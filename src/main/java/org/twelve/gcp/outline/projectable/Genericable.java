@@ -83,6 +83,9 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     protected Outline hasToBe;
     // Structural/call usage constraint. e.g. x(a) => x.definedToBe = (Generic->Generic)
     protected Outline definedToBe;
+    // Concrete entity type recorded after a successful projectEntity pass; used exclusively
+    // by MetaExtractor for dot-completion.  Never participates in inference constraint checks.
+    protected Outline projectedType = null;
 
     protected Genericable(N node, AST ast, Outline declaredToBe) {
         this.node = node;
@@ -364,6 +367,11 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
     public Outline definedToBe() {
         return this.definedToBe;
+    }
+
+    /** Returns the concrete entity type recorded by {@code projectEntity} — used only by MetaExtractor. */
+    public Outline projectedType() {
+        return this.projectedType;
     }
 
     @Override
@@ -649,10 +657,16 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             outline = ((Projectable) this.declaredToBe).project(cast(this.declaredToBe), projection, session);
         }
         if (!(this.extendToBe instanceof NOTHING) && outline instanceof Projectable && this.extendToBe instanceof Projectable) {
-//            this.extendToBe = this.extendToBe.copy();
             ((Projectable) outline).project(cast(outline), cast(this.extendToBe), session);
         }
         if (outline.is(this)) {
+            // Projection succeeded: this Genericable is compatible with the concrete Entity.
+            // Record the concrete entity for meta/completion (resolveOutline priority 1.5).
+            // Stored in a separate field so it never participates in the inference constraint
+            // chain and cannot trigger addDefinedToBe / addExtendToBe validation errors.
+            if (this.projectedType == null) {
+                this.projectedType = projection;
+            }
             return outline;
         } else {
             GCPErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this);
@@ -669,7 +683,16 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
      * @return copy of genericable(b) contains all constraints from genericable(a)
      */
     private Outline projectGeneric(Genericable<?, ?> projection, ProjectSession session) {
-        if (this.emptyConstraint()) return projection;
+        if (this.emptyConstraint()) {
+            // Record the projected entity for meta/completion even when there are no constraints.
+            if (this.projectedType == null) {
+                Outline pmax = projection.max();
+                Outline pmin = projection.min();
+                Outline concrete = (pmax instanceof Entity) ? pmax : pmin;
+                if (concrete instanceof Entity) this.projectedType = concrete;
+            }
+            return projection;
+        }
         Outline max = projection.max();
         Outline min = projection.min();
         Genericable<?, ?> copied = projection instanceof Reference ? projection.copy(session.copiedCache()) : projection.copy();
@@ -702,7 +725,18 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         copied.addDefinedToBe(defined);
 //        copied.addDefinedToBe(this.definedToBe());
 
-        if (copied.is(this)) {
+        boolean copiedIsThis = copied.is(this);
+        if (copiedIsThis) {
+            // Record the projected entity for meta/completion.
+            // max = projection.extendToBe (upper bound); min = projection.min() (declared/inferred lower bound).
+            // In the common lambda-param case, max = NOTHING and min = Country (or similar Entity),
+            // so we must check min when max is not an Entity.
+            if (this.projectedType == null) {
+                Outline concreteType = (max instanceof Entity) ? max : min;
+                if (concreteType instanceof Entity) {
+                    this.projectedType = concreteType;
+                }
+            }
             return copied;
         } else {
             GCPErrorReporter.report(copied.node, GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this);
