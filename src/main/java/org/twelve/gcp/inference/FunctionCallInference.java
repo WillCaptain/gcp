@@ -304,6 +304,45 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             origin.addHasToBe(projected.hasToBe());
             origin.addDefinedToBe(projected.definedToBe());
         }
+        // When the formal parameter is itself a function type (e.g. filter's (School->Bool)),
+        // propagate the formal's argument-type constraint down into the actual lambda's parameter.
+        // This is the mechanism by which `s` in `filter(s -> s.students().sum(...))` receives
+        // the `School` type: Generic_s.addHasToBe(School) so that on the next inference pass
+        // s.students() can resolve via the concrete entity rather than an AccessorGeneric placeholder.
+        // Guard: only when the lambda parameter has no explicit concrete constraint yet (min = ANY).
+        // When the formal parameter wraps a function type (e.g. sum's Generic{(Student->Number)}
+        // or filter's Generic{(School->Bool)}), propagate the formal arg's concrete element type
+        // to the actual lambda's parameter. This is how `s` in `filter(s->...)` learns it is
+        // `School`, and how `t` in `sum(t->t.age)` learns it is `Student`.
+        //
+        // function.argument() returns a Generic wrapper (not a Function directly), so we must
+        // unwrap it via min() to reach the inner function type. If min() is not a Function,
+        // FIX 1 is not applicable (e.g. Unit-arg functions like count()).
+        Outline formalArgOutline = function.argument();
+        if (formalArgOutline instanceof Genericable<?, ?> formalArgWrapper) {
+            Outline inner = formalArgWrapper.min();
+            if (inner instanceof Function<?, ?>) {
+                formalArgOutline = inner;
+            }
+        }
+        if (formalArgOutline instanceof Function<?, ?> formalFOF
+                && argument.outline() instanceof Function<?, ?> actualFOF
+                && actualFOF.argument() instanceof Genericable<?, ?> actualArg) {
+            Outline formalArgType = formalFOF.argument();
+            // Resolve the concrete minimum type from the formal arg:
+            // may be Generic{declaredToBe=Student} → min()=Student, or directly Student.
+            Outline formalArgMin = (formalArgType instanceof Genericable<?, ?> formalArgGeneric)
+                    ? formalArgGeneric.min()
+                    : formalArgType;
+            // Only propagate when: the formal has a concrete type (not ANY/NOTHING),
+            // AND the lambda param has no explicit type from declaredToBe or hasToBe yet.
+            // (definedToBe is structural/usage-inferred and must NOT block propagation.)
+            if (!(formalArgMin instanceof ANY) && !(formalArgMin instanceof NOTHING)
+                    && actualArg.declaredToBe() instanceof ANY
+                    && actualArg.hasToBe() instanceof ANY) {
+                actualArg.addHasToBe(formalArgMin);
+            }
+        }
         // project return type: resolve the concrete return type for this call
         Outline result = function.returns().project(function.argument(), projectedArg, session);
         if (result instanceof FirstOrderFunction) {

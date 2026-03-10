@@ -13,9 +13,9 @@ import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
-import java.util.Optional;
-
 import static org.twelve.gcp.common.Tool.cast;
+
+import java.util.Optional;
 import org.twelve.gcp.interpreter.Interpreter;
 import org.twelve.gcp.interpreter.value.Value;
 
@@ -55,6 +55,19 @@ public class MemberAccessor extends Accessor {
             GCPErrorReporter.report(this, GCPErrCode.FIELD_NOT_FOUND,
                     member.name() + " not found in " + this.productADT);
         }
+    }
+
+    @Override
+    public boolean inferred() {
+        // The member identifier (e.g. "name" in person.name) is a name token, not a typed
+        // expression — MemberAccessorInference never sets its outline. We must check the
+        // host expression recursively so that unresolved nodes deep in the host chain
+        // (e.g. sum_call inside filter(...)) propagate their !inferred() status upward.
+        if (!this.outline.inferred()) {
+            ast().missInferred().add(this);
+            return false;
+        }
+        return this.productADT.inferred();
     }
 
     @Override

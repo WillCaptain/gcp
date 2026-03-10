@@ -183,27 +183,33 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
      * @return the Outline type of the member
      */
     private static Outline addMember(MemberAccessor node, Entity defined, Genericable<?,?> generic) {
-        Optional<EntityMember> member = defined.getMember(node.member().name());
-        if(member.isPresent()){
-            return member.get().outline();
-        }else {
-            // Use the declaredToBe Entity if it is one (e.g. value:{name:String}).
-            // Fall back to the definedToBe Entity when the declared type is a primitive
-            // (e.g. value:String) — in that case generic.min() returns the primitive, not an Entity.
-            Outline minOutline = generic.min();
-            Entity entity = (minOutline instanceof Entity) ? cast(minOutline) : defined;
-            // If the concrete entity (via declaredToBe / hasToBe) already declares this member,
-            // return it directly instead of creating an AccessorGeneric placeholder.
-            // Example: (s: School) -> s.students() — School.students = Unit->Students is already
-            // known; creating an AccessorGeneric would hide the concrete type and break the
-            // inference of s.students().count() downstream.
-            Optional<EntityMember> entityMember = entity.getMember(node.member().name());
-            if (entityMember.isPresent()) {
-                return entityMember.get().outline().eventual();
-            }
-            AccessorGeneric g = new AccessorGeneric(node);
-            entity.addMember(node.member().name(), g, Modifier.PUBLIC, false, new Variable(node.member(),false,null));
-            return g;
+        // Use the concrete entity from generic.min() if available (e.g. School from hasToBe),
+        // falling back to the structural (definedToBe) entity.
+        // Checking min() FIRST ensures that once a lambda parameter Generic_s receives a
+        // concrete type constraint (e.g. School via addHasToBe), subsequent passes resolve
+        // s.students() from the concrete School entity rather than the cached AccessorGeneric
+        // placeholder that was stored in 'defined' on the first pass.
+        Outline minOutline = generic.min();
+        Entity entity = (minOutline instanceof Entity) ? cast(minOutline) : defined;
+        // Propagate the concrete entity as the ~this (covariant self-type) origin for all
+        // inherited ~this-returning methods (e.g. filter, order_by on VirtualSet<T>).
+        entity.loadBuiltInMethods();
+        entity.updateThis(entity);
+        // Priority 1: concrete entity member (overrides cached AccessorGeneric placeholders).
+        Optional<EntityMember> entityMember = entity.getMember(node.member().name());
+        if (entityMember.isPresent()) {
+            return entityMember.get().outline().eventual();
         }
+        // Priority 2: cached structural member from 'defined' (may be an AccessorGeneric
+        // placeholder created on a previous pass while the host type was still unknown).
+        Optional<EntityMember> member = defined.getMember(node.member().name());
+        if (member.isPresent()) {
+            return member.get().outline();
+        }
+        // Neither the concrete entity nor the structural cache has this member.
+        // Create an AccessorGeneric placeholder in the structural entity for later narrowing.
+        AccessorGeneric g = new AccessorGeneric(node);
+        defined.addMember(node.member().name(), g, Modifier.PUBLIC, false, new Variable(node.member(),false,null));
+        return g;
     }
 }

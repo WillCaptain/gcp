@@ -219,7 +219,16 @@ public class Return extends Genericable<Return, Node> implements Returnable {
 
     @Override
     public boolean inferred() {
-        return super.inferred() && this.supposedToBe().inferred();
+        if (!super.inferred()) return false;
+        Outline effective = this.supposedToBe();
+        // When supposed is UNKNOWN but declaredToBe provides a concrete declared type
+        // (e.g. a generic function member that is declared but never called at a usage
+        // site), fall back to the declared type so that Entity.inferred() doesn't
+        // incorrectly return false for structurally complete entities.
+        if (effective instanceof UNKNOWN && !(declaredToBe instanceof ANY)) {
+            return declaredToBe.inferred();
+        }
+        return effective.inferred();
     }
 
     @Override
@@ -254,7 +263,7 @@ public class Return extends Genericable<Return, Node> implements Returnable {
 
     @Override
     public boolean containsLazyAble() {
-        return super.containsLazyAble() || super.containsLazyAble();
+        return super.containsLazyAble() || (this.supposed != null && this.supposed.containsLazyAble());
     }
 
     @Override
