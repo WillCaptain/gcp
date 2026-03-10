@@ -3,6 +3,7 @@ package org.twelve.gcp.common;
 import com.sun.xml.ws.developer.Serialization;
 import lombok.SneakyThrows;
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.node.expression.TupleNode;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.node.function.FunctionCallNode;
 import org.twelve.gcp.node.statement.MemberNode;
@@ -241,8 +242,13 @@ public final class Tool {
         return false;
     }
 
-    public static boolean isInMember(Node node){
-        return node.parent().parent() instanceof MemberNode;
+    public static boolean isInMember(Node node) {
+        Node gp = node.parent().parent();
+        if (!(gp instanceof MemberNode mn)) return false;
+        // Tuple element MemberNodes are structural scaffolding, not named entity members.
+        // Lazy deferral must not apply to them: the expression is a plain value that should
+        // be inferred directly, regardless of whether the tuple lives inside a lambda body.
+        return !(mn.parent() instanceof TupleNode);
     }
 
 

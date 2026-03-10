@@ -38,6 +38,20 @@ public class TupleNode extends EntityNode {
     }
 
     @Override
+    public boolean inferred() {
+        // TupleNode elements are runtime value expressions (not type definitions),
+        // so we must check whether all descendant nodes are fully resolved —
+        // unlike EntityNode (outline/entity declarations) which only checks its own outline type.
+        // Without this override, EntityNode.inferred() = outline.inferred() returns true
+        // as soon as the Tuple's structural Entity type is built (after pass 1), even though
+        // nested expressions like sum(t->t.age) inside filter predicates may still be UNKNOWN.
+        // That premature "fully inferred" verdict propagates up to VariableDeclarator.fullyInferred=true,
+        // blocking the multi-pass re-inference that resolves those nested expressions.
+        if (!this.outline.inferred()) return false;
+        return this.nodes().stream().allMatch(org.twelve.gcp.ast.Node::inferred);
+    }
+
+    @Override
     public Outline acceptInfer(Inferencer inferencer) {
         return inferencer.visit(this);
     }
