@@ -444,7 +444,10 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             // a genuine type error. Only report when the projection type is fully resolved.
             boolean projReturnUnresolved = projection instanceof Function<?, ?>
                     && ((Function<?, ?>) projection).returns().supposedToBe() instanceof NOTHING;
-            if (!projReturnUnresolved) {
+            // projection.node() can be null for type-annotation outlines (e.g. Unit->Students
+            // declared as a field type in an entity) — they have no source AST position.
+            // Guard before reporting to avoid NullPointerException.
+            if (!projReturnUnresolved && projection.node() != null) {
                 GCPErrorReporter.report(projection.node(), GCPErrCode.PROJECT_FAIL, projection.node() + CONSTANTS.MISMATCH_STR + this.node());
             }
             return this.guess();

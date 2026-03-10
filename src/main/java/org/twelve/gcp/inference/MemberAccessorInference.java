@@ -192,6 +192,15 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
             // (e.g. value:String) — in that case generic.min() returns the primitive, not an Entity.
             Outline minOutline = generic.min();
             Entity entity = (minOutline instanceof Entity) ? cast(minOutline) : defined;
+            // If the concrete entity (via declaredToBe / hasToBe) already declares this member,
+            // return it directly instead of creating an AccessorGeneric placeholder.
+            // Example: (s: School) -> s.students() — School.students = Unit->Students is already
+            // known; creating an AccessorGeneric would hide the concrete type and break the
+            // inference of s.students().count() downstream.
+            Optional<EntityMember> entityMember = entity.getMember(node.member().name());
+            if (entityMember.isPresent()) {
+                return entityMember.get().outline().eventual();
+            }
             AccessorGeneric g = new AccessorGeneric(node);
             entity.addMember(node.member().name(), g, Modifier.PUBLIC, false, new Variable(node.member(),false,null));
             return g;
