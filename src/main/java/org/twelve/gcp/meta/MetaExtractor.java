@@ -213,17 +213,25 @@ public final class MetaExtractor {
         }
         List<FieldMeta> result = new ArrayList<>();
         if (outline instanceof ProductADT padt) {
-            try { padt.loadBuiltInMethods(); } catch (Exception ignored) {}
+            try { padt.loadBuiltInMethods(); } catch (Throwable ignored) {}
             Set<String> baseMemberNames = (padt instanceof Entity entity)
                     ? baseMemberNames(entity)
                     : Set.of();
             for (EntityMember member : padt.members()) {
                 try {
-                    String mType = member.outline() != null ? member.outline().toString() : "?";
+                    // member.outline().toString() can cause StackOverflowError for ~this
+                    // self-referential types (e.g. Aggregator methods returning ~this).
+                    // Catch Throwable so the member is still included with a safe type string.
+                    String mType;
+                    try {
+                        mType = member.outline() != null ? member.outline().toString() : "?";
+                    } catch (Throwable t) {
+                        mType = "~this";
+                    }
                     String desc = memberDescription(member, source);
                     String origin = memberOrigin(member, baseMemberNames);
                     result.add(new FieldMeta(member.name(), mType, desc, origin));
-                } catch (Exception ignored) {}
+                } catch (Throwable ignored) {}
             }
         }
         return result;

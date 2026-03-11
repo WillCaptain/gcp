@@ -153,7 +153,10 @@ public final class ModuleMeta {
     public List<FieldMeta> membersOf(String symbolName, long offset) {
         SymbolMeta sym = resolve(symbolName, offset);
         if (sym == null || sym.type() == null) return List.of();
-        return membersOfType(sym.type());
+        List<FieldMeta> all = membersOfType(sym.type());
+        // Private members (_-prefixed) are only accessible via `this`
+        if ("this".equals(symbolName)) return all;
+        return all.stream().filter(f -> !f.name().startsWith("_")).toList();
     }
 
     /**
@@ -163,11 +166,13 @@ public final class ModuleMeta {
      * <ol>
      *   <li><b>Structural inline types</b> — if the (normalised) type text looks like
      *       {@code {field1: Type1, field2: Type2}} (e.g. a lambda parameter inferred via
-     *       structural typing), it is parsed directly.  Skipping the name-based lookup avoids
-     *       false substring matches such as {@code "String" ⊆ "{code: String}"}.</li>
+     *       structural typing), it is parsed directly using a nesting-aware parser to
+     *       correctly handle nested {@code {}}, {@code ()}, {@code []} brackets inside
+     *       field type expressions.</li>
      *   <li><b>Named types</b> — otherwise we search {@code nodes} for an {@link OutlineMeta}
-     *       whose name is a substring of {@code typeName}, or whose declared type text matches
-     *       exactly.</li>
+     *       whose name exactly matches {@code typeName}, or whose name is the outer type of a
+     *       generic instantiation (e.g. {@code "Aggregator"} matches {@code "Aggregator<School>"}),
+     *       or whose declared type text matches exactly.</li>
      * </ol>
      */
     List<FieldMeta> membersOfType(String typeName) {
@@ -175,13 +180,18 @@ public final class ModuleMeta {
         // Normalise: strip backtick wrapping produced by Genericable.toString() ("`{code: String}`")
         String t = typeName.startsWith("`") && typeName.endsWith("`")
                 ? typeName.substring(1, typeName.length() - 1) : typeName;
-        // Fast path: structural type — parse fields directly, no OutlineMeta lookup
+        // Fast path: structural type — parse fields directly, no OutlineMeta lookup.
+        // Uses nesting-aware splitting to correctly handle nested entities inside function types,
+        // e.g. {sum: ({name:String,city:City}->Number)->{...}} → only "sum" is a top-level field.
         if (t.startsWith("{") && t.endsWith("}")) {
             return parseStructuralFields(t);
         }
         for (SchemaMeta n : nodes) {
             if (n instanceof OutlineMeta om) {
-                if (t.contains(om.name())
+                // Use exact name match or generic outer-type match (Aggregator matches Aggregator<School>)
+                // to prevent false substring matches like "School" ⊆ "Aggregator<School>".
+                if (t.equals(om.name())
+                        || t.startsWith(om.name() + "<")
                         || (om.type() != null && (t.equals(om.type()) || typeName.equals(om.type())))) {
                     return om.members();
                 }
@@ -192,20 +202,65 @@ public final class ModuleMeta {
 
     /**
      * Parses inline structural type notation {@code {field1: Type1, field2: Type2}} into
-     * {@link FieldMeta} entries.  Used as a fallback for lambda parameters and other
-     * symbols whose type was resolved via structural inference rather than a named outline.
+     * {@link FieldMeta} entries.
+     *
+     * <p>Uses a nesting-aware comma splitter that tracks {@code {}}, {@code ()}, and {@code []}
+     * depth, so commas inside nested type expressions (e.g. function parameter types that expand
+     * to {@code {name:String,city:City}}) are not treated as top-level field separators.
      */
     private static List<FieldMeta> parseStructuralFields(String structural) {
         String inner = structural.substring(1, structural.length() - 1).trim();
         if (inner.isEmpty()) return List.of();
         List<FieldMeta> fields = new ArrayList<>();
-        for (String part : inner.split(",")) {
-            String[] kv = part.trim().split(":", 2);
-            if (kv.length == 2) {
-                fields.add(new FieldMeta(kv[0].trim(), kv[1].trim(), null, "inferred"));
+        for (String part : splitTopLevel(inner)) {
+            String trimmed = part.trim();
+            int colonIdx = firstTopLevelColon(trimmed);
+            if (colonIdx > 0) {
+                String fieldName = trimmed.substring(0, colonIdx).trim();
+                String fieldType = trimmed.substring(colonIdx + 1).trim();
+                if (!fieldName.isEmpty()) {
+                    fields.add(new FieldMeta(fieldName, fieldType, null, "inferred"));
+                }
             }
         }
         return fields;
+    }
+
+    /**
+     * Splits {@code s} by commas at nesting depth 0, respecting {@code {}}, {@code ()},
+     * and {@code []} brackets.  Does not track {@code <>} to avoid false positives with
+     * the {@code ->} arrow operator.
+     */
+    private static List<String> splitTopLevel(String s) {
+        List<String> parts = new ArrayList<>();
+        int depth = 0;
+        int start = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '{' || c == '(' || c == '[') depth++;
+            else if (c == '}' || c == ')' || c == ']') depth--;
+            else if (c == ',' && depth == 0) {
+                parts.add(s.substring(start, i));
+                start = i + 1;
+            }
+        }
+        if (start < s.length()) parts.add(s.substring(start));
+        return parts;
+    }
+
+    /**
+     * Returns the index of the first {@code :} at nesting depth 0 in {@code s},
+     * or {@code -1} if none found.
+     */
+    private static int firstTopLevelColon(String s) {
+        int depth = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '{' || c == '(' || c == '[') depth++;
+            else if (c == '}' || c == ')' || c == ']') depth--;
+            else if (c == ':' && depth == 0) return i;
+        }
+        return -1;
     }
 
     public Map<String, Object> toMap() {

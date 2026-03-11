@@ -122,16 +122,16 @@ public class Lazy implements Projectable, ReferAble {
 
     @Override
     public Outline project(Reference reference, OutlineWrapper projection) {
-        List<OutlineWrapper> refs = this.referencesProjections;
-        this.referencesProjections = new ArrayList<>();
-        for (OutlineWrapper ref : refs) {
-            if(ref.outline().id()==reference.id()) {
-                this.referencesProjections.add(projection);
-            }else{
-                this.referencesProjections.add(ref);
+        Lazy copied = (Lazy) this.copy();
+        copied.referencesProjections = new ArrayList<>();
+        for (OutlineWrapper ref : this.referencesProjections) {
+            if (ref.outline().id() == reference.id()) {
+                copied.referencesProjections.add(projection);
+            } else {
+                copied.referencesProjections.add(ref);
             }
         }
-        return this;
+        return copied;
     }
 
     @Override
