@@ -219,9 +219,12 @@ public final class MetaExtractor {
         List<FieldMeta> result = new ArrayList<>();
         if (outline instanceof ProductADT padt) {
             try { padt.loadBuiltInMethods(); } catch (Throwable ignored) {}
-            Set<String> baseMemberNames = (padt instanceof Entity entity)
-                    ? baseMemberNames(entity)
-                    : Set.of();
+            Set<String> baseMemberNames;
+            try {
+                baseMemberNames = (padt instanceof Entity entity) ? baseMemberNames(entity) : Set.of();
+            } catch (Throwable t) {
+                baseMemberNames = Set.of();
+            }
             for (EntityMember member : padt.members()) {
                 try {
                     // member.outline().toString() can cause StackOverflowError for ~this
@@ -267,7 +270,7 @@ public final class MetaExtractor {
         if (source == null || member.node() == null) return null;
         if (member.node().loc() == null) return null;
         long offset = member.node().loc().start();
-        if (offset <= 0) return null;
+        if (offset <= 0 || offset >= source.length()) return null;
         return CommentExtractor.precedingComment(source, offset);
     }
 
