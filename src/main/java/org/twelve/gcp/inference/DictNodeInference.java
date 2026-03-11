@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicReference;
 public class DictNodeInference implements Inference<DictNode> {
     @Override
     public Outline infer(DictNode node, Inferencer inferencer) {
-        System.err.println("[DictNodeInference] infer called on " + node + ", isEmpty=" + node.isEmpty());
         if(node.isEmpty()){
             return new Dict(node,node.ast().Nothing,node.ast().Nothing);
         }
@@ -19,7 +18,6 @@ public class DictNodeInference implements Inference<DictNode> {
         AtomicReference<Outline> value = new AtomicReference<>();
         node.values().forEach((k,v)->{
             Outline inferredK = k.infer(inferencer);
-            System.err.println("[DictNodeInference] k=" + k.lexeme() + " inferredK=" + inferredK);
             if(key.get()==null){
                 key.set(inferredK);
             }else{
@@ -42,8 +40,6 @@ public class DictNodeInference implements Inference<DictNode> {
                 }
             }
         });
-        Outline result = new Dict(node,key.get(),value.get());
-        System.err.println("[DictNodeInference] returning " + result);
-        return result;
+        return new Dict(node,key.get(),value.get());
     }
 }

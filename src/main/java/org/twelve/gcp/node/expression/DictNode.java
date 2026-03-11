@@ -16,7 +16,10 @@ public class DictNode extends Expression {
     public DictNode(AST ast, Pair<Expression,Expression>... tuples) {
         super(ast, null);
         for (Pair<Expression,Expression> tuple : tuples) {
-            values.put(tuple.key(),tuple.value());
+            if (tuple == null) continue;
+            values.put(tuple.key(), tuple.value());
+            this.addNode(tuple.key());
+            this.addNode(tuple.value());
         }
     }
 
