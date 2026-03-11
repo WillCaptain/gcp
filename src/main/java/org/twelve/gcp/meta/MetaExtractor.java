@@ -3,12 +3,17 @@ package org.twelve.gcp.meta;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.node.expression.OutlineDefinition;
+import org.twelve.gcp.node.expression.Variable;
 import org.twelve.gcp.node.expression.identifier.Identifier;
+import org.twelve.gcp.node.expression.typeable.EntityTypeNode;
+import org.twelve.gcp.node.expression.typeable.ExtendTypeNode;
 import org.twelve.gcp.node.function.Argument;
 import org.twelve.gcp.node.imexport.Export;
 import org.twelve.gcp.node.imexport.ExportSpecifier;
 import org.twelve.gcp.node.imexport.Import;
 import org.twelve.gcp.node.imexport.ImportSpecifier;
+import org.twelve.gcp.node.statement.OutlineDeclarator;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
@@ -485,6 +490,83 @@ public final class MetaExtractor {
     /** Convenience overload when source code is not available. */
     public static List<FieldMeta> fieldsOf(Outline outline) {
         return fieldsOf(outline, null);
+    }
+
+    /**
+     * Looks up an outline by name in the given AST and returns its declared body members.
+     *
+     * <p>Unlike {@link #fieldsOf(Outline, String)} which operates on an already-inferred
+     * {@link Outline} type, this overload works directly from the AST declaration body.
+     * It is the canonical fallback for system generics like {@code Aggregator}, {@code VirtualSet},
+     * {@code GroupBy} whose inferred projections may not carry full member lists.
+     *
+     * <p>Both {@link org.twelve.entitir.ontology.world.OntologyWorld} and the playground service
+     * delegate to this method — there is only one implementation of AST-body extraction.
+     *
+     * @param outlineName name of the outline to look up (e.g. "Aggregator", "VirtualSet", "Schools")
+     * @param ast         the AST in which to search
+     * @return declared members with {@code origin = "own"}, or empty list if not found
+     */
+    public static List<FieldMeta> fieldsOf(String outlineName, AST ast) {
+        if (outlineName == null || ast == null) return List.of();
+        List<FieldMeta> result = new ArrayList<>();
+        collectFieldsFromNode(ast.program(), outlineName, ast.sourceCode(), result);
+        return result;
+    }
+
+    /**
+     * Returns {@code true} when {@code outline} represents a VirtualSet-based collection
+     * (i.e., an {@link Entity} whose base is a concrete {@link ProductADT}).
+     *
+     * <p>Use this to distinguish collection symbols (Schools, Cities, …) from plain
+     * entities (School, City, Aggregator&lt;T&gt;, …) in dot-completion logic.
+     * This is the single authoritative implementation — do not reimplement this check
+     * in dependent modules.
+     */
+    public static boolean isVirtualSetCollection(Outline outline) {
+        if (!(outline instanceof Entity entity)) return false;
+        try {
+            Outline base = entity.base();
+            if (base == null) return false;
+            return base instanceof ProductADT && base != entity.ast().Any;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private static boolean collectFieldsFromNode(Node node, String targetName,
+                                                 String src, List<FieldMeta> out) {
+        if (node instanceof OutlineDeclarator od) {
+            for (OutlineDefinition def : od.definitions()) {
+                try {
+                    if (!targetName.equals(def.symbolNode().lexeme())) continue;
+                    EntityTypeNode body = null;
+                    if (def.typeNode() instanceof EntityTypeNode etn) {
+                        body = etn;
+                    } else if (def.typeNode() instanceof ExtendTypeNode ext) {
+                        body = ext.extension();
+                    }
+                    if (body == null) return true;
+                    for (Variable v : body.members()) {
+                        try {
+                            String name = v.name();
+                            if (name == null || name.startsWith("_") || name.equals("type")) continue;
+                            String rawType = v.declared() != null ? v.declared().lexeme() : "?";
+                            if (rawType != null && rawType.startsWith("#")) continue;
+                            String doc = (src != null && v.loc() != null && v.loc().start() > 0)
+                                    ? CommentExtractor.precedingComment(src, v.loc().start())
+                                    : null;
+                            out.add(new FieldMeta(name, rawType, doc, "own"));
+                        } catch (Exception ignored) {}
+                    }
+                    return true;
+                } catch (Exception ignored) {}
+            }
+        }
+        for (Node child : node.nodes()) {
+            if (collectFieldsFromNode(child, targetName, src, out)) return true;
+        }
+        return false;
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
