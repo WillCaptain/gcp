@@ -34,9 +34,12 @@ public class DictNodeInference implements Inference<DictNode> {
             }else{
                 if(value.get().is(inferredV)){
                     value.set(inferredV);
-                }
-                if(!inferredV.is(value.get())){
-                    GCPErrorReporter.report(v, GCPErrCode.OUTLINE_MISMATCH);
+                } else if(!inferredV.is(value.get())){
+                    // Heterogeneous value types — treat this dict as a record
+                    // (Dict<K, Any>) rather than a homogeneous map.  No error is
+                    // reported; value type is widened to Any so subsequent entries
+                    // are accepted without spurious "type mismatch" diagnostics.
+                    value.set(node.ast().Any);
                 }
             }
         });

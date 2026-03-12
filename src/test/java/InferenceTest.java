@@ -688,6 +688,35 @@ public class InferenceTest {
         assertEquals("[String : any]", d.outline().toString());
     }
 
+    /**
+     * Regression guard for heterogeneous dict literal values (record-style dict).
+     *
+     * <p>A dict literal whose VALUES have mixed types (e.g. String + Integer) must NOT
+     * produce a "type mismatch" error.  The value type is widened to {@code Any} instead.
+     * Example: {@code let r = ["name": "Alice", "count": 42]}
+     */
+    @Test
+    void test_heterogeneous_dict_literal_no_type_mismatch() {
+        // let r = ["name": "Alice", "count": 42]
+        // Keys: String + String → key type: String
+        // Values: String + Integer → value type widens to Any (no error)
+        ASTBuilder builder = new ASTBuilder();
+        builder.buildVariableDeclarator(VariableKind.LET)
+                .declare("r", builder.buildDict()
+                        .add(builder.buildLiteral("name"),  builder.buildLiteral("Alice"))
+                        .add(builder.buildLiteral("count"), builder.buildLiteral(42))
+                        .build());
+        AST ast = builder.ast();
+        ast.asf().infer();
+
+        assertTrue(ast.errors().isEmpty(),
+                "Heterogeneous dict literal must not produce type errors, but got: " + ast.errors());
+
+        Variable r = cast(((VariableDeclarator) ast.program().body().statements().getFirst())
+                .assignments().getFirst().lhs());
+        assertEquals("[String : any]", r.outline().toString());
+    }
+
     private static AST mockGCPTestAst() {
         ASF asf = new ASF();
         AST ast = asf.newAST();
