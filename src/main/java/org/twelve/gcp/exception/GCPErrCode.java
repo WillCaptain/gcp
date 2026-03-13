@@ -109,14 +109,41 @@ public enum GCPErrCode {
 
         public static ErrorCategory forError(GCPErrCode code) {
             return switch (code) {
-                case NODE_AST_MISMATCH, DUPLICATED_DEFINITION, UNREACHABLE_STATEMENT -> SYNTAX;
+                // ── Syntax / Structure ────────────────────────────────────────
+                case NODE_AST_MISMATCH, DUPLICATED_DEFINITION, UNREACHABLE_STATEMENT,
+                     UNARY_POSITION_MISMATCH
+                        -> SYNTAX;
+
+                // ── Type System ───────────────────────────────────────────────
                 case OUTLINE_MISMATCH, CONSTRUCT_CONSTRAINTS_FAIL, UNSUPPORTED_UNARY_OPERATION,
-                     ARGUMENT_MISMATCH, POLY_SUM_FAIL, INVALID_OPTION_EXPRESSION -> TYPE_SYSTEM;
+                     ARGUMENT_MISMATCH, POLY_SUM_FAIL, INVALID_OPTION_EXPRESSION,
+                     PROJECT_FAIL,           // Rank-2 / projection type failure
+                     TYPE_CAST_NEVER_SUCCEED,
+                     DECLARED_CAN_NOT_BE_GENERIC,
+                     NOT_BE_ASSIGNEDABLE, OUTLINE_USED_AS_VALUE
+                        -> TYPE_SYSTEM;
+
+                // ── Semantics ─────────────────────────────────────────────────
                 case VARIABLE_NOT_DEFINED, MODULE_NOT_DEFINED, FUNCTION_NOT_DEFINED,
-                     NOT_A_FUNCTION, FIELD_NOT_FOUND, NOT_INITIALIZED -> SEMANTIC;
+                     NOT_A_FUNCTION, FIELD_NOT_FOUND, NOT_INITIALIZED,
+                     NOT_ASSIGNABLE, THIS_IS_NOT_ASSIGNABLE,
+                     FUNCTION_NOT_FOUND, NOT_REFER_ABLE, REFERENCE_MIS_MATCH,
+                     NOT_INTEGER, NOT_AN_ARRAY_OR_DICT, UNPACK_INDEX_OVER_FLOW,
+                     INVALID_SYMBOL, NOT_ENTITY_INHERITED, MISSING_REQUIRED_FIELD,
+                     OUTLINE_NOT_FOUND, NOT_ACCESSIBLE, UNAVAILABLE_THIS
+                        -> SEMANTIC;
+
+                // ── Control Flow ──────────────────────────────────────────────
                 case CONDITION_IS_NOT_BOOL, POSSIBLE_ENDLESS_LOOP -> CONTROL_FLOW;
+
+                // ── Name Resolution ───────────────────────────────────────────
                 case AMBIGUOUS_VARIABLE_REFERENCE, AMBIGUOUS_DECLARATION -> NAME_RESOLUTION;
-                case INFER_ERROR, UNAVAILABLE_OUTLINE_ASSIGNMENT -> INFERENCE;
+
+                // ── Type Inference ────────────────────────────────────────────
+                case INFER_ERROR, UNAVAILABLE_OUTLINE_ASSIGNMENT, AMBIGUOUS_RETURN
+                        -> INFERENCE;
+
+                // ── System (internal / not-yet-implemented) ───────────────────
                 default -> SYSTEM;
             };
         }
