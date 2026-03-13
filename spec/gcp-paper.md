@@ -225,7 +225,7 @@ The total number of updates before fixpoint is therefore bounded by 1 + 3·|𝕋
 
 ---
 
-**Theorem 3.4 (Soundness, informal).** *Let P be a well-formed Outline program. If GCP infers `guess(x) = τ` for a variable x, and v is the runtime value of x under the Outline interpreter (§8), then v ∈ ⟦τ⟧, the value domain of τ.*
+**Theorem 3.4 (Soundness, informal).** *Let P be a well-formed Outline program. If GCP infers `guess(x) = τ` for a variable x, and v is the runtime value of x under the Outline interpreter (§8), then v ∈ ⟦τ⟧, the value domain of τ.* (The formulation follows the progress-and-preservation methodology of [[Wright & Felleisen 1994]](#ref17); a full mechanized proof is left as future work.)
 
 *Proof sketch.* The inference rules (§6.2) mirror the evaluation rules of the interpreter:
 
@@ -427,53 +427,62 @@ The key design principle is **stateless rule classes**: each `*Inference` class 
 
 ### 6.2 Inference Rules for Core Constructs
 
-**Variable declaration** `let x: τ_d = e`:
+We write `Γ ⊢ e : τ` for "expression `e` in environment Γ has inferred type τ". Environment entries map names to `Genericable` constraint chains; `Γ(x) = g` retrieves the chain for `x`, and `Γ[x ↦ g]` extends Γ. Side-conditions on the right of a rule record constraint emissions; they are performed as a side effect during the single AST traversal described in §6.1. `guess(g)` (§3.5) reads the best current approximation from chain `g`.
+
+---
+
+**[T-IntLit]**
 ```
-infer(let x : τ_d = e):
-  g ← new Genericable(declaredToBe = τ_d)
-  g.addExtendToBe(infer(e))
-  env.define(x, g)
+─────────────────────────────────────────────────────────────
+Γ ⊢ n : Int        side: g_n.addExtendToBe(Int)
 ```
 
-**Assignment** `x = e`:
+**[T-VarDecl]** — `let x : τ_d = e`
 ```
-infer(x = e):
-  g ← env.lookup(x)
-  τ ← infer(e)
-  g.addExtendToBe(τ)
-  checkConsistency(g)          -- report CONSTRUCT_CONSTRAINTS_FAIL if violated
+Γ ⊢ e : τ_e        g = Genericable(τ_d)        g.addExtendToBe(τ_e)
+─────────────────────────────────────────────────────────────────────
+Γ[x ↦ g] ⊢ let x : τ_d = e : •
+```
+If the consistency invariant (§3.2) `τ_e ≼ τ_d` is violated, a `CONSTRUCT_CONSTRAINTS_FAIL` error is emitted at `x`.
+
+**[T-Assign]** — `x = e`
+```
+Γ ⊢ e : τ        g = Γ(x)        g.addExtendToBe(τ)
+────────────────────────────────────────────────────
+Γ ⊢ x = e : •
 ```
 
-**Member access** `e.p`:
+**[T-Access]** — `e.p`
 ```
-infer(e.p):
-  τ_e ← infer(e)
-  g   ← new AccessorGeneric()
-  τ_e.addDefinedToBe({p: g})   -- e must have member p
-  return g
+Γ ⊢ e : τ_e        r = Genericable()        τ_e.addDefinedToBe({p : r})
+─────────────────────────────────────────────────────────────────────────
+Γ ⊢ e.p : guess(r)
 ```
+The `addDefinedToBe` call records that `e` must structurally provide a member `p` of type `r`; OEM (§4) later checks structural compatibility.
 
-**Function call** `f(a)`:
+**[T-App]** — `f(a)`
 ```
-infer(f(a)):
-  τ_f ← infer(f)
-  τ_a ← infer(a)
-  session ← new ProjectSession()
-  if τ_f is HigherOrderFunction:
-    return τ_f.doProject(τ_f, τ_a, session)   -- HOF path
-  else:
-    τ_f.addDefinedToBe(τ_a → ?)               -- FOF path: constrain f's type
-    return τ_f.definedToBe.returnType
-```
+Γ ⊢ f : τ_f        Γ ⊢ a : τ_a        s = new ProjectSession()
+────────────────────────────────────────────────────────────────────────────────
+Γ ⊢ f(a) : doProject(τ_f, τ_a, s)          if τ_f is HigherOrderFunction (HOF)
 
-**Lambda** `x → body`:
+Γ ⊢ f : τ_f        Γ ⊢ a : τ_a
+──────────────────────────────────────────────────────────────────────────
+Γ ⊢ f(a) : τ_r      where τ_f.addDefinedToBe(τ_a → τ_r),  τ_r fresh      (FOF)
 ```
-infer(x → body):
-  g ← new Generic()
-  env.define(x, g)
-  τ_body ← infer(body)
-  return FirstOrderFunction(g, τ_body)
+The HOF path delegates to the bidirectional Projection mechanism (§5); the FOF path constrains `f`'s structural type directly.
+
+**[T-Lambda]** — `x → e`
 ```
+g = Genericable()        Γ[x ↦ g] ⊢ e : τ_body
+───────────────────────────────────────────────────────────────────
+Γ ⊢ (x → e) : guess(g) → τ_body
+```
+`g` starts unconstrained (τ_h = ⊤) and is narrowed when the lambda is passed to a HOF via [T-App] and Projection (§5.3).
+
+---
+
+The `isLazy` guard (§6.3) suppresses [T-Access] and [T-App] on their first pass when `τ_e = UNKNOWN`, deferring type emission to subsequent rounds. All rules are otherwise syntax-directed and deterministic: each AST node type fires exactly one rule.
 
 ### 6.3 The isLazy Mechanism
 
@@ -723,7 +732,7 @@ GCP infers `zero : (β→β)→α→β`, `succ : ((β→β)→β→β)→(β→�
 let church_mul = m -> n -> f -> m(n(f));   -- PROJECT_FAIL error
 ```
 
-Here `n(f)` forces `type(n) = type(f)→α`, while `m(n(f))` simultaneously forces `type(n) = α→β`. The two constraints require `type(f) = α`, producing the recursive type `α = α→β` — an infinite type that cannot be represented in a Rank-1 system. GCP correctly reports a `PROJECT_FAIL` type error (`[type_system] project compilation failed`) for this expression. This is an inherent limitation shared with all Rank-1 systems: Hindley–Milner gives the same error; Haskell requires an explicit `RankNTypes` pragma plus a hand-written signature. Wells (1994) proved that Rank-2 type *inference* (finding the polymorphic type without annotation) is decidable but impractical; Rank-3 and above are undecidable. The correct encoding requires the quantifier *inside* the arrow: `∀a.(a→a)→a→a` — a Rank-2 type that lies outside GCP's inference scope.
+Here `n(f)` forces `type(n) = type(f)→α`, while `m(n(f))` simultaneously forces `type(n) = α→β`. The two constraints require `type(f) = α`, producing the recursive type `α = α→β` — an infinite type that cannot be represented in a Rank-1 system. GCP correctly reports a `PROJECT_FAIL` type error (`[type_system] project compilation failed`) for this expression. This is an inherent limitation shared with all Rank-1 systems: Hindley–Milner gives the same error; Haskell requires an explicit `RankNTypes` pragma plus a hand-written signature. [[Wells 1994]](#ref15) proved that Rank-2 type *inference* (finding the polymorphic type without annotation) is decidable but impractical; Rank-3 and above are undecidable. The correct encoding requires the quantifier *inside* the arrow: `∀a.(a→a)→a→a` — a Rank-2 type that lies outside GCP's inference scope.
 
 **Recursive Types.** Mutually recursive type definitions require careful constraint ordering to avoid infinite-depth subtype checks. GCP's cycle-detection mechanism (ThreadLocal visited set) prevents infinite loops but may conservatively report type errors for some valid recursive structures.
 
@@ -737,19 +746,25 @@ Here `n(f)` forces `type(n) = type(f)→α`, while `m(n(f))` simultaneously forc
 
 **Type Inference.** The foundational work is Milner's Algorithm W [[Milner 1978]](#ref3) and its extension to recursive types [[Damas & Milner 1982]](#ref5). GCP's constraint-based approach is more closely related to the work of Pottier and Rémy [[Pottier & Rémy 2005]](#ref4), who generalize HM to constraint-based frameworks supporting subtyping.
 
-**Gradual Typing.** The gradual type system of Pierce and Turner [[Pierce & Turner 2000]](#ref1) and its subsequent elaborations [[Siek & Taha 2006]](#ref6) allow mixing of typed and untyped code. GCP's `UNKNOWN` type and lazy inference play a similar role but are fully internal — they do not appear in the user-facing type language.
+**Gradual Typing.** The gradual type system of Pierce and Turner [[Pierce & Turner 2000]](#ref1) and its subsequent elaborations [[Siek & Taha 2006]](#ref6) allow mixing of typed and untyped code. The abstract interpretation of gradual types [[Garcia et al. 2016]](#ref19) provides a lattice-theoretic foundation closely related to GCP's constraint chain. GCP's `UNKNOWN` type and lazy inference play a similar role to the `?` type in gradual systems but are fully internal — they do not appear in the user-facing type language.
 
-**Structural Typing.** Structural type systems for object-oriented languages are surveyed in [[Cardelli & Wegner 1985]](#ref7). GCP's OEM is a formalization of duck typing, closely related to record subtyping in type theory but extended to handle cyclic structural types.
+**Structural Typing.** Structural type systems for object-oriented languages are surveyed in [[Cardelli & Wegner 1985]](#ref7). GCP's OEM is a formalization of duck typing, closely related to record subtyping in type theory [[Pierce 2002]](#ref16) but extended to handle cyclic structural types. The behavioral notion of subtyping of [[Liskov & Wing 1994]](#ref20) complements OEM: where OEM is syntactic/structural, Liskov-Wing subtyping is behavioral. GCP targets the structural side exclusively.
 
-**TypeScript.** The industrial-scale type system most comparable to GCP is TypeScript [[Microsoft 2012]](#ref2). The specific comparison in §10.2 highlights the differences. Work on understanding TypeScript's unsoundness [[Bierman et al. 2014]](#ref8) motivates GCP's more disciplined constraint model.
+**Occurrence Typing.** Typed Racket [[Tobin-Hochstadt & Felleisen 2008]](#ref18) introduces *occurrence typing*, which narrows a variable's type in each branch of a conditional based on predicate tests. GCP achieves narrowing through the constraint chain without requiring explicit test predicates; the trade-off is that GCP narrows globally while occurrence typing narrows flow-sensitively per branch.
+
+**TypeScript and JavaScript Type Checkers.** The industrial-scale type system most comparable to GCP is TypeScript [[Microsoft 2012]](#ref2). The specific comparison in §10.2 highlights the differences. Work on understanding TypeScript's unsoundness [[Bierman et al. 2014]](#ref8) motivates GCP's more disciplined constraint model. Facebook's Flow [[Flow 2017]](#ref21) applies a similar structural type system to JavaScript with an emphasis on inter-procedural inference, but like TypeScript it does not separate the four dimensions of type information that GCP maintains.
 
 **Liquid Types.** Liquid types [[Rondon et al. 2008]](#ref9) extend HM with refinement predicates. GCP's `hasToBe` and `definedToBe` constraints play a similar role of capturing usage patterns, but GCP targets structural shape rather than value predicates.
+
+**Type Inclusion Constraints.** The constraint-based approach of [[Aiken & Wimmers 1993]](#ref22) solves type inclusion constraints for a typed lambda calculus. GCP's constraint chain generalizes this to a four-dimensional system where each dimension uses a distinct lattice operation (join vs. meet), enabling the separation of value assignment from usage demand.
 
 **Demand-Driven Type Inference.** The propagation of type demands from use-sites to definition-sites is closely related to Mycroft's polymorphic type inference [[Mycroft 1984]](#ref12) and to the *bottom-up* variant of constraint-based inference. GCP's `hasToBe` propagation is a call-site demand constraint in this tradition, applied to a dynamically typed host language. The companion paper [[GCP-Python CGO]](#ref-gcpython) applies GCP's demand-driven inference to automatically annotate Python source for ahead-of-time compilation, demonstrating that the same constraint substrate generalizes from type-safe query generation to compiler optimization.
 
 **Effect Systems and Capability Types.** Effect systems [[Lucassen & Gifford 1988]](#ref11) track side-effectful operations through a fourth annotation dimension analogous to GCP's `definedToBe` structural access constraint. While effect systems focus on the *nature* of operations (read, write, allocate), GCP's `definedToBe` captures the *shape* required by operations. Both approaches use a meet-based composition rule; the difference lies in the constraint domain (effect lattice vs. structural type lattice).
 
 **Flow-Sensitive Typing.** Flow-sensitive type systems [[Flanagan & Felleisen 1999]](#ref10) narrow types at control-flow join points. GCP's constraint chain achieves a limited form of flow sensitivity through `hasToBe`: a variable's demanded type at one use-site narrows its effective type globally. Full flow sensitivity (narrowing at each use independently) is not currently supported; this is the trade-off GCP makes for tractability and incrementality.
+
+**Rank-2 Polymorphism.** [[Wells 1994]](#ref15) proved that typability in System F (rank-2 polymorphism) is decidable but equivalent in complexity to semi-unification, making it impractical for automated inference. This result bounds GCP's inference scope (§10.3) and applies equally to Hindley–Milner and all other Rank-1 systems.
 
 ---
 
@@ -802,5 +817,23 @@ The generality of GCP's constraint substrate is evidenced by its application to 
 <a id="ref13">[Cannon 2005]</a> B. Cannon. Localized type inference of atomic types in Python. M.S. Thesis, California Polytechnic State University, 2005.
 
 <a id="ref14">[Salib 2004]</a> M. Salib. Starkiller: A static type inferencer and compiler for Python. M.S. Thesis, MIT, 2004.
+
+<a id="ref15">[Wells 1994]</a> J.B. Wells. Typability and type checking in the second-order lambda-calculus are equivalent and undecidable. In *Proceedings of LICS*, pages 176–185, 1994.
+
+<a id="ref16">[Pierce 2002]</a> B.C. Pierce. *Types and Programming Languages*. MIT Press, Cambridge, MA, 2002.
+
+<a id="ref17">[Wright & Felleisen 1994]</a> A.K. Wright and M. Felleisen. A syntactic approach to type soundness. *Information and Computation*, 115(1):38–94, 1994.
+
+<a id="ref18">[Tobin-Hochstadt & Felleisen 2008]</a> S. Tobin-Hochstadt and M. Felleisen. The design and implementation of Typed Racket. In *Proceedings of POPL*, pages 395–406, 2008.
+
+<a id="ref19">[Garcia et al. 2016]</a> R. Garcia, A.M. Clark, and É. Tanter. Abstracting gradual typing. In *Proceedings of POPL*, pages 429–442, 2016.
+
+<a id="ref20">[Liskov & Wing 1994]</a> B.H. Liskov and J.M. Wing. A behavioral notion of subtyping. *ACM Transactions on Programming Languages and Systems*, 16(6):1811–1841, 1994.
+
+<a id="ref21">[Flow 2017]</a> A. Chaudhuri, V. Vekris, S. Goldman, M. Roch, and G. Lerner. Fast and precise type checking for JavaScript. *Proceedings of OOPSLA*, 1(OOPSLA):48:1–48:30, 2017.
+
+<a id="ref22">[Aiken & Wimmers 1993]</a> A. Aiken and E.L. Wimmers. Type inclusion constraints and type inference. In *Proceedings of FPCA*, pages 31–41, 1993.
+
+<a id="ref23">[Hindley 1969]</a> J.R. Hindley. The principal type-scheme of an object in combinatory logic. *Transactions of the American Mathematical Society*, 146:29–60, 1969.
 
 <a id="ref-gcpython">[GCP-Python CGO]</a> (companion paper). Zero-Annotation Python Ahead-of-Time Compilation via Demand-Driven Call-Site Type Inference. Submitted to CGO 2026.
