@@ -191,7 +191,7 @@ Python's syntax includes many constructs that have no direct GCP-native represen
 | `MatchCaseConverter` | `match x: case int(n):` | → pattern dispatch | **definedToBe** | Per-arm structural constraint narrows `x`'s shape to each case type |
 | `IfExpConverter` | `a if cond else b` | → conditional expression | **hasToBe** | Propagates branch result demands back to `a` and `b` |
 | `ForLoopConverter` | `for i in range(n)` | → typed iterator | **hasToBe** | Demand from iterator element type flows into loop variable `i` |
-| `LambdaConverter` | `lambda x: x + 1` | → anonymous function | **hasToBe** | Enables HOF call-site demand to propagate into lambda parameter |
+| `LambdaConverter` | `lambda x: x + 1` | → anonymous FunctionNode; module-level assignments rewritten to annotated `def` by writer | **hasToBe** | HOF call-site demand propagates into lambda parameter; module-level lambdas get full parameter + return annotations |
 | `NamedExprConverter` | `(y := f(x))` | → assignment expression | **hasToBe** | Walrus target receives demand from surrounding expression context |
 | `TupleUnpackConverter` | `a, b = f()` | → structured binding | **hasToBe** | Destructuring propagates per-position demand into multi-return function |
 | `EnumerateZipConverter` | `enumerate(xs)`, `zip(a,b)` | → typed iterator pairs | **hasToBe** | Index/element demands flow back from loop body into collection element type |
@@ -206,10 +206,13 @@ Without these converters, GCP sees the affected constructs as opaque, leaving th
 `PythonAnnotationWriter` traverses the inferred library AST and rewrites each function's signature to include PEP 484 annotations. The resolved type for parameter `x` is obtained via `guess(x) = first_non_trivial(τ_e, τ_d, τ_h, τ_f)`, which returns the most specific non-UNKNOWN constraint slot.
 
 The writer handles the following annotation forms:
-- Scalar types: `int`, `float`, `str`, `bool`
-- Generator return types: `Iterator[int]` (requires `from typing import Iterator` injection)
-- Void functions: `-> None`
-- Functions with unknown parameter types: parameter left unannotated (partial annotation is safe)
+- **Scalar types**: `int`, `float`, `str`, `bool`
+- **Collection types**: `list[int]`, `dict[str, int]`, `tuple[int, str]` (new: tuple return types from Tuple outline)
+- **Generator return types**: `Iterator[int]` (requires `from typing import Iterator` injection)
+- **Optional / Union types**: `Optional[int]`, `Union[int, str]`
+- **Void functions**: `-> None`
+- **Module-level lambda rewriting**: When a lambda is assigned at module scope (`square = lambda x: x * x`) and GCP infers its argument types, the writer converts the assignment to an annotated `def` (`def square(x: int) -> int: return x * x`), enabling mypyc to compile the helper function with full type information. *Local* lambdas inside function bodies cannot be rewritten (Python closure semantics); their unannotated form is preserved.
+- **Functions with unknown parameter types**: parameter left unannotated (partial annotation is valid PEP 484 and safe for mypyc)
 
 ### 3.5 Implementation
 
@@ -272,7 +275,7 @@ Each specialization is independently compiled by mypyc to type-specific C code, 
 
 ### 5.1 Experimental Setup
 
-**Primary platform.** Apple M-series (ARM64, macOS 15), CPython 3.14, mypyc HEAD. All experiments run on a single machine with no concurrent load. Each function invocation is repeated 500,000–1,000,000 times in a warm loop; reported values are **median** per-call duration in nanoseconds. **Cross-platform validation** (§5.6) uses an Alibaba Cloud server (Intel Xeon Platinum x86-64, Ubuntu, CPython 3.11.6, mypyc 1.19.1). Five configurations are compared:
+**Primary platform.** Apple M-series (ARM64, macOS 15), CPython 3.14, mypyc HEAD. All experiments run on a single machine with no concurrent load. Each function invocation is repeated 500,000–1,000,000 times in a warm loop; reported values are **median** per-call duration in nanoseconds. **Cross-platform validation** (§5.7) uses an Alibaba Cloud server (Intel Xeon Platinum x86-64, Ubuntu, CPython 3.11.6, mypyc 1.19.1). Five configurations are compared:
 
 - **CPython**: standard interpreted execution, zero annotations.
 - **mypyc(bare)**: mypyc compilation of the exact zero-annotation source file.
@@ -391,7 +394,36 @@ All 14 benchmark cases (two input sizes per function) report `correct=True`, con
 
 ---
 
-### 5.6 RQ4 — Cross-Platform Validation: Linux x86-64
+### 5.6 RQ5 — Annotation Coverage
+
+*What fraction of the Python constructs targeted by GCP-Python receive a type annotation, and which patterns remain unannotated?*
+
+Speedup numbers are meaningful only when annotation *coverage* is high. We measure coverage as the fraction of function parameters and return types that GCP successfully annotates, across nine representative construct categories drawn from the 22-category Table 2 benchmark suite.
+
+**Table 5. GCP-Python Annotation Coverage by Construct Type**
+
+| Construct category | Params annotated | Returns annotated | Notes |
+|---|---:|---:|---|
+| Scalar parameters (`int`/`float`/`str`) | **100%** | **100%** | `hasToBe` demand from call-site literals |
+| `list[int]` parameter | **100%** | **100%** | `definedToBe` subscript constraint |
+| Tuple unpack assignment | **100%** | **100%** | outer function params typed |
+| Module-level λ (→ `def`) | **100%** | **80%** | PythonAnnotationWriter rewrites `λ→def` |
+| Class method parameters | **100%** | **67%** | `self` excluded; `__init__` → `None` |
+| Yield / generator | **100%** | **50%** | return = `Iterator[T]` when inferred |
+| Dict comprehension args | **0%** | **0%** | cross-module `zip` not yet resolved |
+| Cross-module calls | **0%** | — | demand stops at module boundary |
+| Local λ inside `def` | **0%** | **0%** | Python syntax prevents annotation |
+| **Overall (annotatable targets)** | **90.9%** | **84.2%** | 20/22 params, 16/19 returns |
+
+**Lambda handling.** Python syntax does not permit annotating lambda parameters directly (`lambda x: int: x * x` is a syntax error). GCP-Python circumvents this limitation for *module-level* lambda assignments: `square = lambda x: x * x` is automatically rewritten to `def square(x: int) -> int: return x * x`, exposing parameter types to mypyc. *Local* lambdas (defined inside a function body) cannot be rewritten without risk of closure-binding side effects; their parameters remain unannotated. In Table 2, the "Lambda expressions" category (21.50×) measures functions that *contain* local lambdas with a direct integer hot path — the outer function's parameters (`n: int`) are fully annotated, driving the high speedup. Measured separately, a loop that *calls* three module-level lambdas (converted to annotated defs) achieves **2.0×** — limited by per-call function-dispatch overhead rather than arithmetic throughput.
+
+**Tuple return types.** The `TypeAnnotationGenerator` now emits `tuple[T₁, T₂, …]` return annotations when GCP resolves a `Tuple` outline (e.g., `def min_max(xs: list[int]) -> tuple[int, int]:`). This is a correctness improvement that enables mypyc to optimise callers that unpack the returned tuple.
+
+**Coverage gaps.** The 9.1% parameter coverage gap and 15.8% return-type coverage gap arise from three sources: (i) Python language constraints (local lambda parameters), (ii) demand-propagation boundaries (cross-module calls, dict-comprehension builtins from the standard library), and (iii) incomplete return-type inference for some lambda bodies (`x * x` where the self-multiplication return type is not yet narrowed). Local variable annotations are deliberately excluded: mypyc infers them from the typed function signatures, so explicit injection adds no compilation benefit.
+
+---
+
+### 5.7 RQ4 — Cross-Platform Validation: Linux x86-64
 
 *Does the annotation advantage hold on the primary server deployment target (x86-64 Linux)?*
 
@@ -418,13 +450,13 @@ We replicate the §5.1 core benchmark on an Alibaba Cloud server (Intel Xeon Pla
 
 ---
 
-### 5.7 Threats to Validity
+### 5.8 Threats to Validity
 
 **Internal validity.** Reported values are medians over 5 independent timing chunks (each chunk = N/5 iterations, N ≥ 500,000). We measure the within-run **coefficient of variation** (CV = σ/μ × 100%) across the 5 chunks as a stability indicator. For the 7-function core benchmark, GCP configurations have a mean CV of **3.6%** and a maximum CV of **12.5%** (sum_squares(1000)); CPython configurations are similarly stable (mean 3.2%). The one outlier is the mypyc(bare) configuration for sum_squares(100) (CV 26.8%), where bare mypyc operates near the 1.0× threshold and tiny absolute timing differences produce large relative variance; this case is outside the GCP evaluation path and does not affect GCP result validity. A 10-second CPU cooldown between mypyc compilation and benchmark execution eliminates thermal throttling artifacts on Apple Silicon.
 
 **Construct validity.** The benchmark suite covers 20 categories but favours integer arithmetic — mypyc's best case. Programs dominated by I/O, database access, or third-party extension calls (numpy, pandas) will see little benefit because their bottleneck is not Python dispatch overhead. The benchmark functions are intentionally pure-Python to isolate the annotation effect.
 
-**External validity.** Primary experiments were conducted on an Apple M-series ARM64 machine; cross-platform validation on Intel Xeon Platinum x86-64 Linux is reported in §5.6. The annotation advantage (GCP vs bare) is confirmed on both platforms. Absolute speedup magnitudes differ — Linux averages 7.54× vs Mac's 13.17× for the core benchmark — due to Python version differences (3.11 vs 3.14) and architecture effects as detailed in §5.6. The key qualitative finding (annotation quality, not compiler quality, is the bottleneck) holds consistently.
+**External validity.** Primary experiments were conducted on an Apple M-series ARM64 machine; cross-platform validation on Intel Xeon Platinum x86-64 Linux is reported in §5.7. The annotation advantage (GCP vs bare) is confirmed on both platforms. Absolute speedup magnitudes differ — Linux averages 7.54× vs Mac's 13.17× for the core benchmark — due to Python version differences (3.11 vs 3.14) and architecture effects as detailed in §5.7. The key qualitative finding (annotation quality, not compiler quality, is the bottleneck) holds consistently.
 
 **Annotation completeness.** GCP-Python annotates scalar types and generator return types. It does not yet annotate `list[int]` or `dict[str, int]` parameter types. The three limited-impact categories (subscript, list method, dict) are directly caused by this gap; extending the annotation writer to cover container type parameters is ongoing work.
 
@@ -462,7 +494,7 @@ The core insight is that function parameter types are determined not by a functi
 
 Our evaluation across 22 Python program categories demonstrates that the annotation bottleneck is the primary barrier to mypyc performance: bare mypyc without annotations averages only **1.08×** over CPython, while GCP-Python achieves an arithmetic mean **18.4×** speedup with peaks at 120× for match/case dispatch, 106× for default-parameter loops, and 34× for real-world number-theoretic code (TheAlgorithms/Python). Against a developer-written manual-annotation oracle, GCP achieves **101.8%** of the manually-annotated performance automatically (within-run CV < 13%). The pipeline requires zero annotation effort from the developer and adds only **55–70 ms** of analysis overhead.
 
-A direct comparison against Numba JIT (§5.3) reveals a complementary performance profile: mypyc(GCP) **beats warm Numba** on call-intensive integer functions on ARM64 — `is_prime(997)` by 1.9× and `factorial(10)` by 3.1× — while Numba's LLVM backend wins on loop-vectorisation-amenable kernels. Cross-platform validation on Linux x86-64 (§5.6) confirms that the annotation bottleneck persists across architectures: bare mypyc averages 1.15× on Linux while GCP achieves 7.54×, with GCP matching oracle accuracy at **99.7%** of manually-annotated performance. The critical differentiator is deployment model: mypyc(GCP) requires no `@njit` annotations, no restricted Python subset, and no JIT runtime dependency.
+A direct comparison against Numba JIT (§5.3) reveals a complementary performance profile: mypyc(GCP) **beats warm Numba** on call-intensive integer functions on ARM64 — `is_prime(997)` by 1.9× and `factorial(10)` by 3.1× — while Numba's LLVM backend wins on loop-vectorisation-amenable kernels. Cross-platform validation on Linux x86-64 (§5.7) confirms that the annotation bottleneck persists across architectures: bare mypyc averages 1.15× on Linux while GCP achieves 7.54×, with GCP matching oracle accuracy at **99.7%** of manually-annotated performance. The critical differentiator is deployment model: mypyc(GCP) requires no `@njit` annotations, no restricted Python subset, and no JIT runtime dependency.
 
 Future work includes: extending annotation coverage to container types (`list[int]`, `dict[str, int]`), cross-module demand propagation, and automatic call-context sampling from production traces.
 
