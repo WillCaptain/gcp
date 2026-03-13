@@ -1,6 +1,7 @@
 package org.twelve.gcp.inference.operator;
 
 public class Precedence {
+    public static final int POWER   = 6;
     public static final int MUL_DIV = 5;
     public static final int ADD_SUB = 4;
     public static final int COMPARISON = 3;

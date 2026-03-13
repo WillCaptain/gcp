@@ -9,8 +9,10 @@ public enum BinaryOperator implements Operator {
     ADD("+", Precedence.ADD_SUB, new AddInference()),
     SUBTRACT("-", Precedence.ADD_SUB, new NumOperaInference()),
     MULTIPLY("*", Precedence.MUL_DIV, new NumOperaInference()),
-    DIVIDE("/", Precedence.MUL_DIV, new NumOperaInference()),
+    DIVIDE("/", Precedence.MUL_DIV, new DivideInference()),
+    FLOOR_DIVIDE("//", Precedence.MUL_DIV, new NumOperaInference()),
     MODULUS("%", Precedence.MUL_DIV, new NumOperaInference()),
+    POWER("**", Precedence.POWER, new NumOperaInference()),
 
     ASSIGN_RETURN(":=", Precedence.COMPARISON, (left, right, node) -> node.ast().Error),//forget what to do
     // Comparison Operators
