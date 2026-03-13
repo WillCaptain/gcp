@@ -1,6 +1,6 @@
 # Zero-Annotation Python Ahead-of-Time Compilation via Demand-Driven Call-Site Type Inference
 
-**Abstract** — `mypyc` compiles type-annotated Python to C extensions and routinely delivers 5–100× speedups over CPython. Its practical barrier is not compiler quality but *annotation coverage*: functions lacking explicit parameter types receive almost no benefit (average **1.30×** in our experiments on integer-intensive benchmarks; one case *regresses* to 0.81× due to mypyc boxing overhead), because mypyc falls back to dynamic dispatch for every untyped call. We present **GCP-Python**, a demand-driven inference pipeline that automatically injects PEP 484-compliant type annotations into zero-annotation Python source files by propagating type constraints from call sites into function parameters. The pipeline requires no developer effort: given a library file and a representative call-context file, GCP-Python produces a fully-annotated source ready for mypyc compilation in **66 ms** of analysis overhead. Evaluated on 20 Python program categories, GCP-Python achieves an arithmetic mean **18.4×** speedup over CPython, with peaks of **120×** for match/case dispatching, **106×** for default-parameter arithmetic, and **34×** for real-world number-theoretic code (TheAlgorithms/Python). On a 7-function oracle benchmark, GCP-Python achieves **101.8%** of manually-annotated performance with zero developer effort, and **outperforms warm Numba JIT** on call-intensive integer functions (`is_prime(997)`: mypyc(GCP) 14.67× vs Numba 7.66× over CPython; `factorial(10)`: 8.53× vs 2.78×) — with no code modification required and no JIT warm-up latency.
+**Abstract** — `mypyc` compiles type-annotated Python to C extensions and routinely delivers 5–100× speedups over CPython. Its practical barrier is not compiler quality but *annotation coverage*: functions lacking explicit parameter types receive almost no benefit (average **1.30×** in our experiments on integer-intensive benchmarks; one case *regresses* to 0.81× due to mypyc boxing overhead), because mypyc falls back to dynamic dispatch for every untyped call. We present **GCP-Python**, a demand-driven inference pipeline that automatically injects PEP 484-compliant type annotations into zero-annotation Python source files by propagating type constraints from call sites into function parameters. The pipeline requires no developer effort: given a library file and a representative call-context file, GCP-Python produces a fully-annotated source ready for mypyc compilation in **66 ms** of analysis overhead. Evaluated on 20 Python program categories, GCP-Python achieves an arithmetic mean **18.4×** speedup over CPython, with peaks of **120×** for match/case dispatching, **106×** for default-parameter arithmetic, and **34×** for real-world number-theoretic code (TheAlgorithms/Python). On a 7-function oracle benchmark, GCP-Python achieves **101.8%** of manually-annotated performance on ARM64 and **99.7%** on Linux x86-64 with zero developer effort, and **outperforms warm Numba JIT** on call-intensive integer functions on ARM64 (`is_prime(997)`: mypyc(GCP) 14.67× vs Numba 7.66× over CPython; `factorial(10)`: 8.53× vs 2.78×) — with no code modification required and no JIT warm-up latency.
 
 ---
 
@@ -272,7 +272,7 @@ Each specialization is independently compiled by mypyc to type-specific C code, 
 
 ### 5.1 Experimental Setup
 
-**Platform.** Apple M-series (ARM64, macOS 15), CPython 3.14, mypyc HEAD. All experiments run on a single machine with no concurrent load. Each function invocation is repeated 500,000–1,000,000 times in a warm loop; reported values are **median** per-call duration in nanoseconds. Four configurations are compared:
+**Primary platform.** Apple M-series (ARM64, macOS 15), CPython 3.14, mypyc HEAD. All experiments run on a single machine with no concurrent load. Each function invocation is repeated 500,000–1,000,000 times in a warm loop; reported values are **median** per-call duration in nanoseconds. **Cross-platform validation** (§5.6) uses an Alibaba Cloud server (Intel Xeon Platinum x86-64, Ubuntu, CPython 3.11.6, mypyc 1.19.1). Five configurations are compared:
 
 - **CPython**: standard interpreted execution, zero annotations.
 - **mypyc(bare)**: mypyc compilation of the exact zero-annotation source file.
@@ -387,13 +387,40 @@ All 14 benchmark cases (two input sizes per function) report `correct=True`, con
 
 ---
 
-### 5.6 Threats to Validity
+### 5.6 RQ4 — Cross-Platform Validation: Linux x86-64
+
+*Does the annotation advantage hold on the primary server deployment target (x86-64 Linux)?*
+
+We replicate the §5.1 core benchmark on an Alibaba Cloud server (Intel Xeon Platinum, 2 vCPUs, 3.5 GB RAM, Ubuntu Linux, CPython 3.11.6, mypyc 1.19.1). The GCP-annotated source used is identical to the Mac experiment; mypyc recompiles it natively for x86-64. Numba warm-call measurements follow the same protocol as §5.3.
+
+**Table 5. Linux x86-64 Cross-Platform Results (Intel Xeon Platinum, CPython 3.11.6)**
+
+| Function | CPython (ns) | bare× | **GCP×** | manual× | **GCP/manual** | Numba(jit)× |
+|---|---:|---:|---:|---:|---:|---:|
+| `factorial(10)` | 936.4 | 1.58× | **7.94×** | 7.57× | **104.9%** | 3.06× |
+| `factorial(20)` | 2120.2 | 1.54× | **2.15×** | 2.26× | **95.3%** | 5.37× |
+| `fibonacci(30)` | 1564.4 | 1.04× | **4.41×** | 4.26× | **103.4%** | 6.14× |
+| `sum_squares(100)` | 6436.8 | 0.84× | **12.75×** | 12.75× | **100.0%** | 24.93× |
+| `sum_squares(1000)` | 73292.5 | 0.81× | **16.68×** | 17.39× | **95.9%** | 262.89× |
+| `is_prime(997)` | 2974.4 | 1.19× | **4.91×** | 4.91× | **99.9%** | 8.44× |
+| `is_prime(9999991)` | 376083.0 | 1.09× | **3.96×** | 4.05× | **97.7%** | 22.22× |
+| **Average** | — | **1.15×** | **7.54×** | **7.60×** | **99.7%** | — |
+
+**Answer to RQ4.** The annotation bottleneck holds on Linux: bare mypyc averages only **1.15×** while GCP achieves **7.54×** (a 6.5× gap attributable to annotation quality). GCP maintains oracle-level accuracy — **99.7%** of manually-annotated performance on average (range 95.3%–104.9%), confirming that the annotation quality does not depend on the compilation platform.
+
+**Cross-platform speedup comparison.** Linux GCP× values are systematically lower than Mac (7.54× average vs 13.17× on Mac) for two structural reasons. First, **Python version**: Python 3.14 on Mac includes unreleased interpreter improvements and a more recent mypyc; Python 3.11's specializing adaptive interpreter (PEP 659 [[CPython 3.11]](#ref-py311)) already partially optimises tight integer loops at the CPython level, reducing the headroom for mypyc. Second, **architecture**: Apple M-series ARM cores have wider integer execution units and deeper out-of-order pipelines than the 2-vCPU cloud Xeon. The most striking difference is `is_prime(9999991)` (27.68× on Mac vs 3.96× on Linux); analysis shows that the Mac CPython 3.14 baseline is 2.4× *faster* than Linux CPython 3.11 for this function (155.9 µs vs 376.1 µs), while mypyc(GCP) on Mac achieves sub-6 µs — suggesting that mypyc HEAD on Python 3.14 applies significantly more aggressive integer-loop optimization than mypyc 1.19.1 on Python 3.11.
+
+**Numba on Linux.** On Linux, GCP+mypyc beats warm Numba JIT for `factorial(10)` (7.94× vs 3.06×, GCP 2.6× ahead) but loses for the other six functions. Numba's LLVM backend generates more optimised x86-64 code for loop-intensive kernels on this architecture; on ARM64 (Mac), GCP also won `is_prime(997)`. The complementary performance profile (mypyc wins on call-overhead-dominated patterns, Numba wins on long loops) is consistent across platforms.
+
+---
+
+### 5.7 Threats to Validity
 
 **Internal validity.** Reported values are medians over 5 independent timing chunks (each chunk = N/5 iterations, N ≥ 500,000). We measure the within-run **coefficient of variation** (CV = σ/μ × 100%) across the 5 chunks as a stability indicator. For the 7-function core benchmark, GCP configurations have a mean CV of **3.6%** and a maximum CV of **12.5%** (sum_squares(1000)); CPython configurations are similarly stable (mean 3.2%). The one outlier is the mypyc(bare) configuration for sum_squares(100) (CV 26.8%), where bare mypyc operates near the 1.0× threshold and tiny absolute timing differences produce large relative variance; this case is outside the GCP evaluation path and does not affect GCP result validity. A 10-second CPU cooldown between mypyc compilation and benchmark execution eliminates thermal throttling artifacts on Apple Silicon.
 
 **Construct validity.** The benchmark suite covers 20 categories but favours integer arithmetic — mypyc's best case. Programs dominated by I/O, database access, or third-party extension calls (numpy, pandas) will see little benefit because their bottleneck is not Python dispatch overhead. The benchmark functions are intentionally pure-Python to isolate the annotation effect.
 
-**External validity.** All experiments were conducted on a single Apple M-series machine. x86-64 Linux results (the primary server deployment target) are not reported here; we note that mypyc's x86-64 backend is more mature and may produce different relative numbers. Cross-platform validation is future work.
+**External validity.** Primary experiments were conducted on an Apple M-series ARM64 machine; cross-platform validation on Intel Xeon Platinum x86-64 Linux is reported in §5.6. The annotation advantage (GCP vs bare) is confirmed on both platforms. Absolute speedup magnitudes differ — Linux averages 7.54× vs Mac's 13.17× for the core benchmark — due to Python version differences (3.11 vs 3.14) and architecture effects as detailed in §5.6. The key qualitative finding (annotation quality, not compiler quality, is the bottleneck) holds consistently.
 
 **Annotation completeness.** GCP-Python annotates scalar types and generator return types. It does not yet annotate `list[int]` or `dict[str, int]` parameter types. The three limited-impact categories (subscript, list method, dict) are directly caused by this gap; extending the annotation writer to cover container type parameters is ongoing work.
 
@@ -431,7 +458,7 @@ The core insight is that function parameter types are determined not by a functi
 
 Our evaluation across 20 Python program categories demonstrates that the annotation bottleneck is the primary barrier to mypyc performance: bare mypyc without annotations averages only **1.08×** over CPython, while GCP-Python achieves an arithmetic mean **18.4×** speedup with peaks at 120× for match/case dispatch, 106× for default-parameter loops, and 34× for real-world number-theoretic code (TheAlgorithms/Python). Against a developer-written manual-annotation oracle, GCP achieves **101.8%** of the manually-annotated performance automatically (within-run CV < 13%). The pipeline requires zero annotation effort from the developer and adds only **55–70 ms** of analysis overhead.
 
-A direct comparison against Numba JIT (§5.3) reveals a complementary performance profile: mypyc(GCP) **beats warm Numba** on call-intensive integer functions — `is_prime(997)` by 1.9× and `factorial(10)` by 3.1× — while Numba's LLVM backend wins on loop-vectorisation-amenable kernels. The critical differentiator is deployment model: mypyc(GCP) requires no `@njit` annotations, no restricted Python subset, and no JIT runtime dependency.
+A direct comparison against Numba JIT (§5.3) reveals a complementary performance profile: mypyc(GCP) **beats warm Numba** on call-intensive integer functions on ARM64 — `is_prime(997)` by 1.9× and `factorial(10)` by 3.1× — while Numba's LLVM backend wins on loop-vectorisation-amenable kernels. Cross-platform validation on Linux x86-64 (§5.6) confirms that the annotation bottleneck persists across architectures: bare mypyc averages 1.15× on Linux while GCP achieves 7.54×, with GCP matching oracle accuracy at **99.7%** of manually-annotated performance. The critical differentiator is deployment model: mypyc(GCP) requires no `@njit` annotations, no restricted Python subset, and no JIT runtime dependency.
 
 Future work includes: extending annotation coverage to container types (`list[int]`, `dict[str, int]`), cross-module demand propagation, and automatic call-context sampling from production traces.
 
