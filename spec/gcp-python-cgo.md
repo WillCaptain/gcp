@@ -18,7 +18,7 @@ We take a different approach. GCP-Python is a *demand-driven*, *call-site–driv
 
 **Contributions.** This paper presents:
 
-1. **GCP demand-driven inference for Python** (§3): A call-site `hasToBe` constraint propagation algorithm that infers PEP 484-compatible parameter types by jointly analysing library and caller ASTs. The algorithm handles 20 Python syntax patterns through a converter pipeline that normalizes language features (AugAssign, subscript, walrus, match/case, etc.) before feeding them to the GCP constraint solver.
+1. **GCP three-dimensional constraint inference for Python** (§3): A joint inference pipeline that infers PEP 484-compatible types by propagating three complementary constraint dimensions simultaneously — `extendToBe` (from literal assignments and default values), `hasToBe` (from call-site demands), and `definedToBe` (from structural access patterns). The pipeline handles 20 Python syntax patterns through a converter pipeline that normalizes language features (AugAssign, subscript, walrus, match/case, etc.) before feeding them to the GCP constraint solver.
 
 2. **FunctionSpecializer** (§4): A monomorphization pass that handles polymorphic call sites by generating one fully-annotated function copy per observed type tuple, enabling mypyc to compile each specialization to type-specific C code.
 
@@ -87,7 +87,7 @@ GCP-Python occupies the gap between these approaches: static analysis (no runtim
 
 ## 3. GCP Demand-Driven Inference
 
-### 3.1 The Core Mechanism: hasToBe Propagation
+### 3.1 Three-Dimensional Constraint Propagation
 
 GCP (Generalized Constraint Projection) is a type inference engine built around a four-dimensional constraint model. Each variable *x* carries a constraint tuple:
 
@@ -101,14 +101,31 @@ where:
 - τ_h = `hasToBe`: the meet of all type demands from consuming contexts
 - τ_f = `definedToBe`: the meet of structural constraints from member accesses
 
-The *demand-driven* step is the **hasToBe** propagation. When a call site passes a concrete argument to a function parameter, GCP emits a `hasToBe` constraint from the call site's argument type into the function parameter's `τ_h` slot:
+For zero-annotation Python source, `τ_d` is always absent. The remaining three dimensions are all actively populated during inference, and **all three contribute to the final PEP 484 annotation**. Their roles are distinct:
 
+**`extendToBe` — value propagation.** Any literal or constructor assignment to a variable immediately seeds its `τ_e` slot via join. In a Python function body, this resolves local variable types without any call-site information:
 ```
-call: f(10)   →   f.x.addHasToBe(Integer)
-call: f(1.5)  →   f.x.addHasToBe(Float)
+count = 0          →   count.addExtendToBe(Integer)
+name  = "hello"    →   name.addExtendToBe(String)
+def f(x=0): ...    →   x.addExtendToBe(Integer)   ← DefaultParamConverter
 ```
 
-Because `τ_h` is updated via meet (glb), a parameter exercised only with `int` arguments resolves to `int`, enabling mypyc's full optimization. This is the key mechanism that fills the annotation gap.
+**`hasToBe` — call-site demand.** When a call site passes a concrete argument to a function parameter, GCP emits a `hasToBe` constraint into the parameter's `τ_h` slot via meet (glb). This is the *demand-driven* step that fills the annotation gap for parameters with no default values:
+```
+f(10)   →   f.x.addHasToBe(Integer)
+f(1.5)  →   f.x.addHasToBe(Float)
+```
+Because `τ_h` is the meet over all call sites, a parameter exercised only with `int` arguments resolves to `int`, enabling mypyc's full optimization.
+
+**`definedToBe` — structural access.** When a variable is used in a structural context — subscript access, method call, or member access — GCP emits a `definedToBe` constraint recording what shape the variable must have:
+```
+seq[i]         →   seq.addDefinedToBe(Array(?))     ← SubscriptConverter
+x.startswith() →   x.addDefinedToBe({startswith: ?→Bool})
+f(a, b)        →   f.addDefinedToBe(a→b→?)          ← function shape
+```
+For the Python compiler pipeline, `definedToBe` is particularly important for inferring the return types of built-in methods (e.g., `str.find()` → `int`, `len()` → `int`) and for correctly typing subscript expressions once `SubscriptConverter` has rewritten `seq[i]` into an array accessor node.
+
+**Type resolution.** At annotation-write time, `PythonAnnotationWriter` calls `guess(x) = first_non_trivial(τ_e, τ_d, τ_h, τ_f)`, which returns the most specific non-UNKNOWN constraint slot. In practice, parameters are resolved predominantly by `τ_h` (from call sites); local variables by `τ_e` (from literal assignments); and container/callable parameters by `τ_f` (from structural access patterns). The three dimensions are complementary: a parameter with both a call-site demand and a structural access gets both constraints narrowed, producing a maximally specific annotation.
 
 ### 3.2 Joint Inference with Call Context
 
@@ -116,9 +133,12 @@ The `PythonInferencer` class runs GCP inference jointly over two ASTs: the libra
 
 **Pass 1 — Parse and convert.** Both files are parsed into Python ASTs, then normalized by a converter pipeline (§3.3) that rewrites Python-specific syntax into GCP-compatible forms.
 
-**Pass 2 — Demand propagation.** The inferencer traverses the call-context AST and emits `hasToBe` constraints into the library's function parameters for each call site.
+**Pass 2 — Multi-dimensional constraint emission.** The inferencer traverses both ASTs and emits constraints from all three active dimensions:
+- *From the library body* (`extendToBe`): literal assignments and default-parameter values seed local variable types.
+- *From the call-context* (`hasToBe`): each concrete call-site argument emits a demand into the corresponding function parameter.
+- *From structural usage* (`definedToBe`): subscript, member-access, and method-call patterns emit shape constraints onto the variables being accessed.
 
-**Pass 3 — Fixpoint.** The library AST is re-inferred with the propagated constraints. A fixpoint loop repeats until all constraints stabilize (typically 2–3 iterations).
+**Pass 3 — Fixpoint.** The library AST is re-inferred with all propagated constraints. A fixpoint loop repeats until all constraint chains stabilize (typically 2–3 iterations for single-module programs).
 
 **Example.** For the library function and call context:
 
@@ -135,7 +155,17 @@ def count_divisible(n, k):
 count_divisible(1000, 7)
 ```
 
-Pass 2 emits `n.addHasToBe(Integer)` and `k.addHasToBe(Integer)` from the call site. Pass 3 resolves `count`, `i`, and the return type to `Integer`. The `PythonAnnotationWriter` then produces:
+All three constraint dimensions fire:
+```
+count = 0     →  count.addExtendToBe(Integer)         [extendToBe — literal]
+count += 1    →  (AugAssignConverter) count = count+1
+               →  count.addExtendToBe(Integer)         [extendToBe — accumulator]
+f(1000, 7)    →  n.addHasToBe(Integer)                 [hasToBe   — call site]
+              →  k.addHasToBe(Integer)                 [hasToBe   — call site]
+i % k         →  i.addDefinedToBe(Integer)             [definedToBe — arith operand]
+```
+
+Pass 3 propagates: since `n: Integer` and `k: Integer`, `range(n)` produces an integer iterator so `i: Integer`. The return type is resolved as `Integer` from the `count` chain. The `PythonAnnotationWriter` then produces:
 
 ```python
 def count_divisible(n: int, k: int) -> int:
@@ -150,26 +180,26 @@ This fully-annotated function compiles to tight C integer arithmetic under mypyc
 
 ### 3.3 Python Converter Pipeline
 
-Python's syntax includes many constructs that have no direct GCP-native representation. A pipeline of *converters* normalizes these before inference:
+Python's syntax includes many constructs that have no direct GCP-native representation. A pipeline of *converters* normalizes these before inference. The rightmost column identifies which constraint dimension(s) each converter primarily activates:
 
-| Converter | Python Construct | GCP Normalization | Impact |
-|---|---|---|---|
-| `AugAssignConverter` | `x += y` | → `x = x + y` | Reveals loop accumulator types |
-| `SubscriptConverter` | `seq[i]` | → `ArrayAccessor` node | Enables element-type inference |
-| `IfExpConverter` | `a if cond else b` | → conditional expression | Propagates branch types |
-| `TupleUnpackConverter` | `a, b = f()` | → structured binding | Enables multi-return type propagation |
-| `DefaultParamConverter` | `def f(x=0)` | → default-value type seed | Seeds parameter type from default |
-| `ForLoopConverter` | `for i in range(n)` | → typed iterator | Infers loop variable type |
-| `ListCompConverter` | `[f(x) for x in xs]` | → map/filter chain | Propagates element types |
-| `LambdaConverter` | `lambda x: x + 1` | → anonymous function | Enables lambda param inference |
-| `NamedExprConverter` | `(y := f(x))` | → assignment expression | Resolves walrus operator types |
-| `StarredConverter` | `a, *b = xs` | → head/tail binding | Infers rest-element types |
-| `EnumerateZipConverter` | `enumerate(xs)`, `zip(a,b)` | → typed iterator pairs | Propagates index/element types |
-| `IsInstanceConverter` | `isinstance(x, int)` | → type guard branch | Specializes type in guarded branch |
-| `MatchCaseConverter` | `match x: case int(n):` | → pattern dispatch | Resolves per-case bound types |
-| `YieldConverter` | `yield x` | → iterator element emission | Propagates generator element types |
+| Converter | Python Construct | GCP Normalization | Primary Constraint | Impact |
+|---|---|---|---|---|
+| `AugAssignConverter` | `x += y` | → `x = x + y` | **extendToBe** | Exposes loop accumulator as a value assignment; seeds `τ_e` from literal RHS |
+| `DefaultParamConverter` | `def f(x=0)` | → default-value type seed | **extendToBe** | Default literal directly seeds `τ_e` of the parameter |
+| `SubscriptConverter` | `seq[i]` | → `ArrayAccessor` node | **definedToBe** | Records that `seq` must be an array; enables element-type inference |
+| `IsInstanceConverter` | `isinstance(x, int)` | → type guard branch | **definedToBe** | Specializes variable shape inside the guarded branch |
+| `MatchCaseConverter` | `match x: case int(n):` | → pattern dispatch | **definedToBe** | Per-arm structural constraint narrows `x`'s shape to each case type |
+| `IfExpConverter` | `a if cond else b` | → conditional expression | **hasToBe** | Propagates branch result demands back to `a` and `b` |
+| `ForLoopConverter` | `for i in range(n)` | → typed iterator | **hasToBe** | Demand from iterator element type flows into loop variable `i` |
+| `LambdaConverter` | `lambda x: x + 1` | → anonymous function | **hasToBe** | Enables HOF call-site demand to propagate into lambda parameter |
+| `NamedExprConverter` | `(y := f(x))` | → assignment expression | **hasToBe** | Walrus target receives demand from surrounding expression context |
+| `TupleUnpackConverter` | `a, b = f()` | → structured binding | **hasToBe** | Destructuring propagates per-position demand into multi-return function |
+| `EnumerateZipConverter` | `enumerate(xs)`, `zip(a,b)` | → typed iterator pairs | **hasToBe** | Index/element demands flow back from loop body into collection element type |
+| `StarredConverter` | `a, *b = xs` | → head/tail binding | **hasToBe** | Rest-element demand constrains collection element type |
+| `ListCompConverter` | `[f(x) for x in xs]` | → map/filter chain | **hasToBe** | Element demand from `f`'s call-site type propagates into `x` |
+| `YieldConverter` | `yield x` | → iterator element emission | **hasToBe** | Generator element type demand propagates `Iterator[T]` return annotation |
 
-Without these converters, GCP sees the affected constructs as opaque, leaving parameters at type `UNKNOWN` and producing no mypyc benefit. With converters, each construct becomes a source of `hasToBe` constraints that propagate to parameters.
+Without these converters, GCP sees the affected constructs as opaque, leaving the corresponding variables at type `UNKNOWN`. With converters, each construct is translated into GCP-native AST nodes that emit the appropriate constraint dimension: `extendToBe` for value-producing contexts, `definedToBe` for structural-access contexts, and `hasToBe` for demand-propagating contexts. The three dimensions are orthogonal and complementary — a variable can receive all three simultaneously, and `guess(x)` resolves to the most specific non-UNKNOWN result across all four slots.
 
 ### 3.4 Annotation Rewriting
 
@@ -383,7 +413,7 @@ All 14 benchmark cases (two input sizes per function) report `correct=True`, con
 
 **Pytype / Pyright.** Google's Pytype [[Pytype 2020]](#ref-pytype) and Microsoft's Pyright perform bidirectional type inference for IDEs. Both are declaration-site–driven and do not propagate type demands from call sites to parameters — the precise gap that GCP-Python fills.
 
-**Demand-driven type inference.** The concept of propagating type demands from call sites was formalized in the context of ML-family languages by Mycroft [[Mycroft 1984]](#ref-mycroft) and subsequently incorporated into constraint-based type inference systems [[Pottier & Rémy 2005]](#ref-pottier). GCP's `hasToBe` propagation is an instance of this family applied to an untyped dynamic language.
+**Demand-driven type inference.** The concept of propagating type demands from call sites was formalized in the context of ML-family languages by Mycroft [[Mycroft 1984]](#ref-mycroft) and subsequently incorporated into constraint-based type inference systems [[Pottier & Rémy 2005]](#ref-pottier). GCP-Python uses all three active constraint dimensions from the GCP engine — `extendToBe` (value propagation from literals), `hasToBe` (call-site demand), and `definedToBe` (structural access patterns) — making it a multi-directional constraint inference system rather than a purely demand-driven one. The `hasToBe` dimension is the primary novelty for the annotation gap problem, but accurate annotation of local variables and container types relies on `extendToBe` and `definedToBe` respectively.
 
 **Whole-program type inference for Python.** Cannon's *Localized Type Inference* [[Cannon 2005]](#ref-cannon) infers types for CPython's optimization layer. Starkiller [[Salib 2004]](#ref-salib) and Shedskin [[De Smit 2011]](#ref-shedskin) perform whole-program inference to compile Python to C++. These systems require whole-program visibility and cannot handle partial programs or library-only annotation. GCP-Python works on a per-library basis with a lightweight call-context file. The CPython 3.11 specializing adaptive interpreter [[CPython 3.11]](#ref-py311) (PEP 659) takes a different approach: it specializes bytecodes at runtime based on observed types, achieving 10–60% speedup without recompilation — complementary to GCP-Python's ahead-of-time approach, which targets larger speedups for compute-intensive libraries.
 
