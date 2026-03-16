@@ -19,6 +19,12 @@ public abstract class ADT implements Outline {
     protected long id;
 
     protected final Map<String, EntityMember> members = new HashMap<>();
+    /**
+     * Cached snapshot of {@link #members} values, invalidated whenever the map is mutated.
+     * Avoids creating a new {@code List} on every {@link #members()} call — which is hot
+     * inside type-compatibility loops ({@link #tryIamYou}, {@link #updateThis}, etc.).
+     */
+    private List<EntityMember> cachedMembersList = null;
     private int scopeLayer;
 
     public ADT(AST ast) {
@@ -37,7 +43,13 @@ public abstract class ADT implements Outline {
         EntityMember toString = EntityMember.from(CONSTANTS.TO_STR, FirstOrderFunction.from(this.ast(), this.ast().String, this.ast().Unit),
                 Modifier.PUBLIC, false, null, true);
         this.members.put(CONSTANTS.TO_STR, toString);
+        this.cachedMembersList = null;
         return true;
+    }
+
+    /** Invalidates the cached members snapshot. Called by subclasses whenever {@link #members} is mutated. */
+    protected final void invalidateMembersCache() {
+        this.cachedMembersList = null;
     }
 
 
@@ -47,7 +59,10 @@ public abstract class ADT implements Outline {
     }
 
     public List<EntityMember> members() {
-        return members.values().stream().toList();
+        if (cachedMembersList == null) {
+            cachedMembersList = List.copyOf(members.values());
+        }
+        return cachedMembersList;
     }
 
     public Optional<EntityMember> getMember(String name) {

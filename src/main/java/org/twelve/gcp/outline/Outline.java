@@ -50,11 +50,19 @@ import static org.twelve.gcp.common.Tool.cast;
 public interface Outline extends Serializable {
 
     /**
-     * Thread-local set of "{id_a}:{id_b}" pairs currently being compared via {@link #is}.
+     * Compact, allocation-efficient key for the cycle-guard set in {@link #is}.
+     * Using a record avoids the per-call String concatenation that the previous
+     * {@code "{id_a}:{id_b}"} scheme required, cutting object allocation significantly
+     * inside hot type-comparison loops.
+     */
+    record IsKey(long a, long b) {}
+
+    /**
+     * Thread-local set of (a,b) id pairs currently being compared via {@link #is}.
      * Prevents infinite recursion when two structurally equivalent types reference each other
      * through their built-in method signatures (e.g. {@code Number.min: Number → Number}).
      */
-    ThreadLocal<Set<String>> IS_COMPARING = ThreadLocal.withInitial(HashSet::new);
+    ThreadLocal<Set<IsKey>> IS_COMPARING = ThreadLocal.withInitial(HashSet::new);
 
     AST ast();
 
@@ -108,8 +116,8 @@ public interface Outline extends Serializable {
         // Key is ASYMMETRIC (this.id:another.id) so that A.is(B) and B.is(A) are tracked
         // independently; only a genuine re-entry of the exact same directed call is treated
         // as a cycle, preventing false positives that would suppress real type errors.
-        String key = this.id() + ":" + another.id();
-        Set<String> guard = IS_COMPARING.get();
+        IsKey key = new IsKey(this.id(), another.id());
+        Set<IsKey> guard = IS_COMPARING.get();
         if (!guard.add(key)) return true;
         try {
             return this.tryIamYou(another) || another.tryYouAreMe(this);

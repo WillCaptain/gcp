@@ -145,6 +145,7 @@ public abstract class ProductADT extends ADT {
         EntityMember m = this.members.get(member.name());
         if (m == null || !m.outline().inferred()) {//没有重载,或者第n次infer，覆盖前一次infer结果
             this.members.put(member.name(), member);
+            this.invalidateMembersCache();
             return true;
         }
 
@@ -156,6 +157,7 @@ public abstract class ProductADT extends ADT {
         } else {//第一次重载
             if (m.node() == member.node()) {
                 this.members.put(member.name(), member);
+                this.invalidateMembersCache();
                 return true;
             }
             Poly overwrite = Poly.from(m.node());
@@ -163,6 +165,7 @@ public abstract class ProductADT extends ADT {
 //            overwrite.sum(member.outline(), member.mutable().toBool());
             if (overwrite.sum(member.outline(), member.mutable().toBool())) {
                 this.members.put(member.name(), EntityMember.from(m.name(), overwrite, m.modifier()));
+                this.invalidateMembersCache();
                 return true;
             } else {
                 return false;
@@ -172,6 +175,7 @@ public abstract class ProductADT extends ADT {
 
     public boolean replaceMember(String name, Outline outline) {
         EntityMember removed = this.members.remove(name);
+        this.invalidateMembersCache();
         return this.addMember(name, outline, removed.modifier(), removed.mutable() == Mutable.True, removed.node());
     }
 

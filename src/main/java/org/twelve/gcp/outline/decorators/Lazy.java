@@ -25,6 +25,13 @@ public class Lazy implements Projectable, ReferAble {
     private final AstScope scope;
     private List<OutlineWrapper> referencesProjections = new ArrayList<>();
     private Map<ProjectSession, GenericProjection> genericProjections = new HashMap<>();
+    /**
+     * Cached result of {@link #eventual()}.
+     * Set once the wrapped node is fully inferred — after that the result is stable and
+     * re-running {@code acceptInfer} would produce the same value, so we skip the re-work.
+     * Cleared whenever {@link #project(List)} or {@link #doProject} changes the projections.
+     */
+    private Outline cachedEventual = null;
 //    private ProductADT me;
 
     public Lazy(Node node, Inferencer inferencer) {
@@ -70,6 +77,7 @@ public class Lazy implements Projectable, ReferAble {
 
     @Override
     public Outline eventual() {
+        if (cachedEventual != null) return cachedEventual;
         this.node.ast().symbolEnv().enter(this.scope);
         Outline eventual = this.node.acceptInfer(inferencer);
         if (eventual instanceof ReferAble && !this.referencesProjections.isEmpty()) {
@@ -92,6 +100,9 @@ public class Lazy implements Projectable, ReferAble {
 //            eventual.updateThis(this.me);
 //        }
         this.node.ast().symbolEnv().exit();
+        if (this.node.inferred()) {
+            cachedEventual = eventual;
+        }
         return eventual;
     }
 
@@ -117,6 +128,7 @@ public class Lazy implements Projectable, ReferAble {
     @Override
     public Outline project(List<OutlineWrapper> projections) {
         this.referencesProjections = projections;
+        this.cachedEventual = null;
         return this;
     }
 
@@ -149,6 +161,7 @@ public class Lazy implements Projectable, ReferAble {
             p = this.genericProjections.get(session);
         }
         p.add(projected,projection);
+        this.cachedEventual = null;
         return this;
     }
 
