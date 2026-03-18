@@ -1,0 +1,402 @@
+@startuml GCP Architecture Overview
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam classFontSize 12
+skinparam packageStyle rectangle
+skinparam ArrowColor #555555
+skinparam ClassBorderColor #888888
+
+title GCP — Generic Constraint Propagation\nType Inference Engine Architecture
+
+' ============================================================
+' LAYER 1: COMPILATION PIPELINE (top-level flow)
+' ============================================================
+package "Compilation Pipeline" #E8F4F8 {
+
+    package "MSLL Parser (external)" #D0E8F0 {
+        class MsllParser << external >>
+    }
+
+    package "AST / ASF Management" #D8ECD8 {
+        class ASF {
+            +infer()
+            +isLastInfer(): boolean
+            +asts: List<AST>
+        }
+        class AST {
+            +program: Program
+            +symbolEnv: LocalSymbolEnvironment
+            +inferences: Inferences
+            +Counter: AtomicLong
+            --
+            +infer(): Module
+            +inferred(): boolean
+            +addError(GCPError)
+            +addStatement(Statement)
+            --
+            «singletons per AST»
+            +Any: ANY
+            +Nothing: NOTHING
+            +Unit: UNIT
+            +Error: ERROR
+            +String: STRING
+            +Number: NUMBER
+            ...
+        }
+        class AbstractNode {
+            #outline: Outline
+            #parent: Node
+            -id: Long
+            -loc: Location
+            --
+            +infer(Inferences): Outline
+            +inferred(): boolean
+            +invalidate(): AbstractNode
+            +addNode(Node)
+        }
+        interface Node {
+            +ast(): AST
+            +infer(Inferences): Outline
+            +outline(): Outline
+        }
+        ASF "1" *-- "many" AST : manages
+        AST *-- AbstractNode : owns
+        AbstractNode ..|> Node
+    }
+
+    package "AST Nodes" #E8E8D8 {
+        class Program
+        class Statement <<abstract>>
+        class Expression <<abstract>>
+        class TypeNode <<abstract>>
+        class FunctionNode
+        class FunctionCallNode
+        class MemberAccessor
+        class Argument
+        class VariableDeclarator
+        class Import
+        class Export
+
+        Program "1" *-- "1" ProgramBody
+        ProgramBody "1" *-- "many" Statement
+        Statement <|-- VariableDeclarator
+        Statement <|-- ExpressionStatement
+        Expression <|-- FunctionCallNode
+        Expression <|-- MemberAccessor
+        Expression <|-- Argument
+        AbstractNode <|-- Program
+        AbstractNode <|-- Statement
+        AbstractNode <|-- Expression
+        AbstractNode <|-- TypeNode
+        AbstractNode <|-- FunctionNode
+        AbstractNode <|-- Import
+        AbstractNode <|-- Export
+    }
+}
+
+' ============================================================
+' LAYER 2: TYPE SYSTEM (Outline hierarchy)
+' ============================================================
+package "Type System (Outline)" #F4ECD8 {
+
+    interface Outline {
+        +is(Outline): boolean
+        +canBe(Outline): boolean
+        +maybe(Outline): boolean
+        +equals(Outline): boolean
+        +copy(): Outline
+        +project(Reference, OutlineWrapper): Outline
+        +eventual(): Outline
+        +instantiate(): Outline
+        +inferred(): boolean
+        +id(): long
+        +ast(): AST
+        +node(): Node
+    }
+
+    package "Primitive Types" #FFF0D8 {
+        abstract class Primitive
+        class ANY
+        class NOTHING
+        class NUMBER
+        class STRING
+        class INTEGER
+        class DOUBLE
+        class BOOL
+        Primitive <|-- ANY
+        Primitive <|-- NOTHING
+        Primitive <|-- NUMBER
+        Primitive <|-- STRING
+        Primitive <|-- INTEGER
+        Primitive <|-- DOUBLE
+        Primitive <|-- BOOL
+    }
+
+    package "Algebraic Data Types (ADT)" #FFF8D8 {
+        abstract class ADT {
+            #members: Map<String, EntityMember>
+            +getMember(name): Optional<EntityMember>
+            +addMember(...)
+        }
+        abstract class ProductADT {
+            +members(): List<EntityMember>
+            +interact(List, List): List
+        }
+        abstract class SumADT {
+            +options(): List<Outline>
+        }
+        class Entity {
+            -base: Outline
+            -references: List<Reference>
+            --
+            +produce(Entity): Entity
+            +doProject(...): Outline
+        }
+        class Tuple
+        class Array
+        class Dict
+        class Option
+        class Poly {
+            +sum(Outline, boolean): Outline
+        }
+
+        ADT <|-- ProductADT
+        ADT <|-- SumADT
+        ProductADT <|-- Entity
+        ProductADT <|-- Tuple
+        ProductADT <|-- Array
+        ProductADT <|-- Dict
+        SumADT <|-- Option
+        SumADT <|-- Poly
+    }
+
+    package "Projectable (Generic) Types" #F8F0E8 {
+        interface Projectable {
+            +project(Projectable, Outline, ProjectSession): Outline
+            +doProject(Projectable, Outline, ProjectSession): Outline
+            +emptyConstraint(): boolean
+            +containsGeneric(): boolean
+            +guess(): Outline
+        }
+        interface Generalizable {
+            +addExtendToBe(Outline)
+            +addHasToBe(Outline)
+            +addDefinedToBe(Outline)
+        }
+
+        abstract class "Genericable<G,N>" as Genericable {
+            #declaredToBe: Outline   «declared type»
+            #extendToBe: Outline     «upper bound (actual value)»
+            #hasToBe: Outline        «lower bound (usage context)»
+            #definedToBe: Outline    «structural usage (call/access)»
+            --
+            +min(): Outline
+            +max(): Outline
+            +guess(): Outline
+            --
+            #projectLambda(Function, FirstOrderFunction, ProjectSession): Outline
+            #projectEntity(Entity, ProjectSession): Outline
+            #projectGeneric(Genericable, ProjectSession): Outline
+            #projectFunction(FirstOrderFunction, ProjectSession): Outline
+        }
+
+        class Generic
+        class Return {
+            +addReturn(Outline)
+            +supposedToBe(): Outline
+        }
+        class Reference
+        class AccessorGeneric {
+            «placeholder for unresolved member access»
+        }
+
+        abstract class "Function<T,A>" as FunctionType {
+            +argument(): Outline
+            +returns(): Returnable
+        }
+        class FirstOrderFunction {
+            -session: ProjectSession
+        }
+        class FixFunction {
+            «permissive; suppresses type errors»
+        }
+        class HigherOrderFunction
+
+        class ProjectSession {
+            +projections: Map
+            +copiedCache: Map
+            +disable(Consumer): Outline
+        }
+
+        Projectable <|.. Genericable
+        Generalizable <|.. Genericable
+        Genericable <|-- Generic
+        Genericable <|-- Return
+        Genericable <|-- Reference
+        Genericable <|-- AccessorGeneric
+        Projectable <|.. FunctionType
+        FunctionType <|-- FirstOrderFunction
+        FunctionType <|-- FixFunction
+        FunctionType <|-- HigherOrderFunction
+    }
+
+    package "Built-in / Decorator Types" #F0F0F0 {
+        class UNKNOWN
+        class UNIT
+        class ERROR
+        class Lazy {
+            «deferred inference»
+        }
+        class This {
+            «self-referential type (~this)»
+        }
+    }
+
+    Outline <|.. Primitive
+    Outline <|.. ADT
+    Outline <|.. Projectable
+    Outline <|.. UNKNOWN
+    Outline <|.. UNIT
+    Outline <|.. ERROR
+    Outline <|.. Lazy
+    Entity ..|> Projectable
+}
+
+' ============================================================
+' LAYER 3: INFERENCE ENGINE
+' ============================================================
+package "Inference Engine" #F0E8F8 {
+
+    interface "Inference<T>" as InferenceI {
+        +infer(T node, Inferences inferences): Outline
+    }
+    interface Inferences {
+        +infer(Node): Outline
+        +isLazy(): boolean
+        +isLastInfer(): boolean
+    }
+    class OutlineInferences {
+        «Visitor: dispatches to\nconcrete Inference<T> impls»
+    }
+
+    class FunctionCallInference {
+        «FOF: FirstOrderFunction projection\nHOF: Genericable constraint inference\nOverload resolution via Poly»
+    }
+    class MemberAccessorInference {
+        «Genericable path: creates AccessorGeneric\nProductADT path: direct member lookup»
+    }
+    class ArgumentInference {
+        «Infers lambda/function parameter types»
+    }
+    class AssignmentInference {
+        «Propagates assignment type constraints»
+    }
+    class FunctionInference {
+        «Builds FirstOrderFunction for function defs»
+    }
+    class FunctionTypeNodeInference {
+        «Creates formal FirstOrderFunction from type annotations\n(node may be null for formal params)»
+    }
+    class VariableInference
+    class IdentifierInference
+    class EntityInference
+    class BinaryExprInference
+
+    Inferences <|.. OutlineInferences
+    InferenceI <|.. FunctionCallInference
+    InferenceI <|.. MemberAccessorInference
+    InferenceI <|.. ArgumentInference
+    InferenceI <|.. AssignmentInference
+    InferenceI <|.. FunctionInference
+    InferenceI <|.. FunctionTypeNodeInference
+    InferenceI <|.. VariableInference
+    InferenceI <|.. IdentifierInference
+    InferenceI <|.. EntityInference
+    InferenceI <|.. BinaryExprInference
+    OutlineInferences ..> FunctionCallInference : delegates
+    OutlineInferences ..> MemberAccessorInference : delegates
+    OutlineInferences ..> ArgumentInference : delegates
+    OutlineInferences ..> FunctionInference : delegates
+}
+
+' ============================================================
+' LAYER 4: SYMBOL ENVIRONMENT
+' ============================================================
+package "Symbol Environment" #E8F8F0 {
+    interface SymbolEnvironment
+    interface Scope
+
+    class LocalSymbolEnvironment {
+        -scopeStack: Deque<AstScope>
+        +define(name, Outline)
+        +lookup(name): Outline
+        +lookupAll(name): Outline  «may return Poly»
+        +module(): Module
+    }
+    class GlobalSymbolEnvironment {
+        -namespaces: Map
+        +export(name, Module)
+        +resolve(import): Outline
+    }
+    class AstScope {
+        -symbols: Map<String, EnvSymbol>
+    }
+    class EnvSymbol {
+        +name: String
+        +outline: Outline
+    }
+
+    SymbolEnvironment <|.. LocalSymbolEnvironment
+    SymbolEnvironment <|.. GlobalSymbolEnvironment
+    Scope <|.. AstScope
+    LocalSymbolEnvironment *-- AstScope
+    AstScope *-- EnvSymbol
+    ASF *-- GlobalSymbolEnvironment
+    AST *-- LocalSymbolEnvironment
+}
+
+' ============================================================
+' LAYER 5: ERROR HANDLING
+' ============================================================
+package "Error Handling" #F8E8E8 {
+    class GCPErrorReporter {
+        +{static} report(Node, GCPErrCode, String)
+        +{static} report(AST, Node, GCPErrCode, String)
+    }
+    class GCPError {
+        +errorCode: GCPErrCode
+        +node: Node
+        +message: String
+    }
+    enum GCPErrCode {
+        OUTLINE_MISMATCH
+        FIELD_NOT_FOUND
+        FUNCTION_NOT_DEFINED
+        FUNCTION_NOT_FOUND
+        PROJECT_FAIL
+        CONSTRUCT_CONSTRAINTS_FAIL
+        NOT_A_FUNCTION
+        REFERENCE_MIS_MATCH
+        NODE_AST_MISMATCH
+    }
+    GCPErrorReporter ..> GCPError : creates
+    GCPError --> GCPErrCode
+    GCPErrorReporter ..> AST : addError()
+}
+
+' ============================================================
+' CROSS-LAYER RELATIONSHIPS
+' ============================================================
+AST --> Inferences : uses
+AbstractNode --> Inferences : calls infer()
+FunctionCallInference --> FirstOrderFunction : projects
+FunctionCallInference --> Genericable : projects
+FunctionCallInference --> ProjectSession : uses
+MemberAccessorInference --> AccessorGeneric : creates
+MemberAccessorInference --> Entity : queries
+Entity --> Genericable : propagates hasToBe
+ArgumentInference --> Genericable : constrains
+AssignmentInference --> Genericable : addHasToBe()
+FunctionTypeNodeInference --> FirstOrderFunction : creates
+
+@enduml

@@ -102,6 +102,11 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
         if (outline instanceof Lazy) {
             outline = outline.eventual();
         }
+        // ANY path: host is the dynamic top-type (e.g. result of json() / json.parse()).
+        // Any field access on Any returns Any — mirroring TypeScript's `any` semantics.
+        if (outline instanceof ANY) {
+            return outline;
+        }
         // Entity path: host type is fully known; look up the member directly
         if (!(outline instanceof ProductADT)) {
             GCPErrorReporter.report(node.member(), GCPErrCode.FIELD_NOT_FOUND);

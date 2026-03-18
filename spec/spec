@@ -1,0 +1,21 @@
+<script>start("/Users/imac/Documents/code/github/entitir/spec/");</script>
+<script>onHasParentDirectory();</script>
+<script>addRow("api","api",1,96,"96 B",1772835841,"3/7/26, 6:24:01 AM");</script>
+<script>addRow("compare","compare",1,128,"128 B",1772837688,"3/7/26, 6:54:48 AM");</script>
+<script>addRow(".DS_Store",".DS_Store",0,6148,"6.0 kB",1773054431,"3/9/26, 7:07:11 PM");</script>
+<script>addRow("action.md","action.md",0,12300,"12.0 kB",1772769813,"3/6/26, 12:03:33 PM");</script>
+<script>addRow("db.md","db.md",0,4936,"4.8 kB",1772768298,"3/6/26, 11:38:18 AM");</script>
+<script>addRow("decision.md","decision.md",0,41347,"40.4 kB",1773617941,"3/16/26, 7:39:01 AM");</script>
+<script>addRow("discoverer.md","discoverer.md",0,5259,"5.1 kB",1772768298,"3/6/26, 11:38:18 AM");</script>
+<script>addRow("eai-onboarding-example.md","eai-onboarding-example.md",0,19383,"18.9 kB",1773623836,"3/16/26, 9:17:16 AM");</script>
+<script>addRow("entitir.md","entitir.md",0,4835,"4.7 kB",1772768298,"3/6/26, 11:38:18 AM");</script>
+<script>addRow("event.md","event.md",0,16335,"16.0 kB",1773625617,"3/16/26, 9:46:57 AM");</script>
+<script>addRow("overview.md","overview.md",0,7068,"6.9 kB",1772768298,"3/6/26, 11:38:18 AM");</script>
+<script>addRow("permission.md","permission.md",0,5818,"5.7 kB",1772768298,"3/6/26, 11:38:18 AM");</script>
+<script>addRow("pipeline.md","pipeline.md",0,7346,"7.2 kB",1773617248,"3/16/26, 7:27:28 AM");</script>
+<script>addRow("plugin.md","plugin.md",0,2819,"2.8 kB",1772768298,"3/6/26, 11:38:18 AM");</script>
+<script>addRow("runtime.md","runtime.md",0,11001,"10.7 kB",1773026330,"3/9/26, 11:18:50 AM");</script>
+<script>addRow("schema.md","schema.md",0,5471,"5.3 kB",1772768298,"3/6/26, 11:38:18 AM");</script>
+<script>addRow("search.md","search.md",0,3117,"3.0 kB",1772768298,"3/6/26, 11:38:18 AM");</script>
+<script>addRow("skill-routing.md","skill-routing.md",0,10045,"9.8 kB",1773416579,"3/13/26, 11:42:59 PM");</script>
+<script>addRow("world.md","world.md",0,11317,"11.1 kB",1773029957,"3/9/26, 12:19:17 PM");</script>

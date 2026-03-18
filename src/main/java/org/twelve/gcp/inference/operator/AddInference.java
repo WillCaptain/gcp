@@ -5,6 +5,7 @@ import org.twelve.gcp.node.expression.BinaryExpression;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
+import org.twelve.gcp.outline.primitive.ANY;
 import org.twelve.gcp.outline.primitive.STRING;
 import org.twelve.gcp.outline.primitive.NUMBER;
 import org.twelve.gcp.outline.projectable.Addable;
@@ -23,6 +24,11 @@ public class AddInference implements OperatorInference {
         }
         if (right instanceof Genericable<?,?>) {
             ((Genericable<?,?>) right).addDefinedToBe(ast.stringOrNumber(right.node()));
+        }
+        // ANY is the dynamic top-type (e.g. result of json() / json.parse()). Adding ANY to a
+        // String always yields String; adding ANY to a Number yields Any (unknown numeric/other).
+        if (left instanceof ANY || right instanceof ANY) {
+            return (left instanceof STRING || right instanceof STRING) ? ast.String : ast.Any;
         }
         if ((!(left instanceof UNKNOWN) && !compatibleWithAdd(left, ast)) ||
             (!(right instanceof UNKNOWN) && !compatibleWithAdd(right, ast))) {

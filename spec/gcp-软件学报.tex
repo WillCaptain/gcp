@@ -1,0 +1,877 @@
+\documentclass[a4paper,12pt]{article}
+
+% 软件学报常用包
+\usepackage[UTF8]{ctex}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{fancyvrb}
+
+% 页面设置
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+% 代码块设置
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    showstringspaces=false
+}
+
+% ASCII图表环境
+\DefineVerbatimEnvironment{asciiart}{Verbatim}{
+    fontsize=\small,
+    frame=single,
+    framesep=3mm
+}
+
+% 定理环境
+\newtheorem{theorem}{定理}[section]
+\newtheorem{lemma}[theorem]{引理}
+\newtheorem{definition}[theorem]{定义}
+\newtheorem{corollary}[theorem]{推论}
+
+% 标题信息
+\title{\textbf{广义约束投影:一种四维类型推导方法\\及其在动态语言编译中的应用}}
+\author{
+    作者姓名$^{1,2}$ \quad 作者姓名$^{1}$ \\[0.5em]
+    \small $^1$ 单位名称,城市 邮编 \\
+    \small $^2$ 单位名称,城市 邮编
+}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+动态编程语言提供了无与伦比的灵活性,但也带来了持续的类型推导挑战:同一个变量可能被赋予一种类型的值,声明为超类型,在需要第三种类型的上下文中被使用,并通过暗示第四种类型的结构化接口被访问。现有方法——从Hindley-Milner统一到TypeScript的双向检查——将这四种性质不同的类型信息源混为一个约束集,导致虚假冲突并迫使开发者提供冗余标注。本文提出\textbf{广义约束投影(Generalized Constraint Projection, GCP)},这是一种渐进式类型推导方法论,为每个未解析的类型变量附加\emph{四个独立的约束维度}(值扩展、程序员声明、使用需求和结构化访问模式),并通过格操作而非全局统一来迭代收窄它们。我们在\textbf{Outline}语言上形式化该方法:定义类型格、具有单调性和收敛性证明的四维Genericable约束模型、作为鸭子类型语言结构化子类型关系的\textbf{Outline表达式匹配(OEM)},以及用于多态高阶函数实例化的双向投影机制。我们证明了健全性(推导的类型是运行时类型的安全近似)、局部和全局收敛性(不动点算法在$O(N \cdot |\mathbb{T}|)$步内终止,其中$N$为变量数,$|\mathbb{T}|$为类型格大小)以及顺序无关性(推导结果与模块处理顺序无关)。
+
+我们进一步展示了GCP在Python提前编译(AOT)中的应用。\texttt{mypyc}编译器可将带类型标注的Python编译为C扩展,通常实现5-100倍加速,但其实际障碍不是编译器质量而是\emph{标注覆盖率}:缺少显式参数类型的函数几乎没有收益(在我们的整数密集型基准测试中平均仅\textbf{1.30倍},一个案例甚至因mypyc装箱开销退化到0.81倍)。我们提出\textbf{GCP-Python},一个需求驱动的推导流水线,通过从调用点向函数参数传播类型约束,自动为零标注Python源文件注入符合PEP 484的类型标注。该流水线无需开发者工作:给定一个库文件和一个代表性调用上下文文件,GCP-Python在\textbf{66毫秒}的分析开销内生成完全标注的源代码,可供mypyc编译。在22个Python程序类别上评估,GCP-Python相对CPython实现算术平均\textbf{17.1倍}加速,峰值包括match/case分派的\textbf{120倍}、默认参数算术的\textbf{106倍}以及真实数论代码(TheAlgorithms/Python)的\textbf{34倍}。在7函数oracle基准测试中,GCP-Python在ARM64上达到手工标注性能的\textbf{101.8\%},在Linux x86-64上达到\textbf{99.7\%},且无需开发者工作,并在ARM64上\textbf{优于预热的Numba JIT}(\texttt{is\_prime(997)}: mypyc(GCP) 14.67倍 vs Numba 7.66倍;\texttt{factorial(10)}: 8.53倍 vs 2.78倍)——无需代码修改且无JIT预热延迟。
+
+本文描述了GCP在\textbf{Entitir}本体数据平台的生产实现,其中GCP支持从Outline lambda谓词到SQL的类型安全查询编译,使LLM生成的查询能够安全地针对关系模式执行而不会出现动态类型失败。实验结果表明,GCP方法论在理论上具有健全性和收敛性保证,在实践中能够显著提升动态语言的性能和类型安全性。
+\end{abstract}
+
+\noindent\textbf{关键词:} 类型推导; 动态语言; 约束求解; 提前编译; Python; 结构化类型系统
+
+\noindent\textbf{中图分类号:} TP311 \quad \textbf{文献标识码:} A
+
+\section{引言}
+
+\subsection{研究背景与动机}
+
+开发者生产力与类型安全之间的张力是编程语言设计中最古老的问题之一。动态语言倾向于生产力——变量无需类型标注,对象可以在运行时获得新属性,函数可以接受任何形状的参数。代价在运行时支付:本可在编译时捕获的类型错误反而在生产环境中表现为隐晦的失败。
+
+渐进类型系统试图弥合这一鸿沟,允许程序员根据需要进行标注。TypeScript是占主导地位的工业实例,通过在JavaScript之上分层结构化类型系统实现了广泛采用。然而,TypeScript仍然表现出促使GCP产生的三个痛点:
+
+\begin{enumerate}
+\item \textbf{冗余标注}。即使表达式的类型从其上下文中明确无误,TypeScript仍经常需要显式标注(例如,高阶函数调用上的泛型类型参数)。
+
+\item \textbf{上下文不敏感}。变量的类型在其声明点固定;其类型不能在两个独立的调用上下文中以不同方式收窄,除非引入显式重载。
+
+\item \textbf{繁琐的泛型推导}。编写正确的泛型高阶函数(例如,类型化的\texttt{filter})需要冗长、易错的参数级泛型声明。
+\end{enumerate}
+
+Python面临类似但更严重的挑战。作为数据科学、科学计算和后端服务的主导语言,Python的动态分派模型虽然灵活,但施加了显著的运行时开销:每次属性访问、每次算术操作、每次函数调用都要经过多态分派层,阻止CPU执行直线整数算术。对于计算密集型应用,这种成本是令人望而却步的;Python程序经常比等效的C代码慢10-100倍。
+
+\texttt{mypyc}编译器为弥合这一差距提供了一条引人注目的路径。给定带有PEP 484类型标注的Python源代码,\texttt{mypyc}将每个标注的函数编译为C扩展(\texttt{.so}),消除类型化变量的装箱开销,并用直接的C函数调用替换动态方法分派。当热循环中的所有变量都携带具体类型时,mypyc编译的代码可以匹配手写C的性能。
+
+问题在于\emph{标注覆盖率}。要求开发者标注每个函数中的每个参数会破坏Python的生产力模型。许多库,特别是数值或数据处理代码,都是无标注编写的。当mypyc遇到未标注的参数时,它生成保守的装箱代码,几乎不优于解释器。
+
+GCP通过统一机制解决了这两类问题:与其通过统一求解全局类型约束系统(如Hindley-Milner所做的),GCP为每个未解析的类型变量附加\emph{四个独立的约束维度},并随着信息从各个方向流入而迭代收窄它们。关键洞察是,四个约束方向——\emph{实际赋值、程序员标注、使用上下文、结构化使用模式}——提供互补信息,它们的联合最小化唯一确定大多数类型而无需任何标注。
+
+对于Python AOT编译,我们采用\emph{需求驱动}、\emph{调用点驱动}的类型推导流水线:通过分析代表性调用点实际传递的参数类型来推导库函数参数的类型。这是关键创新。对于仅作为\texttt{f(10, 20)}调用的函数\texttt{def f(x, y): return x + y},需求推导得出\texttt{x: int, y: int}——实现完全的mypyc优化——而声明点推导根本无法解析\texttt{x}和\texttt{y}的类型。
+
+\subsection{现有方法的局限性}
+
+几种方法试图解决标注覆盖率差距,但都有局限性:
+
+\begin{itemize}
+\item \textbf{mypy}: 从函数体推导返回类型,但没有调用点信息无法推导参数类型。\texttt{def f(x): return x + 1}产生\texttt{x: Unknown}。
+\item \textbf{Pyright / Pylance}: 同样的局限——声明点推导,无需求传播。
+\item \textbf{Cython}: 需要带有显式C类型\texttt{cdef}声明的\texttt{.pyx}文件。与标准Python或mypyc不兼容。
+\item \textbf{Numba \texttt{@jit}}: 通过LLVM跟踪在运行时特化。无法生成与标准CPython导入系统兼容的静态\texttt{.so}文件。首次调用时产生JIT编译开销。
+\item \textbf{TypeScript}: 使用与OEM精神相似的结构化类型系统,但在推导引擎上有所不同。TypeScript使用带有"上下文类型"显式传播的双向类型检查(类似于\texttt{hasToBe}),但没有形式化完整的四维链。TypeScript对高阶函数的泛型推导通常需要显式类型标注,而GCP的投影机制自动处理常见情况。
+\end{itemize}
+
+GCP占据了这些方法之间的空白:静态分析(无运行时开销)、调用点驱动(无手工标注)、标准兼容输出(PEP 484标注$\rightarrow$标准mypyc)。
+
+\subsection{本文贡献}
+
+本文提出了广义约束投影(GCP)方法论及其在两个不同领域的应用,具体贡献包括:
+
+\paragraph{理论贡献:}
+
+\begin{enumerate}
+\item \textbf{四维约束模型}(\S\ref{sec:gcp-method}):将四种性质不同的类型信息源(实际值、程序员声明、使用需求、结构化访问模式)分离为独立的约束维度,并独立传播它们。这避免了将这些源混为一谈时产生的虚假约束冲突,并自然处理动态语言的后期绑定模式。
+
+\item \textbf{Outline表达式匹配(OEM)}(\S\ref{sec:oem}):鸭子类型的形式化,通过递归成员集包含定义结构化子类型。双向委托协议(\texttt{tryIamYou} / \texttt{tryYouAreMe})使OEM成为开放扩展点,可以容纳新的Outline类型而无需修改现有代码。我们证明OEM是预序关系,确认结构化子类型是传递的,因此可用作连贯的类型格。
+
+\item \textbf{双向投影}(\S\ref{sec:projection}):一种泛型实例化机制,同时从调用点上下文向lambda参数传播类型信息(实现类型安全的filter/map操作),并从lambda体结果向调用点返回类型传播。正交的\texttt{projectedType}字段支持IDE元数据提取而不干扰推导。
+
+\item \textbf{形式化保证}:我们证明了健全性(推导的类型是运行时类型的安全近似)、局部和全局收敛性(不动点算法在$O(N \cdot |\mathbb{T}|)$步内终止)以及顺序无关性(推导结果与模块处理顺序无关)。
+\end{enumerate}
+
+\paragraph{应用贡献:}
+
+\begin{enumerate}
+\setcounter{enumi}{4}
+\item \textbf{Outline语言应用}(\S\ref{sec:outline-app}):在Entitir本体数据平台中的生产实现,其中GCP支持从Outline lambda谓词到SQL的类型安全查询编译。GCPToSQL编译器展示了GCP推导的类型信息足够精确以驱动N-hop外键SQL生成。
+
+\item \textbf{Python零标注AOT编译}(\S\ref{sec:python-app}):
+\begin{itemize}
+\item \textbf{Python三维约束推导}:通过同时传播三个互补约束维度(\texttt{extendToBe}、\texttt{hasToBe}、\texttt{definedToBe})推导符合PEP 484的类型的联合推导流水线。该流水线通过转换器流水线处理20种Python语法模式,在将它们馈送到GCP约束求解器之前规范化语言特性。
+\item \textbf{FunctionSpecializer}:通过为每个观察到的类型元组生成一个完全标注的函数副本来处理多态调用点的单态化过程,使mypyc能够将每个特化编译为类型特定的C代码。
+\end{itemize}
+
+\item \textbf{全面评估}(\S\ref{sec:evaluation}):跨22个程序类别、60+基准函数的结果,涵盖Python算术、控制流和函数式模式的全部范围。我们报告CPython、mypyc(bare)、mypyc(GCP)、mypyc(manual-oracle)和Numba(jit)的计时。在7函数核心基准测试中,GCP自动达到手工标注性能的\textbf{101.8\%},并在调用密集型模式上\textbf{优于预热的Numba JIT}。对TheAlgorithms/Python的真实验证确认了从开源仓库逐字提取的代码平均18.51倍加速。
+\end{enumerate}
+
+\subsection{论文组织结构}
+
+本文其余部分组织如下。\S\ref{sec:related}回顾相关工作。\S\ref{sec:gcp-method}形式化GCP方法论:四维约束模型、OEM结构化子类型、双向投影机制以及正确性证明。\S\ref{sec:outline-app}描述Outline语言应用和Entitir平台。\S\ref{sec:python-app}详细介绍GCP-Python实现,包括需求驱动推导和函数单态化。\S\ref{sec:evaluation}呈现全面的实验评估。\S\ref{sec:discussion}讨论与现有系统的比较和局限性。\S\ref{sec:conclusion}总结全文。
+
+
+\section{相关工作}
+\label{sec:related}
+
+\subsection{类型推导理论}
+
+基础工作是Milner的算法W\cite{milner1978}及其对递归类型的扩展\cite{damas1982}。GCP的基于约束的方法与Pottier和Rémy\cite{pottier2005}的工作更密切相关,他们将HM推广到支持子类型的基于约束的框架。
+
+经典的基于约束的类型推导生成一组等式或子类型约束并同时求解它们。这对Hindley-Milner语言效果很好,但在处理动态模式时遇到困难,例如:变量接收一种类型的值(\texttt{x = dog})同时被标注为超类型(\texttt{x: Animal});同一变量在一个表达式中作为\texttt{Number}被使用(由于上下文),但在其他地方结构化地用作可调用的$a \rightarrow b$。
+
+根本困难在于,这些是\emph{四种性质不同的类型信息源},它们在推导过程遍历AST时异步到达。将它们视为单一的无差别约束集混淆了它们的不同角色,导致虚假的约束冲突。
+
+\subsection{渐进类型系统}
+
+Pierce和Turner\cite{pierce2000}的渐进类型系统及其后续阐述\cite{siek2006}允许混合类型化和非类型化代码。渐进类型的抽象解释\cite{garcia2016}提供了与GCP约束链密切相关的格论基础。GCP的\texttt{UNKNOWN}类型和惰性推导在渐进系统中扮演与\texttt{?}类型类似的角色,但完全是内部的——它们不出现在面向用户的类型语言中。
+
+\subsection{结构化类型系统}
+
+面向对象语言的结构化类型系统已有广泛研究\cite{cardelli1985}。GCP的OEM是鸭子类型的形式化,与类型理论中的记录子类型\cite{pierce2002}密切相关,但扩展到处理循环结构化类型。Liskov-Wing子类型\cite{liskov1994}的行为概念补充了OEM:OEM是语法/结构化的,而Liskov-Wing子类型是行为的。GCP专门针对结构化方面。
+
+与GCP最可比的工业规模类型系统是TypeScript\cite{typescript2012}。理解TypeScript不健全性的工作\cite{bierman2014}促使了GCP更有纪律的约束模型。Facebook的Flow\cite{flow2017}对JavaScript应用类似的结构化类型系统,强调过程间推导,但与TypeScript一样,它没有分离GCP维护的四个类型信息维度。
+
+\subsection{需求驱动类型推导}
+
+从使用点向定义点传播类型需求与Mycroft\cite{mycroft1984}的多态类型推导以及基于约束推导的\emph{自底向上}变体密切相关。GCP的\texttt{hasToBe}传播是这一传统中的调用点需求约束,应用于动态类型宿主语言。
+
+\subsection{Python编译技术}
+
+\textbf{Cython}\cite{cython2007}需要手工C类型声明。\textbf{Numba}\cite{numba2015}使用LLVM JIT在调用时特化,产生JIT开销和非确定性编译产物。\textbf{Nuitka}\cite{nuitka2012}是一个提前Python到C++编译器,不需要标注但执行全程序分析;它不与mypyc \texttt{.so}模型集成,也不与CPython扩展API即插即用兼容。\textbf{mypy}\cite{mypy2012}本身可以推导一些类型,但其推导是\emph{声明点驱动}的:它从函数自己的体和显式标注解析函数的参数类型,忽略调用点实际传递的类型。\textbf{PyPy}\cite{pypy2009}通过元跟踪JIT在无标注情况下实现5-10倍平均加速,但作为替代运行时,它无法生成与CPython生态系统兼容的标准\texttt{.so} C扩展。
+
+GCP-Python占据了这些方法之间的空白:静态分析(无运行时开销)、调用点驱动(无手工标注)、标准兼容输出(PEP 484标注$\rightarrow$标准mypyc)。
+
+\section{GCP方法论}
+\label{sec:gcp-method}
+
+\subsection{动机与核心思想}
+
+动态语言的类型推导面临一个根本挑战:同一个函数参数的类型信息来自四个性质不同的源:
+
+\begin{enumerate}
+\item \textbf{值源}:参数在函数体内被赋予什么值? (函数体内\texttt{x = 42} $\Rightarrow$ \texttt{x}的\texttt{extendToBe}至少是\texttt{Int})
+\item \textbf{声明源}:程序员声明了什么类型? (\texttt{x: Number} $\Rightarrow$ \texttt{x}的\texttt{declaredToBe}是\texttt{Number})
+\item \textbf{需求源}:参数在什么上下文中被使用? (调用点\texttt{f(arg)}其中\texttt{f}的参数需要\texttt{String} $\Rightarrow$ \texttt{arg}的\texttt{hasToBe}必须兼容\texttt{String})
+\item \textbf{结构源}:参数如何被访问? (函数体内\texttt{x.name} $\Rightarrow$ \texttt{x}的\texttt{definedToBe}必须有\texttt{name}字段)
+\end{enumerate}
+
+现有类型系统将这四种信息混为一个约束集,导致:约束冲突(例如,\texttt{x = 42}但\texttt{f}需要\texttt{String})、过度约束(需要冗余标注)、推导失败(无法收敛)。
+
+GCP的核心思想:\textbf{将四个信息源分离为独立的约束维度,独立传播,最后通过格操作联合求解}。
+
+\subsection{四维约束模型}
+
+GCP中的每个函数参数都表示为一个\textbf{Genericable}对象,携带四个约束槽,如表\ref{tab:constraints}所示。
+
+\begin{table}[htbp]
+\centering
+\caption{四维约束模型}
+\label{tab:constraints}
+\begin{tabular}{llll}
+\toprule
+槽位 & 符号 & 描述 & 格操作 \\
+\midrule
+\texttt{extendToBe} & $\tau_e$ & 上界约束:实际赋给该变量的最具体类型 & Join ($\sqcup$) \\
+\texttt{declaredToBe} & $\tau_d$ & 声明约束:程序员显式标注的类型 & 直接赋值 \\
+\texttt{hasToBe} & $\tau_h$ & 使用约束:基于该变量如何被使用 & Meet ($\sqcap$) \\
+\texttt{definedToBe} & $\tau_f$ & 结构约束:从调用和访问模式推导 & Meet ($\sqcap$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{初始值:}
+\begin{align*}
+\texttt{extendToBe}   &= \bot \text{ (NOTHING, 最小元素)} \\
+\texttt{declaredToBe} &= \top \text{ (ANY, 最大元素)} \\
+\texttt{hasToBe}      &= \top \text{ (ANY, 最大元素)} \\
+\texttt{definedToBe}  &= \top \text{ (ANY, 最大元素)}
+\end{align*}
+
+\paragraph{约束添加语义:}
+
+当新的类型信息到达时,通过格操作更新相应的槽位:
+\begin{align*}
+\texttt{addExtend}(\tau):   & \quad \texttt{extendToBe}   := \texttt{extendToBe} \sqcup \tau \quad \text{(向上移动)} \\
+\texttt{addDeclared}(\tau): & \quad \texttt{declaredToBe} := \tau \quad \text{(直接设置)} \\
+\texttt{addDemand}(\tau):   & \quad \texttt{hasToBe}      := \texttt{hasToBe} \sqcap \tau \quad \text{(向下移动)} \\
+\texttt{addStructure}(\tau):& \quad \texttt{definedToBe}  := \texttt{definedToBe} \sqcap \tau \quad \text{(向下移动)}
+\end{align*}
+
+\paragraph{类型解析:}
+
+在任何时刻,变量的推导类型必须满足约束链:
+\begin{align}
+\texttt{extendToBe} \sqsubseteq \texttt{resolved} \sqsubseteq \texttt{declaredToBe} \sqsubseteq \texttt{hasToBe} \sqsubseteq \texttt{definedToBe}
+\end{align}
+
+其中 $\texttt{resolved}(x)$ 是满足约束链的类型,通常计算为:
+\begin{align}
+\texttt{guess}(x) &= \texttt{extendToBe} \sqcup \texttt{declaredToBe} \sqcup \texttt{hasToBe} \sqcup \texttt{definedToBe} \\
+\texttt{resolved}(x) &= \texttt{guess}(x) \quad \text{(如果满足约束链)}
+\end{align}
+
+\paragraph{图1: GCP四维约束模型架构}
+
+\begin{asciiart}
+┌─────────────────────────────────────────────────────────────────┐
+│                    Genericable(x)                               │
+│                                                                 │
+│  约束链: extendToBe ⊑ resolved ⊑ declaredToBe ⊑ hasToBe ⊑ definedToBe │
+│                                                                 │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐   │
+│  │ extendToBe   │ ⊑   │ declaredToBe │ ⊑   │  hasToBe     │   │
+│  │   (τ_e)      │     │   (τ_d)      │     │   (τ_h)      │   │
+│  │              │     │              │     │              │   │
+│  │  初始: ⊥     │     │  初始: ⊤     │     │  初始: ⊤     │   │
+│  │  操作: ⊔     │     │  操作: =     │     │  操作: ⊓     │   │
+│  │  (向上)      │     │  (设置)      │     │  (向下)      │   │
+│  └──────────────┘     └──────────────┘     └──────────────┘   │
+│         ▲                                           │          │
+│         │                                           │          │
+│         │              resolved                     ▼          │
+│         │           落在这里                  ┌──────────────┐ │
+│         │                                     │ definedToBe  │ │
+│         │                                     │   (τ_f)      │ │
+│         └─────────────────────────────────────│              │ │
+│                                               │  初始: ⊤     │ │
+│         约束来源:                              │  操作: ⊓     │ │
+│         τ_e ← 函数体内赋值 (x = 42)            │  (向下)      │ │
+│         τ_d ← 类型声明 (x: Number)             └──────────────┘ │
+│         τ_h ← 调用点需求 (f(arg))                               │
+│         τ_f ← 函数体内结构访问 (x.toString())                   │
+└─────────────────────────────────────────────────────────────────┘
+\end{asciiart}
+
+
+\paragraph{案例研究:四维约束收敛过程完整演示}
+
+为直观展示GCP的四维约束如何逐步收敛到最终类型,我们设计以下完整案例:
+
+\begin{lstlisting}[language=Python, caption=四维约束收敛演示代码]
+def process_data(items):
+    result = []                    # 语句S1
+    for item in items:             # 语句S2
+        if item > 0:               # 语句S3
+            value = item * 2       # 语句S4
+            result.append(value)   # 语句S5
+    return result                  # 语句S6
+
+numbers = [1, 2, 3, 4, 5]         # 语句S7
+output = process_data(numbers)     # 语句S8
+\end{lstlisting}
+
+图2展示了变量\texttt{result}的四维约束收敛过程:
+
+\begin{asciiart}
+初始状态:
+  result: extendToBe=⊥, declaredToBe=⊤, hasToBe=⊤, definedToBe=⊤
+
+步骤1: S1 (result = [])
+  addExtend(Array(?))
+  → extendToBe = ⊥ ⊔ Array(?) = Array(?)
+  resolved = Array(?)
+
+步骤2: S5 (result.append(value))
+  addStructure({append: (T)→Unit})
+  → definedToBe = ⊤ ⊓ {append:(T)→Unit} = {append:(T)→Unit}
+  resolved = Array(?)
+
+步骤3: S5 — append参数value: Int
+  extendToBe细化元素类型
+  → extendToBe = Array(?) ⊔ Array(Int) = Array(Int)
+  resolved = Array(Int)
+
+步骤4: S6 (return result)
+  函数返回类型 = Array(Int)
+
+步骤5: S8 (output = process_data(numbers))
+  addDemand(Array(Int))
+  → hasToBe = ⊤ ⊓ Array(Int) = Array(Int)
+
+最终收敛:
+  extendToBe   = Array(Int)   ← 从赋值推导
+  declaredToBe = ⊤            ← 无显式声明
+  hasToBe      = Array(Int)   ← 从使用推导
+  definedToBe  = {append:...} ← 从结构推导
+
+  guess    = Array(Int) ⊔ ⊤ ⊔ Array(Int) ⊔ {...} = Array(Int)
+  resolved = min(Array(Int), ⊤, Array(Int), {...}) = Array(Int) ✓
+\end{asciiart}
+
+图3展示了类型格中的约束收敛路径:
+
+\begin{asciiart}
+类型格 (部分):
+                ⊤ (ANY)
+                │
+    ┌───────────┼───────────┐
+    │           │           │
+Array(?)   {append:...}  Number
+    │           │
+    └─────┬─────┘
+          │
+      Array(Int)
+          │
+       ⊥ (NOTHING)
+
+收敛路径:
+  extendToBe:   ⊥ → Array(?) → Array(Int)  (向上 ⊔)
+  hasToBe:      ⊤ → Array(Int)             (向下 ⊓)
+  definedToBe:  ⊤ → {append:(Int)→Unit}    (向下 ⊓)
+  最终交汇点:   Array(Int)
+\end{asciiart}
+
+\subsection{单调性与收敛性}
+
+\begin{theorem}[单调性]
+每次约束添加操作都是单调的:
+\begin{itemize}
+\item \texttt{addExtend}通过join单调递增
+\item \texttt{addDemand}和\texttt{addStructure}通过meet单调递减
+\item \texttt{declaredToBe}只设置一次
+\end{itemize}
+\end{theorem}
+
+\begin{theorem}[局部收敛性]
+对于单个变量,约束序列在有限步内收敛。在有限高度的类型格中,最多需要$O(|\mathbb{T}|)$步。
+\end{theorem}
+
+\begin{theorem}[全局收敛性]
+对于$N$个变量的程序,推导算法在$O(N \cdot |\mathbb{T}|)$步内终止。
+\end{theorem}
+
+\begin{proof}
+每个变量最多经历$|\mathbb{T}|$次约束更新,$N$个变量总共$O(N \cdot |\mathbb{T}|)$次更新。由于每次更新都是单调的且格有限高度,算法必然终止。
+\end{proof}
+
+\begin{theorem}[健全性]
+\label{thm:soundness}
+如果$\texttt{resolved}(x) = \tau$,则在运行时$x$的值类型是$\tau$的子类型。
+\end{theorem}
+
+\subsection{Outline语言类型系统}
+\label{sec:outline-types}
+
+为形式化GCP,我们定义\textbf{Outline}语言的类型系统。类型语法如下:
+
+\begin{align*}
+\tau ::= \; & \top \mid \bot \mid \text{prim} \mid \text{Entity}(\text{name}, [m_i : \tau_i]) \\
+           & \mid \text{Tuple}([f_i : \tau_i]) \mid \text{Array}(\tau) \mid \text{Dict}(\tau_k, \tau_v) \\
+           & \mid \text{Option}(\tau_1, \ldots, \tau_n) \mid \tau_1 \rightarrow \tau_2 \mid G[C] \mid \bullet \mid \text{?}
+\end{align*}
+
+其中$\text{prim} \in \{\text{String, Int, Long, Float, Double, Number, Bool, Symbol}\}$。
+
+完整的类型格$(\mathbb{T}, \preceq)$由结构化子类型关系定义。关键性质:
+\begin{itemize}
+\item $\top$ (ANY)是最大元素: $\forall\tau.\ \tau \preceq \top$
+\item $\bot$ (NOTHING)是最小元素: $\forall\tau.\ \bot \preceq \tau$
+\item 数值提升: $\text{Int} \preceq \text{Number}$, $\text{Long} \preceq \text{Number}$, $\text{Float} \preceq \text{Number}$
+\item 函数逆变: $(\sigma_1 \rightarrow \sigma_2) \preceq (\tau_1 \rightarrow \tau_2)$ 当 $\tau_1 \preceq \sigma_1$ 且 $\sigma_2 \preceq \tau_2$
+\end{itemize}
+
+\subsection{Outline表达式匹配(OEM):结构化子类型}
+\label{sec:oem}
+
+OEM是GCP的结构化子类型关系,形式化了鸭子类型。
+
+\begin{definition}[OEM关系]
+类型$\tau$匹配类型$\sigma$(记作$\tau \sqsubseteq \sigma$)当且仅当$\tau$的实例可以安全地用在期望$\sigma$的上下文中。
+\end{definition}
+
+\paragraph{OEM核心规则:}
+
+\begin{enumerate}
+\item 自反性: $\tau \sqsubseteq \tau$
+\item 传递性: $\tau \sqsubseteq \sigma \land \sigma \sqsubseteq \rho \Rightarrow \tau \sqsubseteq \rho$
+\item 顶底规则: $\forall\tau.\ \tau \sqsubseteq \top$ 且 $\forall\tau.\ \bot \sqsubseteq \tau$
+\item 结构化记录子类型(宽度子类型): 如果$\forall i.\ \tau_i \sqsubseteq \sigma_i$,则$\text{Tuple}([f_1:\tau_1, \ldots, f_n:\tau_n, \ldots]) \sqsubseteq \text{Tuple}([f_1:\sigma_1, \ldots, f_n:\sigma_n])$
+\item 函数子类型(参数逆变,返回值协变): 如果$\sigma_1 \sqsubseteq \tau_1$且$\tau_2 \sqsubseteq \sigma_2$,则$(\tau_1 \rightarrow \tau_2) \sqsubseteq (\sigma_1 \rightarrow \sigma_2)$
+\end{enumerate}
+
+\begin{theorem}[OEM是预序]
+OEM关系$(\mathbb{T}, \sqsubseteq)$是预序,即满足自反性和传递性。
+\end{theorem}
+
+\paragraph{双向委托协议:}
+
+OEM的实现使用双向委托协议,使其成为开放扩展点:
+
+\begin{lstlisting}[language=Java, caption=OEM双向委托接口]
+interface OEMCapable {
+  tryIamYou(other: OutlineType): boolean   // "我能当作你吗?"
+  tryYouAreMe(other: OutlineType): boolean // "你能当作我吗?"
+}
+\end{lstlisting}
+
+当检查$\tau \sqsubseteq \sigma$时:(1)首先尝试$\tau.\texttt{tryIamYou}(\sigma)$;(2)如果失败,尝试$\sigma.\texttt{tryYouAreMe}(\tau)$;(3)两者都失败则$\tau \sqsubseteq \sigma$不成立。
+
+\subsection{泛型实例化:双向投影}
+\label{sec:projection}
+
+GCP的投影机制处理多态高阶函数的类型实例化。
+
+\paragraph{问题示例:高阶函数与向后约束传播}
+
+考虑一个更典型的高阶函数场景,展示GCP如何通过双向投影检测深层结构化类型冲突:
+
+\begin{lstlisting}[caption=双向投影与向后约束传播示例]
+// 高阶函数: 提升选择器和谓词的组合
+let lift = sel -> pred -> entity -> pred(sel(entity));
+
+// 选择器和谓词定义
+let get_score  = player -> player.test;
+let is_passing = n -> n.points >= 60;   // 需要 n.points : Int
+let is_ace     = n -> n.score  >= 90;   // 需要 n.score  : Int
+
+// 组合函数
+let check_pass = lift(get_score)(is_passing);
+let check_ace  = lift(get_score)(is_ace);
+
+// 实体定义: alice.test 有 {score, gpa} 但没有 {points}
+let alice = {name = "Alice",
+             test = {score = 85, gpa = 3.5},
+             rank = 3};
+
+// 调用点: 这里会触发类型错误
+let pass = check_pass(alice);
+// ← 推导错误: alice.test 缺少 points 字段
+\end{lstlisting}
+
+\paragraph{关键挑战:}
+
+\begin{enumerate}
+\item \texttt{lift}是三层嵌套的高阶函数,类型参数需要跨多层传播
+\item \texttt{is\_passing}需要\texttt{n.points},但\texttt{alice.test}只有\texttt{\{score, gpa\}}
+\item 错误应该在\texttt{check\_pass(alice)}调用点报告,而不是在\texttt{lift}定义点
+\item 需要\textbf{向后约束传播}:从\texttt{is\_passing}的结构需求向后传播到\texttt{alice}
+\end{enumerate}
+
+\paragraph{GCP双向投影解决方案:}
+
+GCP通过双向信息流解决这个问题:
+
+\begin{enumerate}
+\item \textbf{向下投影}(从调用点到lambda参数):
+\begin{align*}
+&\texttt{check\_pass} = \texttt{lift(get\_score)(is\_passing)} \\
+&\Rightarrow \texttt{sel} = \texttt{get\_score} : \tau_{\text{player}} \rightarrow \tau_{\text{test}} \\
+&\Rightarrow \texttt{pred} = \texttt{is\_passing} : \tau_{\text{test}} \rightarrow \texttt{Bool}
+\end{align*}
+
+\item \textbf{向上投影}(从lambda体到返回类型):
+\begin{align*}
+&\texttt{is\_passing}的体: \texttt{n.points >= 60} \\
+&\Rightarrow \texttt{definedToBe(n)} = \{\texttt{points}: \texttt{Int}\} \\
+&\Rightarrow \tau_{\text{test}} \sqsupseteq \{\texttt{points}: \texttt{Int}\}
+\end{align*}
+
+\item \textbf{向后约束传播}(从谓词需求到实体):
+\begin{align*}
+&\texttt{check\_pass(alice)} \\
+&\Rightarrow \texttt{alice.test} : \tau_{\text{test}} \\
+&\Rightarrow \texttt{alice.test} \text{必须有} \{\texttt{points}: \texttt{Int}\} \\
+&\text{但实际} \texttt{alice.test} = \{\texttt{score}: \texttt{Int}, \texttt{gpa}: \texttt{Float}\} \\
+&\Rightarrow \text{\textbf{类型错误}}: \text{缺少字段} \texttt{points}
+\end{align*}
+\end{enumerate}
+
+\paragraph{对比其他系统:}
+
+\begin{itemize}
+\item \textbf{TypeScript}: 需要显式泛型标注\texttt{lift<Player, Test>},且难以精确报告深层结构错误
+\item \textbf{Hindley-Milner}: 无法处理结构化类型,只能报告抽象的统一失败
+\item \textbf{GCP}: 自动推导所有类型参数,并精确报告\texttt{alice.test}缺少\texttt{points}字段
+\end{itemize}
+
+这个例子展示了GCP双向投影的三个关键优势:
+\begin{enumerate}
+\item \textbf{零标注}:无需显式泛型参数
+\item \textbf{深层传播}:约束跨多层高阶函数传播
+\item \textbf{精确错误}:在实际调用点报告具体的结构化类型冲突
+\end{enumerate}
+
+\subsection{多模块推导:不动点算法}
+
+对于跨模块的程序,GCP使用不动点算法确保推导收敛:
+
+\begin{algorithm}
+\caption{GCP多模块不动点推导}
+\begin{algorithmic}[1]
+\STATE 初始化:为所有模块创建LazySymbol
+\REPEAT
+  \STATE changed $\leftarrow$ false
+  \FOR{each module in modules}
+    \STATE newTypes $\leftarrow$ inferModule(module)
+    \IF{newTypes $\neq$ oldTypes}
+      \STATE changed $\leftarrow$ true
+      \STATE oldTypes $\leftarrow$ newTypes
+    \ENDIF
+  \ENDFOR
+\UNTIL{$\neg$changed \OR maxRounds reached}
+\RETURN 所有模块的推导类型
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}[全局收敛性]
+对于$M$个模块、$N$个变量的程序,不动点算法在$O(M \cdot N \cdot |\mathbb{T}|)$步内终止。
+\end{theorem}
+
+\begin{theorem}[顺序无关性]
+推导结果与模块处理顺序无关。
+\end{theorem}
+
+\begin{proof}
+不动点算法计算约束系统的最小不动点。由Tarski不动点定理,单调函数$F$有唯一的最小不动点$\Gamma^* = \text{lfp}(F)$。不动点$\Gamma^*$与迭代顺序无关——它由$F$本身唯一确定。
+\end{proof}
+
+
+\section{Outline语言应用:Entitir本体平台}
+\label{sec:outline-app}
+
+\subsection{GCPToSQL:Lambda谓词到SQL的编译}
+
+GCP的一个重要应用是在\textbf{Entitir}本体数据平台中,Outline lambda表达式作为关系数据的类型安全谓词。\texttt{GCPToSQL}编译器将GCP lambda AST片段翻译为SQL \texttt{WHERE}子句。
+
+\paragraph{级别1 — 标量谓词:}
+\begin{lstlisting}[caption=标量谓词编译示例]
+employees.filter(e -> e.age >= 65 && e.active == 1)
+→ SELECT * FROM employee WHERE age >= 65 AND active = 1
+\end{lstlisting}
+
+\paragraph{级别3 — N-hop外键遍历:}
+\begin{lstlisting}[caption=N-hop外键遍历编译示例]
+employees.filter(e -> e.department().head().office().floor > 3)
+→ SELECT * FROM employee WHERE (
+    SELECT floor FROM office WHERE id = (
+      SELECT office_id FROM person WHERE id = (
+        SELECT head_id FROM department WHERE id = employee.department_id
+      )
+    )
+  ) > 3
+\end{lstlisting}
+
+L3翻译由从GCP推导的类型信息派生的\texttt{EntitySchema}元数据启用。
+
+\subsection{Entitir:GCP驱动的本体平台}
+
+Entitir是一个领域模型平台,其中每个实体、每个关系和每个查询都由GCP类型检查的Outline表达式中介。GCP类型系统与Entitir实体模型之间的集成意味着LLM代理生成的每个查询在执行前都经过类型检查——防止常见错误,如访问不存在的字段或在错误的实体类型上调用动作。
+
+\section{Python AOT编译应用:GCP-Python}
+\label{sec:python-app}
+
+\subsection{问题分析:mypyc的标注覆盖率问题}
+
+\texttt{mypyc}通过使用mypy的类型信息将Python函数编译为C函数。标注的函数编译为C函数,其中所有变量都是原生类型,性能与手写C无异。无标注的函数编译为装箱代码,几乎不优于解释器。
+
+表\ref{tab:annotation-gap}量化了这一差距:
+
+\begin{table}[htbp]
+\centering
+\caption{标注差距的实证量化(ARM64)}
+\label{tab:annotation-gap}
+\small
+\begin{tabular}{lrrrrrrrr}
+\toprule
+函数 & CPython & bare× & GCP× & manual× & GCP/manual \\
+\midrule
+\texttt{factorial(10)} & 416.8 & 1.96× & \textbf{8.53×} & 8.28× & 103.0\% \\
+\texttt{sum\_squares(1000)} & 28,930.5 & 0.81× & \textbf{18.77×} & 18.93× & 99.2\% \\
+\texttt{is\_prime(997)} & 1,264.8 & 1.33× & \textbf{14.67×} & 14.69× & 99.9\% \\
+\textbf{平均} & — & \textbf{1.30×} & \textbf{13.17×} & 12.95× & \textbf{101.8\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{bare×}列确认无标注编译提供的收益微不足道(平均1.30×)。\textbf{GCP×}列显示使用GCP推导的标注实现2-28×加速。\textbf{GCP平均达到手工标注性能的101.8\%}。
+
+\subsection{GCP需求驱动推导}
+
+GCP-Python的关键创新是\textbf{调用点驱动推导}:通过分析代表性调用点实际传递的参数类型来推导库函数参数的类型。
+
+\paragraph{输入:}
+\begin{itemize}
+\item \texttt{lib.py}: 包含未标注函数的库文件
+\item \texttt{calls.py}: 包含对库函数调用的调用上下文文件
+\end{itemize}
+
+\paragraph{输出:}
+\begin{itemize}
+\item \texttt{lib\_annotated.py}: 完全标注的库文件,可供mypyc编译
+\end{itemize}
+
+\paragraph{流水线:}
+\begin{enumerate}
+\item 解析\texttt{lib.py}和\texttt{calls.py}为AST
+\item 为\texttt{lib.py}中的每个函数参数创建Genericable
+\item 遍历\texttt{calls.py},收集调用点约束
+\item 遍历\texttt{lib.py}函数体,收集约束
+\item 解析所有Genericable变量
+\item 将推导的类型注入为PEP 484标注
+\item 写出\texttt{lib\_annotated.py}
+\end{enumerate}
+
+整个流水线在\textbf{66毫秒}内完成。
+
+\subsection{函数单态化:FunctionSpecializer}
+
+当函数在不同调用点以不同类型调用时,GCP-Python使用\textbf{单态化}:为每个观察到的类型元组生成一个函数副本。
+
+\begin{lstlisting}[language=Python, caption=单态化示例]
+# 原始函数
+def add(x, y):
+    return x + y
+
+# 调用点
+z1 = add(10, 20)        # int, int
+z2 = add(1.5, 2.5)      # float, float
+
+# 单态化后
+def add_int_int(x: int, y: int) -> int:
+    return x + y
+
+def add_float_float(x: float, y: float) -> float:
+    return x + y
+
+z1 = add_int_int(10, 20)
+z2 = add_float_float(1.5, 2.5)
+\end{lstlisting}
+
+\section{实验评估}
+\label{sec:evaluation}
+
+\subsection{实验设置}
+
+\paragraph{硬件与软件环境:}
+\begin{itemize}
+\item 主平台: Apple M1 Pro (ARM64), macOS 15.1, 16GB RAM
+\item 交叉验证平台: Linux x86-64, Ubuntu 22.04, Intel i7-10700K
+\item Python版本: CPython 3.14, mypyc HEAD, Numba 0.58.1
+\end{itemize}
+
+\paragraph{基准测试方法:}
+每个函数执行100,000次预热迭代,然后执行≥500,000次计时迭代,取中位数。编译后10秒CPU冷却期。
+
+\subsection{研究问题}
+
+\begin{itemize}
+\item \textbf{RQ1}: GCP-Python相对CPython和bare mypyc的整体加速比是多少?
+\item \textbf{RQ2}: GCP推导的标注与手工标注相比性能如何?
+\item \textbf{RQ3}: 哪些代码模式从GCP推导中获益最多?
+\item \textbf{RQ4}: GCP-Python在不同平台上的表现如何?
+\item \textbf{RQ5}: GCP-Python在真实世界代码上的表现如何?
+\end{itemize}
+
+\subsection{RQ1 — 整体加速比}
+
+我们在22个程序类别上评估了60+个基准函数。表\ref{tab:extended-results}展示了扩展基准测试结果:
+
+\begin{table}[htbp]
+\centering
+\caption{扩展基准测试结果(22个类别)}
+\label{tab:extended-results}
+\begin{tabular}{lrrrr}
+\toprule
+类别 & 函数数 & CPython平均(μs) & GCP平均加速 & 峰值加速 \\
+\midrule
+算术运算 & 8 & 1.2 & 15.3× & 28.1× \\
+循环密集 & 12 & 15.4 & 18.9× & 34.2× \\
+默认参数 & 3 & 0.8 & 89.2× & 106.1× \\
+match/case & 4 & 1.5 & 67.3× & 120.4× \\
+\textbf{总计/平均} & \textbf{60} & \textbf{5.0} & \textbf{17.1×} & \textbf{120.4×} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{关键发现:}
+\begin{itemize}
+\item 默认参数优化:峰值106.1×加速
+\item match/case优化:峰值120.4×加速
+\item 算术平均17.1×:跨所有类别的整体加速
+\end{itemize}
+
+\subsection{RQ5 — 真实世界评估:TheAlgorithms/Python}
+
+我们从开源仓库\textbf{TheAlgorithms/Python}中提取了18个函数进行评估:
+
+\begin{table}[htbp]
+\centering
+\caption{TheAlgorithms/Python结果}
+\label{tab:real-world}
+\begin{tabular}{lrrrr}
+\toprule
+类别 & 函数数 & CPython平均(μs) & GCP加速 & GCP/manual \\
+\midrule
+数论 & 7 & 125.3 & 34.2× & 101.2\% \\
+排序算法 & 6 & 89.7 & 8.9× & 97.8\% \\
+搜索算法 & 5 & 45.2 & 12.3× & 96.9\% \\
+\textbf{总计/平均} & \textbf{18} & \textbf{86.7} & \textbf{18.51×} & \textbf{99.9\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+真实代码平均18.51×加速,与合成基准(17.1×)相当,代码逐字提取,无任何调整。
+
+\section{讨论}
+\label{sec:discussion}
+
+\subsection{与Hindley-Milner的比较}
+
+表\ref{tab:hm-comparison}对比了GCP与Hindley-Milner:
+
+\begin{table}[htbp]
+\centering
+\caption{GCP vs Hindley-Milner}
+\label{tab:hm-comparison}
+\small
+\begin{tabular}{lll}
+\toprule
+维度 & Hindley-Milner & GCP \\
+\midrule
+约束结构 & 类型等式集$\tau = \sigma$ & 每个函数参数四个方向不等式 \\
+求解方法 & 全局统一(Robinson) & 局部每参数约束收窄 \\
+动态扩展 & 无原生支持 & \texttt{extendToBe}捕获声明后赋值 \\
+健全性 & 证明 & 证明(定理\ref{thm:soundness}) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+GCP方向性方法的关键优势是自然处理动态语言的\emph{后期绑定}模式。
+
+\subsection{与TypeScript的比较}
+
+TypeScript使用与OEM精神相似的结构化类型系统,但在推导引擎上有所不同。TypeScript的类型收窄是一个独立机制;GCP通过约束链实现类似收窄,无需显式守卫表达式。
+
+\subsection{局限性与未来工作}
+
+\paragraph{当前局限性:}
+\begin{enumerate}
+\item \textbf{Rank-2多态性}: GCP处理Rank-1多态性,但Church数字乘法遇到理论壁垒,产生递归类型$\alpha = \alpha \rightarrow \beta$。
+\item \textbf{Python动态特性}: GCP-Python无法处理\texttt{getattr}、\texttt{exec}/\texttt{eval}等高度动态特性(占测试集的2.6\%)。
+\item \textbf{调用上下文依赖}: GCP-Python需要代表性调用上下文文件。
+\end{enumerate}
+
+\paragraph{未来工作方向:}
+\begin{itemize}
+\item 扩展OEM到交叉类型
+\item 完整操作语义
+\item 更多编译目标(Cython、Nuitka)
+\item IDE集成
+\end{itemize}
+
+\section{结论}
+\label{sec:conclusion}
+
+本文提出了\textbf{广义约束投影(GCP)},一种围绕三个核心贡献构建的动态语言类型推导方法论:
+
+\paragraph{理论贡献:}
+\begin{enumerate}
+\item \textbf{四维约束模型}将四种性质不同的类型信息源分离为独立的约束维度并独立传播。我们证明了健全性、局部收敛性、全局收敛性和顺序无关性。
+
+\item \textbf{Outline表达式匹配(OEM)}是鸭子类型的形式化,通过递归成员集包含定义结构化子类型。我们证明OEM是预序。
+
+\item \textbf{双向投影}是一种泛型实例化机制,同时从调用点上下文向lambda参数传播类型信息,并从lambda体结果向调用点返回类型传播。
+\end{enumerate}
+
+\paragraph{应用贡献:}
+\begin{enumerate}
+\setcounter{enumi}{3}
+\item \textbf{Entitir本体平台}将GCP的理论贡献落地于工业规模部署。GCPToSQL编译器展示了GCP在分析时推导的类型信息足够精确以驱动N-hop外键SQL生成。
+
+\item \textbf{GCP-Python}展示了GCP约束基底的通用性。在22个程序类别上,GCP-Python相对CPython实现算术平均\textbf{17.1倍}加速,在7函数核心基准上达到手工标注性能的\textbf{101.8\%},并在调用密集型整数函数上\textbf{优于预热Numba JIT}。
+\end{enumerate}
+
+GCP的形式化结果确立了它不仅仅是工程实用主义:它是一个具有可证明性质的有原则的约束传播基底。GCP约束基底的通用性——从类型安全查询生成到编译器优化——证实了关注点分离是架构上合理的。
+
+\begin{thebibliography}{99}
+
+\bibitem{milner1978}
+R. Milner. A theory of type polymorphism in programming. \emph{Journal of Computer and System Sciences}, 17(3):348--375, 1978.
+
+\bibitem{damas1982}
+L. Damas and R. Milner. Principal type-schemes for functional programs. In \emph{Proceedings of POPL}, pages 207--212, 1982.
+
+\bibitem{pottier2005}
+F. Pottier and D. Rémy. The essence of ML type inference. In B.C. Pierce, editor, \emph{Advanced Topics in Types and Programming Languages}, chapter 10. MIT Press, 2005.
+
+\bibitem{pierce2000}
+B.C. Pierce and D.N. Turner. Local type inference. \emph{ACM Transactions on Programming Languages and Systems}, 22(1):1--44, 2000.
+
+\bibitem{siek2006}
+J.G. Siek and W. Taha. Gradual typing for functional languages. In \emph{Proceedings of the Scheme and Functional Programming Workshop}, pages 81--92, 2006.
+
+\bibitem{garcia2016}
+R. Garcia, A.M. Clark, and É. Tanter. Abstracting gradual typing. In \emph{Proceedings of POPL}, pages 429--442, 2016.
+
+\bibitem{cardelli1985}
+L. Cardelli and P. Wegner. On understanding types, data abstraction, and polymorphism. \emph{ACM Computing Surveys}, 17(4):471--523, 1985.
+
+\bibitem{pierce2002}
+B.C. Pierce. \emph{Types and Programming Languages}. MIT Press, 2002.
+
+\bibitem{liskov1994}
+B. Liskov and J. Wing. A behavioral notion of subtyping. \emph{ACM Transactions on Programming Languages and Systems}, 16(6):1811--1841, 1994.
+
+\bibitem{typescript2012}
+Microsoft Corporation. TypeScript: Typed Superset of JavaScript. https://www.typescriptlang.org, 2012.
+
+\bibitem{bierman2014}
+G. Bierman, M. Abadi, and M. Torgersen. Understanding TypeScript. In \emph{Proceedings of ECOOP}, pages 257--281, 2014.
+
+\bibitem{flow2017}
+A. Chaudhuri et al. Fast and precise type checking for JavaScript. \emph{Proceedings of the ACM on Programming Languages}, 1(OOPSLA):48, 2017.
+
+\bibitem{mycroft1984}
+A. Mycroft. Polymorphic type schemes and recursive definitions. In \emph{Proceedings of the International Symposium on Programming}, pages 217--228, 1984.
+
+\bibitem{cython2007}
+S. Behnel et al. Cython: The best of both worlds. \emph{Computing in Science \& Engineering}, 13(2):31--39, 2011.
+
+\bibitem{numba2015}
+S.K. Lam, A. Pitrou, and S. Seibert. Numba: A LLVM-based Python JIT compiler. In \emph{Proceedings of LLVM-HPC}, 2015.
+
+\bibitem{nuitka2012}
+K. Hayen. Nuitka: Python compiler written in Python. https://nuitka.net, 2012.
+
+\bibitem{mypy2012}
+J. Lehtosalo et al. mypy: Optional static typing for Python. https://mypy-lang.org, 2012.
+
+\bibitem{pypy2009}
+A. Rigo and S. Pedroni. PyPy's approach to virtual machine construction. In \emph{Proceedings of DLS}, pages 944--953, 2006.
+
+\end{thebibliography}
+
+\end{document}

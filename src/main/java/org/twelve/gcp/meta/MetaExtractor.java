@@ -437,8 +437,10 @@ public final class MetaExtractor {
             //   2. projectedType  — concrete entity recorded by projectEntity (lambda params);
             //                       not part of the inference constraint chain, safe to read here
             //   3. declaredToBe   — explicit programmer annotation  (e.g. (c: Country) -> ...)
-            //   4. hasToBe        — usage constraint from surrounding context
-            //   5. definedToBe    — structural access pattern (e.g. c was accessed as {code:String})
+            //   4. min()          — merges hasToBe + definedToBe as parallel lower-bound constraints
+            //                       (e.g. `y=x; x.age-1` → x: {name:String, age:Int}, not just {name:String})
+            //   5. hasToBe        — usage constraint (fallback when min() is not concrete)
+            //   6. definedToBe    — structural access pattern (fallback)
             Outline ext = g.extendToBe();
             if (isConcrete(ext)) return resolveOutline(ext);
 
@@ -447,6 +449,13 @@ public final class MetaExtractor {
 
             Outline decl = g.declaredToBe();
             if (isConcrete(decl)) return resolveOutline(decl);
+
+            // hasToBe and definedToBe are parallel independent lower-bound constraints.
+            // Use min() to merge them (same as Genericable.guess()) instead of
+            // picking one arbitrarily — e.g. x in `y={name="will"}; y=x; x.age-1`
+            // must resolve to {name:String, age:Int}, not just {name:String}.
+            Outline min = g.min();
+            if (isConcrete(min)) return resolveOutline(min);
 
             Outline has = g.hasToBe();
             if (isConcrete(has)) return resolveOutline(has);

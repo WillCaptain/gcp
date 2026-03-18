@@ -92,7 +92,11 @@ public abstract class ADT implements Outline {
             EntityMember found = this.members.get(member.name());
             if (found == null) {
                 if (member.outline() instanceof Literal) continue;
-                return false;
+                // Universal built-in methods (e.g. to_str) are available on every ADT even when
+                // not explicitly declared.  Load them lazily and retry before rejecting the check.
+                this.loadBuiltInMethods();
+                found = this.members.get(member.name());
+                if (found == null) return false;
             }
             if (!found.outline().is(member.outline())) {
                 return false;

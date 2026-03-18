@@ -2,8 +2,11 @@ package org.twelve.gcp.outline.stdlib;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.common.Modifier;
+import org.twelve.gcp.outline.adt.Array;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
+import org.twelve.gcp.outline.projectable.Return;
+import org.twelve.gcp.outline.projectable.Returnable;
 import org.twelve.gcp.outlineenv.LocalSymbolEnvironment;
 
 /**
@@ -31,6 +34,7 @@ public final class StdLib {
         env.defineSymbol("io",      buildIo(ast),      false, null);
         env.defineSymbol("json",    buildJson(ast),    false, null);
         env.defineSymbol("http",    buildHttp(ast),    false, null);
+        env.defineSymbol("string",  buildString(ast),  false, null);
     }
 
     // ── Date ──────────────────────────────────────────────────────────────────
@@ -89,19 +93,62 @@ public final class StdLib {
     // ── IO ────────────────────────────────────────────────────────────────────
 
     /**
-     * IO module entity:
-     *   read(path: String)                  : String → String
-     *   write(path: String)(content: String): String → String → Unit  (curried)
-     *   exists(path: String)                : String → Bool
-     *   delete(path: String)                : String → Bool
+     * IO module entity (per-run in-memory sandbox):
+     *   read(path: String)                   : String → String
+     *   write(path: String)(content: String) : String → String → Unit  (curried)
+     *   append(path: String)(content: String): String → String → Unit  (curried)
+     *   exists(path: String)                 : String → Bool
+     *   delete(path: String)                 : String → Unit
+     *   list(prefix: String)                 : String → [String]
      */
     private static Entity buildIo(AST ast) {
         Entity io = Entity.from(ast.program());
-        io.addMember("read",   FirstOrderFunction.from(ast, ast.String,  ast.String),              Modifier.PUBLIC, false, null, false);
-        io.addMember("write",  FirstOrderFunction.from(ast, ast.Unit,    ast.String, ast.String),  Modifier.PUBLIC, false, null, false);
-        io.addMember("exists", FirstOrderFunction.from(ast, ast.Boolean, ast.String),              Modifier.PUBLIC, false, null, false);
-        io.addMember("delete", FirstOrderFunction.from(ast, ast.Boolean, ast.String),              Modifier.PUBLIC, false, null, false);
+        io.addMember("read",   FirstOrderFunction.from(ast, ast.String,                       ast.String),              Modifier.PUBLIC, false, null, false);
+        io.addMember("write",  FirstOrderFunction.from(ast, ast.Unit,                         ast.String, ast.String),  Modifier.PUBLIC, false, null, false);
+        io.addMember("append", FirstOrderFunction.from(ast, ast.Unit,                         ast.String, ast.String),  Modifier.PUBLIC, false, null, false);
+        io.addMember("exists", FirstOrderFunction.from(ast, ast.Boolean,                      ast.String),              Modifier.PUBLIC, false, null, false);
+        io.addMember("delete", FirstOrderFunction.from(ast, ast.Unit,                         ast.String),              Modifier.PUBLIC, false, null, false);
+        io.addMember("list",   FirstOrderFunction.from(ast, Array.from(ast, ast.String),      ast.String),              Modifier.PUBLIC, false, null, false);
         return io;
+    }
+
+    // ── String ────────────────────────────────────────────────────────────────
+
+    /**
+     * String module entity:
+     *   trim(s)                  : String → String
+     *   upper(s)                 : String → String
+     *   lower(s)                 : String → String
+     *   contains(s)(sub)         : String → String → Bool
+     *   starts_with(s)(prefix)   : String → String → Bool
+     *   ends_with(s)(suffix)     : String → String → Bool
+     *   index_of(s)(sub)         : String → String → Int
+     *   split(s)(delim)          : String → String → [String]
+     *   join(arr)(delim)         : Any    → String → String
+     *   replace(s)(old)(new)     : String → String → String → String
+     *   slice(s)(from)(to)       : String → Int → Int → String
+     *   pad_left(s)(width)(pad)  : String → Int → String → String
+     *   pad_right(s)(width)(pad) : String → Int → String → String
+     *   repeat(s)(n)             : String → Int → String
+     */
+    private static Entity buildString(AST ast) {
+        Array stringArray = Array.from(ast, ast.String);
+        Entity s = Entity.from(ast.program());
+        s.addMember("trim",        FirstOrderFunction.from(ast, ast.String,  ast.String),                            Modifier.PUBLIC, false, null, false);
+        s.addMember("upper",       FirstOrderFunction.from(ast, ast.String,  ast.String),                            Modifier.PUBLIC, false, null, false);
+        s.addMember("lower",       FirstOrderFunction.from(ast, ast.String,  ast.String),                            Modifier.PUBLIC, false, null, false);
+        s.addMember("contains",    FirstOrderFunction.from(ast, ast.Boolean, ast.String,  ast.String),               Modifier.PUBLIC, false, null, false);
+        s.addMember("starts_with", FirstOrderFunction.from(ast, ast.Boolean, ast.String,  ast.String),               Modifier.PUBLIC, false, null, false);
+        s.addMember("ends_with",   FirstOrderFunction.from(ast, ast.Boolean, ast.String,  ast.String),               Modifier.PUBLIC, false, null, false);
+        s.addMember("index_of",    FirstOrderFunction.from(ast, ast.Integer, ast.String,  ast.String),               Modifier.PUBLIC, false, null, false);
+        s.addMember("split",       FirstOrderFunction.from(ast, stringArray, ast.String,  ast.String),               Modifier.PUBLIC, false, null, false);
+        s.addMember("join",        FirstOrderFunction.from(ast, ast.String,  ast.Any,     ast.String),               Modifier.PUBLIC, false, null, false);
+        s.addMember("replace",     FirstOrderFunction.from(ast, ast.String,  ast.String,  ast.String, ast.String),   Modifier.PUBLIC, false, null, false);
+        s.addMember("slice",       FirstOrderFunction.from(ast, ast.String,  ast.String,  ast.Integer, ast.Integer), Modifier.PUBLIC, false, null, false);
+        s.addMember("pad_left",    FirstOrderFunction.from(ast, ast.String,  ast.String,  ast.Integer, ast.String),  Modifier.PUBLIC, false, null, false);
+        s.addMember("pad_right",   FirstOrderFunction.from(ast, ast.String,  ast.String,  ast.Integer, ast.String),  Modifier.PUBLIC, false, null, false);
+        s.addMember("repeat",      FirstOrderFunction.from(ast, ast.String,  ast.String,  ast.Integer),              Modifier.PUBLIC, false, null, false);
+        return s;
     }
 
     // ── JSON ──────────────────────────────────────────────────────────────────
@@ -121,18 +168,47 @@ public final class StdLib {
     // ── HTTP ──────────────────────────────────────────────────────────────────
 
     /**
+     * HttpResponse entity type:
+     *   status  : Int            — HTTP status code (e.g. 200, 404)
+     *   ok      : Bool           — true when 200 ≤ status < 300
+     *   body    : String         — raw response body text
+     *   json()  : Unit → Any     — parse body as JSON and return the root value
+     *   text()  : Unit → String  — alias for body as a no-arg function
+     */
+    static Entity buildHttpResponseType(AST ast) {
+        Entity r = Entity.from(ast.program());
+        r.addMember("status", ast.Integer,                                                   Modifier.PUBLIC, false, null, false);
+        r.addMember("ok",     ast.Boolean,                                                   Modifier.PUBLIC, false, null, false);
+        r.addMember("body",   ast.String,                                                    Modifier.PUBLIC, false, null, false);
+        r.addMember("json",   FirstOrderFunction.from(ast, dynamicAny(ast), ast.Unit),       Modifier.PUBLIC, false, null, false);
+        r.addMember("text",   FirstOrderFunction.from(ast, ast.String,      ast.Unit),       Modifier.PUBLIC, false, null, false);
+        return r;
+    }
+
+    private static Returnable dynamicAny(AST ast) {
+        Returnable ret = Return.from(ast, ast.Any);
+        ret.addReturn(ast.Any);
+        return ret;
+    }
+
+    /**
      * HTTP module entity:
-     *   get(url: String)                   : String → String
-     *   post(url: String)(body: String)    : String → String → String  (curried)
-     *   put(url: String)(body: String)     : String → String → String  (curried)
-     *   delete(url: String)                : String → String
+     *   get(url: String)                          : String → HttpResponse
+     *   post(url: String)(body: String)           : String → String → HttpResponse  (curried)
+     *   post_json(url: String)(body: String)      : String → String → HttpResponse  (curried, sets Accept: application/json)
+     *   put(url: String)(body: String)            : String → String → HttpResponse  (curried)
+     *   delete(url: String)                       : String → HttpResponse
+     *   postForm(url: String)(body: String)       : String → String → HttpResponse  (curried)
      */
     private static Entity buildHttp(AST ast) {
+        Entity resp = buildHttpResponseType(ast);
         Entity http = Entity.from(ast.program());
-        http.addMember("get",    FirstOrderFunction.from(ast, ast.String, ast.String),              Modifier.PUBLIC, false, null, false);
-        http.addMember("post",   FirstOrderFunction.from(ast, ast.String, ast.String, ast.String),  Modifier.PUBLIC, false, null, false);
-        http.addMember("put",    FirstOrderFunction.from(ast, ast.String, ast.String, ast.String),  Modifier.PUBLIC, false, null, false);
-        http.addMember("delete", FirstOrderFunction.from(ast, ast.String, ast.String),              Modifier.PUBLIC, false, null, false);
+        http.addMember("get",       FirstOrderFunction.from(ast, resp, ast.String),              Modifier.PUBLIC, false, null, false);
+        http.addMember("post",      FirstOrderFunction.from(ast, resp, ast.String, ast.String),  Modifier.PUBLIC, false, null, false);
+        http.addMember("post_json", FirstOrderFunction.from(ast, resp, ast.String, ast.String),  Modifier.PUBLIC, false, null, false);
+        http.addMember("put",       FirstOrderFunction.from(ast, resp, ast.String, ast.String),  Modifier.PUBLIC, false, null, false);
+        http.addMember("delete",    FirstOrderFunction.from(ast, resp, ast.String),              Modifier.PUBLIC, false, null, false);
+        http.addMember("postForm",  FirstOrderFunction.from(ast, resp, ast.String, ast.String),  Modifier.PUBLIC, false, null, false);
         return http;
     }
 

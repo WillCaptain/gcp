@@ -32,6 +32,14 @@ public class Lazy implements Projectable, ReferAble {
      * Cleared whenever {@link #project(List)} or {@link #doProject} changes the projections.
      */
     private Outline cachedEventual = null;
+    /**
+     * Reentrancy guard for {@link #eventual()}.
+     * Prevents infinite recursion when {@code this{...}} return types in chained method calls
+     * (e.g. {@code s.filter(...).map(...)}) cause {@code Lazy.eventual()} to invoke itself
+     * indirectly through member-access inference.  When a cycle is detected the method returns
+     * {@code Any} as a safe placeholder; the correct type is resolved in a subsequent pass.
+     */
+    private boolean computing = false;
 //    private ProductADT me;
 
     public Lazy(Node node, Inferencer inferencer) {
@@ -78,6 +86,14 @@ public class Lazy implements Projectable, ReferAble {
     @Override
     public Outline eventual() {
         if (cachedEventual != null) return cachedEventual;
+        if (computing) {
+            // Cycle detected: return the node's current best-known outline as a placeholder.
+            // The correct type will be resolved in a subsequent inference pass.
+            Outline current = this.node.outline();
+            return (current != null && !(current instanceof Lazy)) ? current : this.node.ast().Any;
+        }
+        computing = true;
+        try {
         this.node.ast().symbolEnv().enter(this.scope);
         Outline eventual = this.node.acceptInfer(inferencer);
         if (eventual instanceof ReferAble && !this.referencesProjections.isEmpty()) {
@@ -104,6 +120,9 @@ public class Lazy implements Projectable, ReferAble {
             cachedEventual = eventual;
         }
         return eventual;
+        } finally {
+            computing = false;
+        }
     }
 
     @Override
