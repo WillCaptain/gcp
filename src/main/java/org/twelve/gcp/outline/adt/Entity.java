@@ -71,6 +71,16 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
         return Entity.from(this.node(), this.interact(this.members(), another.members()));
     }
 
+    /**
+     * Merges this entity with another, preserving this entity's base type.
+     * Unlike {@link #produce(Entity)} (which always sets base=Any),
+     * this method retains the base of {@code this} so that structural extensions
+     * such as {@code String{age:Int}} keep their primitive root.
+     */
+    public Entity producePreservingBase(Entity another) {
+        return Entity.from(this.node(), this.base(), this.interact(this.members(), another.members()));
+    }
+
     public Poly produce(Poly another) {
         return cast(another.sum(this, false));
     }

@@ -225,14 +225,11 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         // ANY means "unconstrained" – adding it as an upper bound conveys no information
         // and would pollute extendToBe, causing false "mismatch with any" errors downstream.
         if (outline instanceof ANY) return;
-        //find down stream maximum constraint
-        Outline downConstraint = this.declaredToBe == ast().Any ? this.hasToBe : declaredToBe;
-        downConstraint = downConstraint == ast().Any ? this.definedToBe : downConstraint;
-//        if (outline.equals(downConstraint)) {
-//            return;
-//        }
+        // The combined lower bound: declaredToBe if set, otherwise the parallel merge of
+        // hasToBe + definedToBe.  min() correctly handles the parallel combination.
+        Outline downConstraint = this.min();
 
-        if (!outline.is(downConstraint)) {
+        if (!(downConstraint instanceof ANY) && !outline.is(downConstraint)) {
             GCPErrorReporter.report(safeNode(outline), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline + CONSTANTS.MISMATCH_STR + downConstraint);
             return;
         }
@@ -263,16 +260,9 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (outline == null) return;
         if (outline instanceof ANY) return;
         Outline upConstraint = this.declaredToBe == ast().Any ? this.extendToBe : this.declaredToBe;
-        Outline downConstraint = this.definedToBe;
-
-//        if (outline.equals(downConstraint)) return;  todo
-//        if (upConstraint.equals(outline)) return;
-
-        //find down stream maximum constraint
-        if (!(downConstraint instanceof ANY) && !outline.is(downConstraint)) {
-            GCPErrorReporter.report(safeNode(outline), GCPErrCode.CONSTRUCT_CONSTRAINTS_FAIL, outline + CONSTANTS.MISMATCH_STR + downConstraint);
-            return;
-        }
+        // hasToBe and definedToBe are parallel independent lower-bound constraints.
+        // Neither is required to be a subtype of the other; min() merges them independently.
+        // Do NOT check outline against definedToBe here.
 
         // ANY upper-bound means "unconstrained from above" — any concrete type satisfies it.
         // We must NOT call any.is(outline) here because any.tryIamYou() always returns false
@@ -289,9 +279,9 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     public boolean addDefinedToBe(Outline outline) {
         if (outline == null) return false;
         if (outline instanceof ANY) return true;
-        //find up stream minimum constraint
-        Outline upConstraint = this.hasToBe == ast().Any ? this.declaredToBe : this.hasToBe;
-        upConstraint = upConstraint == ast().Any ? this.extendToBe : upConstraint;
+        // hasToBe is a parallel constraint to definedToBe — it is NOT an upper bound.
+        // Upper bound for definedToBe: only declaredToBe or extendToBe.
+        Outline upConstraint = this.declaredToBe == ast().Any ? this.extendToBe : this.declaredToBe;
 
         // ANY upper-bound means "totally unconstrained" — skip the is-check to avoid
         // false-positive "mismatch with any" errors on valid generic instantiations.
@@ -321,8 +311,49 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
 
     public Outline min() {
         if (this.declaredToBe != ast().Any) return this.declaredToBe;
-        if (this.hasToBe != ast().Any) return this.hasToBe;
-        return this.definedToBe;
+        return mergeParallelConstraints(this.ast(), this.hasToBe, this.definedToBe);
+    }
+
+    /**
+     * Merges {@code hasToBe} and {@code definedToBe} as parallel independent lower-bound
+     * constraints.  Neither is required to be a subtype of the other.
+     *
+     * <p>Merge rules (in priority order):
+     * <ol>
+     *   <li>If either is ANY, return the other.</li>
+     *   <li>If one {@code is} the other, return the more specific one.</li>
+     *   <li>If {@code hasToBe} is a non-Tuple {@link ProductADT} and {@code definedToBe} is an
+     *       {@link Entity}: produce-merge preserving {@code hasToBe}'s base
+     *       (e.g. {@code Person + {age:Int} → Person{age:Int}}).</li>
+     *   <li>If {@code hasToBe} is a Primitive (not Function / not Tuple) and
+     *       {@code definedToBe} is an Entity: create an Entity with {@code hasToBe} as base
+     *       (e.g. {@code String + {age:Int} → String{age:Int}}).</li>
+     *   <li>Otherwise (Function vs Entity, Tuple + named Entity): incompatible;
+     *       return {@code hasToBe} (error should have been reported at add-time).</li>
+     * </ol>
+     */
+    private static Outline mergeParallelConstraints(AST ast, Outline hasToBe, Outline definedToBe) {
+        if (hasToBe == ast.Any) return definedToBe;
+        if (definedToBe == ast.Any) return hasToBe;
+        // One is more specific than the other
+        if (hasToBe.is(definedToBe)) return hasToBe;
+        if (definedToBe.is(hasToBe)) return definedToBe;
+        // Both are independent structural constraints — merge if possible
+        if (definedToBe instanceof Entity definedEntity) {
+            // Non-Tuple ProductADT (named Entity, anonymous Entity, etc.) + Entity:
+            // produce-merge preserving hasToBe's base type
+            if (hasToBe instanceof ProductADT && !(hasToBe instanceof Tuple)) {
+                return ((Entity) hasToBe).producePreservingBase(definedEntity);
+            }
+            // Primitive (not Function, not Tuple): create Entity with hasToBe as base
+            // e.g. hasToBe=String + definedToBe={age:Int} → Entity(base=String, {age:Int})
+            if (!(hasToBe instanceof Function) && !(hasToBe instanceof Tuple)) {
+                Node node = definedEntity.node() != null ? definedEntity.node() : ast.program();
+                return Entity.from(node, hasToBe, new ArrayList<>(definedEntity.members()));
+            }
+        }
+        // Incompatible (Function vs Entity, Tuple + named-field Entity, etc.)
+        return hasToBe;
     }
 
     @Override
@@ -861,18 +892,16 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         copied.hasToBe = this.hasToBe.project(reference, projection);
         copied.declaredToBe = this.declaredToBe.project(reference, projection);
         copied.definedToBe = this.definedToBe.project(reference, projection);
-        Outline benchMark = copied.definedToBe;
-        if (copied.hasToBe instanceof ANY || copied.hasToBe.is(copied.definedToBe)) {
-            if (!(copied.hasToBe instanceof ANY)) benchMark = copied.hasToBe;
-        } else {
-            GCPErrorReporter.report(node, GCPErrCode.PROJECT_FAIL, copied.hasToBe + " doesn't match " + copied.definedToBe);
-        }
+        // hasToBe and definedToBe are parallel constraints; use their merged lower bound
+        // as the benchmark instead of requiring hasToBe <: definedToBe.
+        Outline benchMark = mergeParallelConstraints(this.ast(), copied.hasToBe, copied.definedToBe);
         if (copied.declaredToBe instanceof ANY || copied.declaredToBe.is(benchMark)) {
             if (!(copied.declaredToBe instanceof ANY)) benchMark = copied.declaredToBe;
         } else {
             GCPErrorReporter.report(node, GCPErrCode.PROJECT_FAIL, copied.declaredToBe + " doesn't match " + benchMark);
         }
-        if (!copied.extendToBe.is(benchMark)) {
+        if (!(copied.extendToBe instanceof NOTHING) && !(benchMark instanceof ANY)
+                && !copied.extendToBe.is(benchMark)) {
             GCPErrorReporter.report(node, GCPErrCode.PROJECT_FAIL, copied.extendToBe + " doesn't match " + benchMark);
         }
         return copied;

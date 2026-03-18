@@ -20,6 +20,7 @@ import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
+import org.twelve.gcp.outline.primitive.ANY;
 import org.twelve.gcp.outline.primitive.INTEGER;
 import org.twelve.gcp.outline.primitive.LONG;
 import org.twelve.gcp.outline.primitive.NUMBER;
@@ -967,6 +968,88 @@ public class GCPInference {
         assertEquals("String",will.outline().toString());
         assertEquals("Integer",age.outline().toString());
     }
+    @Test
+    void test_gcp_has_to_be_and_defined_to_be() {
+        /*
+         let f = x -> {
+             var y = {name="will"};
+             y = x;              // x.hasToBe = {name:String}
+             let age = x.age-1;  // x.definedToBe = {age:Int}
+             return age;
+         };
+         Both hasToBe and definedToBe are parallel lower-bound constraints.
+         x.min() should be the structural merge: {name:String, age:Int}.
+         No type errors should be reported.
+         */
+        AST ast = mockGCPTestAst();
+        Argument x = new Argument(new Identifier(ast, new Token<>("x")));
+        FunctionBody body = new FunctionBody(ast);
+
+        // var y = {name="will"}
+        MemberNode nameMember = new MemberNode(
+                new Identifier(ast, new Token<>("name")),
+                LiteralNode.parse(ast, new Token<>("will")),
+                false
+        );
+        EntityNode yEntity = new EntityNode(List.of(nameMember));
+        VariableDeclarator yDecl = new VariableDeclarator(ast, VariableKind.VAR);
+        yDecl.declare(new Identifier(ast, new Token<>("y")), yEntity);
+        body.addStatement(yDecl);
+
+        // y = x  →  x.hasToBe = {name:String}
+        Assignment yxAssign = new Assignment(
+                new Identifier(ast, new Token<>("y")),
+                new Identifier(ast, new Token<>("x"))
+        );
+        body.addStatement(new ExpressionStatement(yxAssign));
+
+        // let age = x.age - 1  →  x.definedToBe gets {age:?}
+        MemberAccessor xAge = new MemberAccessor(
+                new Identifier(ast, new Token<>("x")),
+                new Identifier(ast, new Token<>("age"))
+        );
+        BinaryExpression ageMinus1 = new BinaryExpression(
+                xAge,
+                LiteralNode.parse(ast, new Token<>(1)),
+                new OperatorNode<>(ast, BinaryOperator.SUBTRACT)
+        );
+        VariableDeclarator ageDecl = new VariableDeclarator(ast, VariableKind.LET);
+        ageDecl.declare(new Identifier(ast, new Token<>("age")), ageMinus1);
+        body.addStatement(ageDecl);
+
+        // return age
+        body.addStatement(new ReturnStatement(new Identifier(ast, new Token<>("age"))));
+
+        // let f = x -> { body }
+        FunctionNode f = FunctionNode.from(body, x);
+        VariableDeclarator fDecl = new VariableDeclarator(ast, VariableKind.LET);
+        fDecl.declare(new Identifier(ast, new Token<>("f")), f);
+        ast.addStatement(fDecl);
+
+        assertTrue(ast.asf().infer());
+
+        // Key assertion: parallel hasToBe + definedToBe must NOT produce type errors
+        assertEquals(0, ast.errors().size());
+
+        // x is a Generic with both hasToBe and definedToBe set
+        assertInstanceOf(Generic.class, f.argument().outline());
+        Generic xGeneric = cast(f.argument().outline());
+
+        // hasToBe must be set (from y = x, where y: {name:String})
+        assertFalse(xGeneric.hasToBe() instanceof ANY);
+        assertInstanceOf(Entity.class, xGeneric.hasToBe());
+
+        // definedToBe must be set (from x.age member access)
+        assertFalse(xGeneric.definedToBe() instanceof ANY);
+        assertInstanceOf(Entity.class, xGeneric.definedToBe());
+
+        // min() should combine both into a single entity containing both fields
+        assertInstanceOf(Entity.class, xGeneric.min());
+        Entity minEntity = cast(xGeneric.min());
+        assertTrue(minEntity.getMember("name").isPresent(), "min() entity should have 'name' field from hasToBe");
+        assertTrue(minEntity.getMember("age").isPresent(), "min() entity should have 'age' field from definedToBe");
+    }
+
     private static AST mockGCPTestAst() {
         ASF asf = new ASF();
         AST ast = asf.newAST();
