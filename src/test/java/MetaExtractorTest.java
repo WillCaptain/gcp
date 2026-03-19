@@ -1,7 +1,26 @@
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.twelve.gcp.ast.ASF;
+import org.twelve.gcp.ast.AST;
+import org.twelve.gcp.ast.Token;
+import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.meta.FieldMeta;
+import org.twelve.gcp.meta.MetaExtractor;
 import org.twelve.gcp.meta.OutlineMeta;
+import org.twelve.gcp.node.expression.*;
+import org.twelve.gcp.node.expression.accessor.MemberAccessor;
+import org.twelve.gcp.node.expression.body.FunctionBody;
+import org.twelve.gcp.node.expression.identifier.Identifier;
+import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
+import org.twelve.gcp.node.expression.typeable.EntityTypeNode;
+import org.twelve.gcp.node.expression.typeable.IdentifierTypeNode;
+import org.twelve.gcp.node.function.Argument;
+import org.twelve.gcp.node.function.FunctionCallNode;
+import org.twelve.gcp.node.function.FunctionNode;
+import org.twelve.gcp.node.statement.*;
+import org.twelve.gcp.node.statement.OutlineDeclarator;
+import org.twelve.gcp.outline.adt.Entity;
+import org.twelve.gcp.outline.adt.EntityMember;
 
 import java.util.List;
 
@@ -146,6 +165,179 @@ class MetaExtractorTest {
             OutlineMeta meta = new OutlineMeta("X", "{}", null, null);
             assertThat(meta.fields()).isEmpty();
             assertThat(meta.methods()).isEmpty();
+        }
+    }
+
+    // ── MetaExtractor.completionMembersOf ────────────────────────────────────
+
+    /**
+     * Tests for {@link MetaExtractor#completionMembersOf(org.twelve.gcp.outline.Outline)} and
+     * {@link MetaExtractor#completionMembersOf(org.twelve.gcp.outline.Outline, ASF)}.
+     *
+     * <p>This is the canonical IDE dot-completion entry point: given the Outline of the expression
+     * before the dot, it resolves wrappers, extracts members, and falls back to AST-body lookup
+     * when inference yields only the trivial {@code to_str} builtin.
+     */
+    @Nested
+    class CompletionMembersOf {
+
+        // ── helpers ──────────────────────────────────────────────────────────
+
+        private static AST freshAst() {
+            ASF asf = new ASF();
+            return asf.newAST();
+        }
+
+        // ── null-safety ───────────────────────────────────────────────────────
+
+        @Test
+        void null_outline_returns_empty() {
+            assertThat(MetaExtractor.completionMembersOf(null)).isEmpty();
+            assertThat(MetaExtractor.completionMembersOf(null, new ASF())).isEmpty();
+        }
+
+        // ── plain anonymous entity ─────────────────────────────────────────
+
+        @Test
+        void plain_anonymous_entity_returns_own_fields_and_to_str() {
+            // let person = {name = "Will", age = 20}
+            ASF asf = new ASF();
+            AST ast = asf.newAST();
+            List<MemberNode> ms = List.of(
+                    new MemberNode(new Identifier(ast, new Token<>("name")),
+                            LiteralNode.parse(ast, new Token<>("Will")), false),
+                    new MemberNode(new Identifier(ast, new Token<>("age")),
+                            LiteralNode.parse(ast, new Token<>(20)), false)
+            );
+            EntityNode entity = new EntityNode(ms);
+            VariableDeclarator decl = new VariableDeclarator(ast, VariableKind.LET);
+            decl.declare(new Identifier(ast, new Token<>("person")), entity);
+            ast.addStatement(decl);
+            asf.infer();
+
+            List<FieldMeta> result = MetaExtractor.completionMembersOf(entity.outline());
+
+            assertThat(result).extracting(FieldMeta::name).contains("name", "age");
+            assertThat(result).extracting(FieldMeta::name).contains("to_str");
+        }
+
+        @Test
+        void plain_entity_does_not_include_private_prefix_fields_from_own_members() {
+            // Anonymous entity {_secret = "hidden", visible = "ok"}:
+            // _secret is stored in the entity members and accessible via outline
+            ASF asf = new ASF();
+            AST ast = asf.newAST();
+            List<MemberNode> ms = List.of(
+                    new MemberNode(new Identifier(ast, new Token<>("_secret")),
+                            LiteralNode.parse(ast, new Token<>("hidden")), false),
+                    new MemberNode(new Identifier(ast, new Token<>("visible")),
+                            LiteralNode.parse(ast, new Token<>("ok")), false)
+            );
+            EntityNode entity = new EntityNode(ms);
+            VariableDeclarator decl = new VariableDeclarator(ast, VariableKind.LET);
+            decl.declare(new Identifier(ast, new Token<>("obj")), entity);
+            ast.addStatement(decl);
+            asf.infer();
+
+            List<FieldMeta> result = MetaExtractor.completionMembersOf(entity.outline());
+
+            // completionMembersOf returns raw fields (filtering _-prefixed is done by callers)
+            assertThat(result).extracting(FieldMeta::name).contains("visible");
+        }
+
+        // ── genericable resolution ─────────────────────────────────────────
+
+        @Test
+        void genericable_lambda_param_resolved_to_entity_fields() {
+            // let f = x -> x.name;  then call f({name="Will"})
+            // After inference: x is Generic with definedToBe = {name:String}
+            ASF asf = new ASF();
+            AST ast = asf.newAST();
+
+            FunctionBody body = new FunctionBody(ast);
+            body.addStatement(new ReturnStatement(
+                    new MemberAccessor(new Identifier(ast, new Token<>("x")),
+                            new Identifier(ast, new Token<>("name")))));
+            FunctionNode fn = FunctionNode.from(body, new Argument(new Identifier(ast, new Token<>("x"))));
+            VariableDeclarator fnDecl = new VariableDeclarator(ast, VariableKind.LET);
+            fnDecl.declare(new Identifier(ast, new Token<>("f")), fn);
+            ast.addStatement(fnDecl);
+
+            // f({name="Will"}) — forces x: {name:String}
+            List<MemberNode> callMs = List.of(
+                    new MemberNode(new Identifier(ast, new Token<>("name")),
+                            LiteralNode.parse(ast, new Token<>("Will")), false));
+            ast.addStatement(new ExpressionStatement(
+                    new FunctionCallNode(new Identifier(ast, new Token<>("f")), new EntityNode(callMs))));
+            asf.infer();
+
+            // x.outline() is Genericable — completionMembersOf must resolve it
+            List<FieldMeta> result = MetaExtractor.completionMembersOf(fn.argument().outline());
+
+            assertThat(result).extracting(FieldMeta::name).contains("name");
+        }
+
+        // ── AST-body fallback ──────────────────────────────────────────────
+
+        @Test
+        void ast_fallback_when_entity_has_only_to_str_and_context_asf_provided() {
+            // Simulate a system-type entity: an Entity created with no members
+            // (after loadBuiltInMethods only to_str will appear) but the contextAsf
+            // has an outline declaration "Worker = {salary:String, role:String}".
+            // completionMembersOf must fall back to the AST-body members.
+            ASF contextAsf = new ASF();
+            AST preambleAst = contextAsf.newAST();
+
+            // Build: outline Worker = {salary:String, role:String}  in the preamble AST
+            SymbolIdentifier workerSym = new SymbolIdentifier(preambleAst, new Token<>("Worker"));
+            List<Variable> vars = List.of(
+                    new Variable(new Identifier(preambleAst, new Token<>("salary")), false,
+                            new IdentifierTypeNode(new Identifier(preambleAst, new Token<>("String")))),
+                    new Variable(new Identifier(preambleAst, new Token<>("role")), false,
+                            new IdentifierTypeNode(new Identifier(preambleAst, new Token<>("String"))))
+            );
+            EntityTypeNode bodyNode = new EntityTypeNode(vars);
+            OutlineDefinition def = new OutlineDefinition(workerSym, bodyNode);
+            preambleAst.addStatement(new OutlineDeclarator(List.of(def)));
+
+            // Entity with node = Identifier("Worker") but no inference-resolved members
+            // Entity.from(node) creates an entity with empty member list → only to_str after loadBuiltInMethods
+            Identifier workerIdNode = new Identifier(preambleAst, new Token<>("Worker"));
+            Entity emptyWorker = Entity.from(workerIdNode, List.of());
+
+            // Without context ASF: trivial result (only to_str)
+            List<FieldMeta> withoutCtx = MetaExtractor.completionMembersOf(emptyWorker);
+            assertThat(withoutCtx).extracting(FieldMeta::name)
+                    .containsExactly("to_str");
+
+            // With context ASF: fallback finds salary and role from the outline declaration
+            List<FieldMeta> withCtx = MetaExtractor.completionMembersOf(emptyWorker, contextAsf);
+            assertThat(withCtx).extracting(FieldMeta::name)
+                    .containsExactlyInAnyOrder("salary", "role");
+        }
+
+        @Test
+        void ast_fallback_not_triggered_when_entity_has_substantive_members() {
+            // If extractEntityFields returns real members, the fallback must NOT be invoked
+            // even if contextAsf is present (verifies the "short-circuit" logic).
+            ASF contextAsf = new ASF();
+            AST preambleAst = contextAsf.newAST();
+
+            // Plain anonymous entity {val = 42}
+            ASF asf = new ASF();
+            AST ast = asf.newAST();
+            EntityNode entity = new EntityNode(List.of(
+                    new MemberNode(new Identifier(ast, new Token<>("val")),
+                            LiteralNode.parse(ast, new Token<>(42)), false)));
+            VariableDeclarator decl = new VariableDeclarator(ast, VariableKind.LET);
+            decl.declare(new Identifier(ast, new Token<>("x")), entity);
+            ast.addStatement(decl);
+            asf.infer();
+
+            List<FieldMeta> result = MetaExtractor.completionMembersOf(entity.outline(), contextAsf);
+
+            // Must contain val (own member), not fall back to empty preamble AST
+            assertThat(result).extracting(FieldMeta::name).contains("val");
         }
     }
 }

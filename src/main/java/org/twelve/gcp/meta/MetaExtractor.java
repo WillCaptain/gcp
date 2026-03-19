@@ -1,5 +1,6 @@
 package org.twelve.gcp.meta;
 
+import org.twelve.gcp.ast.ASF;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.Node;
@@ -502,6 +503,67 @@ public final class MetaExtractor {
     /** Convenience overload when source code is not available. */
     public static List<FieldMeta> fieldsOf(Outline outline) {
         return fieldsOf(outline, null);
+    }
+
+    /**
+     * Canonical IDE dot-completion entry point.
+     *
+     * <p>Given the {@link Outline} of the expression before the dot, returns its completable members:
+     * <ol>
+     *   <li>Unwraps {@link Returnable}/{@link Genericable} wrappers via {@link #resolveOutline}.</li>
+     *   <li>Extracts members via {@link #extractEntityFields} (own + base + builtin).</li>
+     *   <li>If the result is trivial (empty or only {@code to_str}) AND a context {@link ASF} is
+     *       provided, falls back to AST-declared-body lookup by the entity's declared name — this
+     *       covers system generics ({@code Aggregator}, {@code GroupBy}, …) whose projected
+     *       instances may not carry full member lists after inference.</li>
+     * </ol>
+     *
+     * <p>All callers — playground service, LLM tools, IDE — should use this method instead of
+     * calling {@link #fieldsOf(Outline)} directly, because this method additionally handles the
+     * AST-body fallback transparently.
+     *
+     * @param outline    Outline of the expression before the dot (may be a wrapper type)
+     * @param contextAsf the preamble ASF for fallback AST body lookup; may be {@code null}
+     * @return list of completable members, never {@code null}
+     */
+    public static List<FieldMeta> completionMembersOf(Outline outline, ASF contextAsf) {
+        Outline resolved = resolveOutline(outline);
+        if (resolved == null) return List.of();
+
+        String source = resolved.ast() != null ? resolved.ast().sourceCode() : null;
+        List<FieldMeta> fields = extractEntityFields(resolved, source);
+
+        if (!isTrivialResult(fields) || contextAsf == null) return fields;
+
+        // AST fallback: look up the entity's declared body by its declared name in the preamble ASF.
+        // This handles system-typed outlines (e.g. Aggregator<School>, GroupBy<...>) whose
+        // instantiated projections may not carry full member lists after inference.
+        if (resolved instanceof Entity ent && ent.node() != null) {
+            String declaredName = ent.node().lexeme();
+            if (declaredName != null && !declaredName.isEmpty()) {
+                for (AST ast : contextAsf.asts()) {
+                    List<FieldMeta> astFields = fieldsOf(declaredName, ast);
+                    if (!astFields.isEmpty()) return astFields;
+                }
+            }
+        }
+
+        return fields;
+    }
+
+    /** Convenience overload when no context ASF is available. */
+    public static List<FieldMeta> completionMembersOf(Outline outline) {
+        return completionMembersOf(outline, null);
+    }
+
+    /**
+     * Returns {@code true} when {@code fields} carries no useful member information beyond the
+     * universal {@code to_str} builtin — i.e., inference did not fully resolve the type.
+     */
+    private static boolean isTrivialResult(List<FieldMeta> fields) {
+        if (fields.isEmpty()) return true;
+        if (fields.size() == 1 && "to_str".equals(fields.get(0).name())) return true;
+        return false;
     }
 
     /**
