@@ -8,13 +8,16 @@ import org.twelve.gcp.outline.primitive.Literal;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.twelve.gcp.common.Tool.cast;
 
 public abstract class ADT implements Outline {
+    private static final ThreadLocal<Set<Long>> CHECKING_UNKNOWN = ThreadLocal.withInitial(HashSet::new);
     private final AST ast;
     protected long id;
 
@@ -71,7 +74,12 @@ public abstract class ADT implements Outline {
 
     @Override
     public boolean containsUnknown() {
-        return members.values().stream().anyMatch(m -> m.outline.containsUnknown());
+        if (!CHECKING_UNKNOWN.get().add(this.id())) return false;
+        try {
+            return members.values().stream().anyMatch(m -> m.outline.containsUnknown());
+        } finally {
+            CHECKING_UNKNOWN.get().remove(this.id());
+        }
     }
 
     @Override

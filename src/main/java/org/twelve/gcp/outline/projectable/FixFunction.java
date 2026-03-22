@@ -23,12 +23,14 @@ public class FixFunction  extends Function<Node,Outline> {
 
     @Override
     public String toString() {
-        FixFunction guess = cast(this.guess());
-        String arg = guess.argument.toString();
-        if(guess.argument instanceof FixFunction){
-            arg = "("+arg+")";
-        }
-        return arg + "->" + guess.returns.toString();
+        return this.guardedToString("(...)->...", () -> {
+            FixFunction guess = cast(this.guess());
+            String arg = guess.argument.toString();
+            if(guess.argument instanceof FixFunction){
+                arg = "("+arg+")";
+            }
+            return arg + "->" + guess.returns.toString();
+        });
     }
 
     @Override

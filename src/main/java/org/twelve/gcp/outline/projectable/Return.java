@@ -172,8 +172,10 @@ public class Return extends Genericable<Return, Node> implements Returnable {
 
     @Override
     public boolean equals(Outline another) {
-        if (!(another instanceof Return)) return false;
-        return this.supposed.equals(((Return) another).supposed);
+        return this.guardedEquals(another, () -> {
+            if (!(another instanceof Return)) return false;
+            return this.supposed.equals(((Return) another).supposed);
+        });
     }
 
     @Override
@@ -233,10 +235,11 @@ public class Return extends Genericable<Return, Node> implements Returnable {
 
     @Override
     public Outline guess() {
-
-        Outline outline = this.supposed instanceof Projectable ? ((Projectable) this.supposed).guess() : this.supposed;
-        outline = (outline instanceof UNKNOWN || outline instanceof NOTHING) ? this.min() : outline;
-        return (outline instanceof ANY) ? this.max() : outline;
+        return this.guardedGuess(() -> this, () -> {
+            Outline outline = this.supposed instanceof Projectable ? ((Projectable) this.supposed).guess() : this.supposed;
+            outline = (outline instanceof UNKNOWN || outline instanceof NOTHING) ? this.min() : outline;
+            return (outline instanceof ANY) ? this.max() : outline;
+        });
     }
 
     /**
@@ -268,15 +271,17 @@ public class Return extends Genericable<Return, Node> implements Returnable {
 
     @Override
     public String toString() {
-        String ret;
-        if (this.supposed == null || this.supposed instanceof UNKNOWN || this.supposed instanceof NOTHING) {
-            ret = super.toString();
-        } else {
-            ret = this.supposed.toString();
-        }
-        if (ret.equals("`null`")) {
-            ret = "?" + this.id;
-        }
-        return ret;
+        return this.guardedToString("...", () -> {
+            String ret;
+            if (this.supposed == null || this.supposed instanceof UNKNOWN || this.supposed instanceof NOTHING) {
+                ret = super.toString();
+            } else {
+                ret = this.supposed.toString();
+            }
+            if (ret.equals("`null`")) {
+                ret = "?" + this.id;
+            }
+            return ret;
+        });
     }
 }

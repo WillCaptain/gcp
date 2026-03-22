@@ -311,13 +311,15 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
 
     @Override
     public Outline guess() {
-        List<EntityMember> members = new ArrayList<>();
-        for (EntityMember m : this.members()) {
-            if (m.isDefault()) continue;
-            Outline guessed = m.outline() instanceof Projectable ? ((Projectable) m.outline()).guess() : m.outline();
-            members.add(EntityMember.from(m.name(), guessed, m.modifier(), m.mutable() == Mutable.True, m.node(), m.isDefault()));
-        }
-        return Entity.from(this.node(), members);
+        return this.guardedGuess(() -> this, () -> {
+            List<EntityMember> members = new ArrayList<>();
+            for (EntityMember m : this.members()) {
+                if (m.isDefault()) continue;
+                Outline guessed = m.outline() instanceof Projectable ? ((Projectable) m.outline()).guess() : m.outline();
+                members.add(EntityMember.from(m.name(), guessed, m.modifier(), m.mutable() == Mutable.True, m.node(), m.isDefault()));
+            }
+            return Entity.from(this.node(), members);
+        });
     }
 
     @Override
@@ -389,14 +391,16 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
 
     @Override
     public boolean equals(Outline another) {
-        if (!(another instanceof Entity)) return false;
-        Entity you = cast(another);
-        if (this.members.size() != you.members.size()) return false;
-        for (String k : this.members.keySet()) {
-            if (you.members.get(k) == null) return false;
-            if (!this.members.get(k).outline().equals(you.members.get(k).outline())) return false;
-        }
-        return true;
+        return this.guardedEquals(another, () -> {
+            if (!(another instanceof Entity)) return false;
+            Entity you = cast(another);
+            if (this.members.size() != you.members.size()) return false;
+            for (String k : this.members.keySet()) {
+                if (you.members.get(k) == null) return false;
+                if (!this.members.get(k).outline().equals(you.members.get(k).outline())) return false;
+            }
+            return true;
+        });
     }
 
     @Override

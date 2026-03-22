@@ -12,6 +12,7 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import static org.twelve.gcp.common.Tool.cast;
 
@@ -56,6 +57,7 @@ public interface Outline extends Serializable {
      * inside hot type-comparison loops.
      */
     record IsKey(long a, long b) {}
+    record EqKey(long a, long b) {}
 
     /**
      * Thread-local set of (a,b) id pairs currently being compared via {@link #is}.
@@ -63,6 +65,9 @@ public interface Outline extends Serializable {
      * through their built-in method signatures (e.g. {@code Number.min: Number → Number}).
      */
     ThreadLocal<Set<IsKey>> IS_COMPARING = ThreadLocal.withInitial(HashSet::new);
+    ThreadLocal<Set<EqKey>> EQUALS_COMPARING = ThreadLocal.withInitial(HashSet::new);
+    ThreadLocal<Set<Long>> STRINGIFYING = ThreadLocal.withInitial(HashSet::new);
+    ThreadLocal<Set<Long>> GUESSING = ThreadLocal.withInitial(HashSet::new);
 
     AST ast();
 
@@ -79,6 +84,36 @@ public interface Outline extends Serializable {
      */
     default boolean equals(Outline another) {
         return this.is(another) && another.is(this) && !(another instanceof Projectable && ((Projectable) another).containsGeneric());
+    }
+
+    default boolean guardedEquals(Outline another, Supplier<Boolean> evaluator) {
+        if (this == another) return true;
+        EqKey key = new EqKey(this.id(), another.id());
+        Set<EqKey> guard = EQUALS_COMPARING.get();
+        if (!guard.add(key)) return true;
+        try {
+            return evaluator.get();
+        } finally {
+            guard.remove(key);
+        }
+    }
+
+    default String guardedToString(String fallback, Supplier<String> evaluator) {
+        if (!STRINGIFYING.get().add(this.id())) return fallback;
+        try {
+            return evaluator.get();
+        } finally {
+            STRINGIFYING.get().remove(this.id());
+        }
+    }
+
+    default Outline guardedGuess(Supplier<Outline> fallback, Supplier<Outline> evaluator) {
+        if (!GUESSING.get().add(this.id())) return fallback.get();
+        try {
+            return evaluator.get();
+        } finally {
+            GUESSING.get().remove(this.id());
+        }
     }
 
     /**

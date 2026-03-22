@@ -63,9 +63,11 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
      */
     @Override
     public boolean equals(Outline another) {
-        if (!(another instanceof Function)) return false;
-        Function you = cast(another);
-        return this.argument.equals(you.argument) && this.returns.equals(you.returns);
+        return this.guardedEquals(another, () -> {
+            if (!(another instanceof Function)) return false;
+            Function you = cast(another);
+            return this.argument.equals(you.argument) && this.returns.equals(you.returns);
+        });
     }
 
     public Returnable returns() {
@@ -84,8 +86,7 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
 
     @Override
     public String toString() {
-//        return argument.toString()+"->"+returns.toString();
-        return this.guess().toString();
+        return this.guardedToString("(...)->...", () -> this.guess().toString());
     }
 
     @Override
@@ -95,9 +96,9 @@ public abstract class Function<T extends Node, A extends Outline> implements Pro
 
     @Override
     public Outline guess() {
-        return new FixFunction(this.node(), this.ast(),
+        return this.guardedGuess(() -> this, () -> new FixFunction(this.node(), this.ast(),
                 this.argument instanceof Projectable ? ((Projectable) this.argument).guess() : this.argument,
-                this.returns.guess());
+                this.returns.guess()));
     }
 
     @Override

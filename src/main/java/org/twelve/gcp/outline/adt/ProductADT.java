@@ -99,17 +99,19 @@ public abstract class ProductADT extends ADT {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("{");
-        // Show all members except pure literal-type constants (isDefault=true, no default-value node).
-        // Default-value fields (age: 100) are included since they represent real, user-facing members.
-        List<EntityMember> ms = this.members().stream()
-                .filter(m -> !m.isDefault() || m.hasDefaultValue())
-                .toList();
-        for (int i = 0; i < ms.size(); i++) {
-            sb.append(ms.get(i).toString() + (i == ms.size() - 1 ? "" : ","));
-        }
-        sb.append("}");
-        return sb.toString();
+        return this.guardedToString("{...}", () -> {
+            StringBuilder sb = new StringBuilder("{");
+            // Show all members except pure literal-type constants (isDefault=true, no default-value node).
+            // Default-value fields (age: 100) are included since they represent real, user-facing members.
+            List<EntityMember> ms = this.members().stream()
+                    .filter(m -> !m.isDefault() || m.hasDefaultValue())
+                    .toList();
+            for (int i = 0; i < ms.size(); i++) {
+                sb.append(ms.get(i).toString()).append(i == ms.size() - 1 ? "" : ",");
+            }
+            sb.append("}");
+            return sb.toString();
+        });
     }
 
 //    public List<EntityMember> members() {
