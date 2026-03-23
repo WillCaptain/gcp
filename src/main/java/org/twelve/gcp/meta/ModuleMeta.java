@@ -175,7 +175,7 @@ public final class ModuleMeta {
      *       or whose declared type text matches exactly.</li>
      * </ol>
      */
-    List<FieldMeta> membersOfType(String typeName) {
+    public List<FieldMeta> membersOfType(String typeName) {
         if (typeName == null) return List.of();
         // Normalise: strip backtick wrapping produced by Genericable.toString() ("`{code: String}`")
         String t = typeName.startsWith("`") && typeName.endsWith("`")

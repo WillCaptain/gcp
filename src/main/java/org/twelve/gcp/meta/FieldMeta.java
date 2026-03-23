@@ -19,13 +19,17 @@ public record FieldMeta(String name, String type, String description, String ori
 
     public boolean isMethod() {
         if (type == null || type.isBlank()) return false;
+        String scanType = type.trim();
+        while (scanType.startsWith("Poly(") && scanType.endsWith(")")) {
+            scanType = scanType.substring("Poly(".length(), scanType.length() - 1).trim();
+        }
         int parenDepth = 0;
         int braceDepth = 0;
         int bracketDepth = 0;
         boolean inString = false;
-        for (int i = 0; i < type.length() - 1; i++) {
-            char ch = type.charAt(i);
-            if (ch == '"' && (i == 0 || type.charAt(i - 1) != '\\')) {
+        for (int i = 0; i < scanType.length(); i++) {
+            char ch = scanType.charAt(i);
+            if (ch == '"' && (i == 0 || scanType.charAt(i - 1) != '\\')) {
                 inString = !inString;
                 continue;
             }
@@ -38,7 +42,10 @@ public record FieldMeta(String name, String type, String description, String ori
                 case '[' -> bracketDepth++;
                 case ']' -> bracketDepth = Math.max(0, bracketDepth - 1);
                 default -> {
-                    if (ch == '-' && type.charAt(i + 1) == '>'
+                    if (ch == '→' && parenDepth == 0 && braceDepth == 0 && bracketDepth == 0) {
+                        return true;
+                    }
+                    if (ch == '-' && i + 1 < scanType.length() && scanType.charAt(i + 1) == '>'
                             && parenDepth == 0 && braceDepth == 0 && bracketDepth == 0) {
                         return true;
                     }

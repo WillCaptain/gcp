@@ -506,6 +506,57 @@ public final class MetaExtractor {
     }
 
     /**
+     * Returns completable members from a type text in the current module metadata.
+     *
+     * <p>This is the canonical fallback for structural inline types such as
+     * {@code {age:Int,name:String,map:Poly(() → {...})}} which already contain
+     * enough information for dot-completion without needing a named outline lookup.
+     */
+    public static List<FieldMeta> completionMembersOfType(String typeText, ModuleMeta moduleMeta) {
+        if (typeText == null || typeText.isBlank() || moduleMeta == null) return List.of();
+        return moduleMeta.membersOfType(typeText);
+    }
+
+    /**
+     * Returns completable members of a method's return type using the receiver's type.
+     *
+     * <p>If the method returns a self-like placeholder such as {@code {...}}
+     * (common for {@code () -> this} / projected self-returning methods), this
+     * falls back to the receiver members instead of returning an empty result.
+     */
+    public static List<FieldMeta> completionMembersOfMethodReturn(String receiverTypeText,
+                                                                  String methodName,
+                                                                  ModuleMeta moduleMeta) {
+        if (receiverTypeText == null || receiverTypeText.isBlank()
+                || methodName == null || methodName.isBlank()
+                || moduleMeta == null) {
+            return List.of();
+        }
+        List<FieldMeta> receiverMembers = moduleMeta.membersOfType(receiverTypeText);
+        for (FieldMeta field : receiverMembers) {
+            if (!methodName.equals(field.name()) || !field.isMethod()) continue;
+            String returnType = extractMethodReturnTypeText(field.type());
+            if (looksLikeSelfReturn(returnType)) {
+                return receiverMembers;
+            }
+            return completionMembersOfType(returnType, moduleMeta);
+        }
+        return List.of();
+    }
+
+    /**
+     * Outline overload for {@link #completionMembersOfMethodReturn(String, String, ModuleMeta)}.
+     */
+    public static List<FieldMeta> completionMembersOfMethodReturn(Outline receiverOutline,
+                                                                  String methodName,
+                                                                  ModuleMeta moduleMeta) {
+        if (receiverOutline == null) return List.of();
+        Outline resolved = resolveOutline(receiverOutline);
+        String typeText = resolved != null ? resolved.toString() : receiverOutline.toString();
+        return completionMembersOfMethodReturn(typeText, methodName, moduleMeta);
+    }
+
+    /**
      * Canonical IDE dot-completion entry point.
      *
      * <p>Given the {@link Outline} of the expression before the dot, returns its completable members:
@@ -557,6 +608,88 @@ public final class MetaExtractor {
     }
 
     /**
+     * Unified dot-completion entry point for IDE editors and LLM tools.
+     *
+     * <p>This is the <em>single authoritative method</em> that both the Outline playground editor
+     * and the Entitir playground editor (and any LLM {@code getMembers} tool) must call when
+     * resolving what appears after a {@code .} — regardless of whether the expression before the
+     * dot is a plain entity, a VirtualSet collection, or a lazy/Genericable wrapper.
+     *
+     * <p>Resolution order:
+     * <ol>
+     *   <li>Unwraps all wrappers ({@link Returnable}, {@link Genericable}, lazy) via
+     *       {@link #resolveOutline} + {@code .eventual()}.</li>
+     *   <li><b>VirtualSet collection</b> (e.g. {@code Employees}, {@code Schools}): uses AST
+     *       by-name lookup to reliably read own navigation methods from the declared outline body,
+     *       then appends {@code VirtualSet} builtin operators ({@code filter}, {@code count}, …).
+     *       Direct {@code outline.members()} is intentionally avoided here because GCP represents
+     *       these as lazy parametric types whose projected instances may carry an incomplete member
+     *       list after forked inference.</li>
+     *   <li><b>Plain entity / ADT</b>: delegates to {@link #completionMembersOf} which uses
+     *       {@code extractEntityFields} with an AST-body fallback for system generics.</li>
+     * </ol>
+     *
+     * @param outline    the {@link Outline} of the expression before the dot
+     * @param contextAsf the ASF that contains the type declarations (preamble or current module);
+     *                   must contain both the specific collection outline and {@code VirtualSet}
+     * @return completable members, never {@code null}
+     */
+    public static List<FieldMeta> dotCompletionOf(Outline outline, ASF contextAsf) {
+        if (outline == null) return List.of();
+
+        // Collection-returning member calls can carry two different "views" at once:
+        //   1) outline.eventual()     -> the real projected collection type (e.g. Employees)
+        //   2) resolveOutline(outline)-> a narrower supposed return type (e.g. Employee)
+        //
+        // For dot-completion we must prefer the eventual collection view first; otherwise
+        // chains like badgeRequests.employee(). would be incorrectly collapsed to Employee
+        // entity fields instead of Employees VirtualSet operators.
+        Outline eventual = outline.eventual();
+        if (isVirtualSetCollection(eventual)) {
+            return virtualSetDotCompletion(eventual, contextAsf);
+        }
+
+        Outline resolved = resolveOutline(outline);
+        if (resolved == null) return List.of();
+        resolved = resolved.eventual();
+
+        if (isVirtualSetCollection(resolved)) {
+            return virtualSetDotCompletion(resolved, contextAsf);
+        }
+        return completionMembersOf(resolved, contextAsf);
+    }
+
+    /**
+     * Returns own navigation methods declared on the VirtualSet collection outline
+     * (looked up by declared name in the AST body) plus the universal {@code VirtualSet}
+     * builtin operators ({@code filter}, {@code count}, {@code take}, …).
+     *
+     * <p>This method is the canonical way to resolve members of any
+     * {@code outline Xs = VirtualSet<X>{...}} — it never relies on walking the projected
+     * {@link org.twelve.gcp.outline.adt.Entity#members()} list, which is unreliable for
+     * lazy parametric types produced by GCP's generic instantiation.
+     */
+    public static List<FieldMeta> virtualSetDotCompletion(Outline resolved, ASF contextAsf) {
+        if (contextAsf == null) return List.of();
+        String outlineName = null;
+        if (resolved instanceof Entity ent && ent.node() != null) {
+            outlineName = ent.node().lexeme();
+        }
+        List<FieldMeta> result = new ArrayList<>();
+        if (outlineName != null && !outlineName.isEmpty()) {
+            for (AST ast : contextAsf.asts()) {
+                List<FieldMeta> own = fieldsOf(outlineName, ast);
+                if (!own.isEmpty()) { result.addAll(own); break; }
+            }
+        }
+        for (AST ast : contextAsf.asts()) {
+            List<FieldMeta> builtin = fieldsOf("VirtualSet", ast);
+            if (!builtin.isEmpty()) { result.addAll(builtin); break; }
+        }
+        return result;
+    }
+
+    /**
      * Returns {@code true} when {@code fields} carries no useful member information beyond the
      * universal {@code to_str} builtin — i.e., inference did not fully resolve the type.
      */
@@ -564,6 +697,34 @@ public final class MetaExtractor {
         if (fields.isEmpty()) return true;
         if (fields.size() == 1 && "to_str".equals(fields.get(0).name())) return true;
         return false;
+    }
+
+    private static String extractMethodReturnTypeText(String rawType) {
+        if (rawType == null || rawType.isBlank()) return null;
+        int asciiArrow = rawType.lastIndexOf("->");
+        int unicodeArrow = rawType.lastIndexOf("→");
+        String tail;
+        if (asciiArrow >= 0) tail = rawType.substring(asciiArrow + 2);
+        else if (unicodeArrow >= 0) tail = rawType.substring(unicodeArrow + 1);
+        else tail = rawType;
+        tail = tail.trim();
+        while (tail.startsWith("Poly(") && tail.endsWith(")")) {
+            tail = tail.substring("Poly(".length(), tail.length() - 1).trim();
+            asciiArrow = tail.lastIndexOf("->");
+            unicodeArrow = tail.lastIndexOf("→");
+            if (asciiArrow >= 0) tail = tail.substring(asciiArrow + 2).trim();
+            else if (unicodeArrow >= 0) tail = tail.substring(unicodeArrow + 1).trim();
+        }
+        while (tail.startsWith("(") && tail.endsWith(")")) {
+            tail = tail.substring(1, tail.length() - 1).trim();
+        }
+        return tail;
+    }
+
+    private static boolean looksLikeSelfReturn(String typeText) {
+        if (typeText == null || typeText.isBlank()) return false;
+        String t = typeText.trim();
+        return "{...}".equals(t) || "{…}".equals(t) || t.contains("{...}") || t.contains("{…}");
     }
 
     /**

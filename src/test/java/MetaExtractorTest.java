@@ -6,6 +6,7 @@ import org.twelve.gcp.ast.Token;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.meta.FieldMeta;
 import org.twelve.gcp.meta.MetaExtractor;
+import org.twelve.gcp.meta.ModuleMeta;
 import org.twelve.gcp.meta.OutlineMeta;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.MemberAccessor;
@@ -338,6 +339,35 @@ class MetaExtractorTest {
 
             // Must contain val (own member), not fall back to empty preamble AST
             assertThat(result).extracting(FieldMeta::name).contains("val");
+        }
+    }
+
+    @Nested
+    class StructuralTypeCompletion {
+
+        private ModuleMeta emptyMeta() {
+            return new ModuleMeta("m", "org.test", null, List.of(), List.of(), List.of(), List.of());
+        }
+
+        @Test
+        void completion_members_of_type_reads_structural_fields_directly() {
+            List<FieldMeta> result = MetaExtractor.completionMembersOfType(
+                    "{age: Int,name: String,map: Poly(() → {...})}",
+                    emptyMeta());
+
+            assertThat(result).extracting(FieldMeta::name)
+                    .containsExactlyInAnyOrder("age", "name", "map");
+        }
+
+        @Test
+        void completion_members_of_method_return_falls_back_to_receiver_for_self_return() {
+            List<FieldMeta> result = MetaExtractor.completionMembersOfMethodReturn(
+                    "{age: Int,name: String,map: Poly(() → {...})}",
+                    "map",
+                    emptyMeta());
+
+            assertThat(result).extracting(FieldMeta::name)
+                    .containsExactlyInAnyOrder("age", "name", "map");
         }
     }
 }
