@@ -3,6 +3,7 @@ package org.twelve.gcp.outline.adt;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.projectable.*;
 
 import java.util.ArrayList;
@@ -80,6 +81,10 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
 
     protected boolean sum(List<Outline> list, Outline outline) {
         for (Outline o : list) {
+            if (outline instanceof NOTHING || o instanceof NOTHING) {
+                if (outline.equals(o)) return false;
+                continue;
+            }
             if (outline instanceof Projectable || o instanceof Projectable) {
                 if (outline.equals(o)) return false;//已经有了完全一致的projectable
 //                if (outline.id()==o.id()) return false;//已经有了完全一致的projectable

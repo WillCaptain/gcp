@@ -8,28 +8,32 @@ import org.twelve.gcp.outline.Outline;
 import static org.twelve.gcp.common.Tool.cast;
 
 public class FixFunction  extends Function<Node,Outline> {
-    protected long id;
+    private final long stableId;
     private final Outline returns;
 
     public FixFunction(Node node, AST ast, Outline arg, Outline returns) {
+        this(node, ast, arg, returns, -1);
+    }
+
+    private FixFunction(Node node, AST ast, Outline arg, Outline returns, long stableId) {
         super(node,ast,arg,Return.from(ast,returns));
+        this.stableId = stableId >= 0 ? stableId : super.id();
         this.returns = returns;
     }
 
     @Override
     public long id() {
-        return this.id;
+        return stableId;
     }
 
     @Override
     public String toString() {
         return this.guardedToString("(...)->...", () -> {
-            FixFunction guess = cast(this.guess());
-            String arg = guess.argument.toString();
-            if(guess.argument instanceof FixFunction){
+            String arg = this.argument.toString();
+            if(this.argument instanceof FixFunction){
                 arg = "("+arg+")";
             }
-            return arg + "->" + guess.returns.toString();
+            return arg + "->" + this.returns.toString();
         });
     }
 
@@ -42,7 +46,7 @@ public class FixFunction  extends Function<Node,Outline> {
     public Outline guess() {
         Outline arg = argument instanceof Projectable?((Projectable) argument).guess():argument;
         Outline r = returns instanceof Projectable?((Projectable) returns).guess():returns;
-        return new FixFunction(node,ast(),arg,r);
+        return new FixFunction(node,ast(),arg,r, this.stableId);
     }
 
     @Override

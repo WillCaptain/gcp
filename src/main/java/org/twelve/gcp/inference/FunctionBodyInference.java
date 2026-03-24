@@ -4,6 +4,7 @@ import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.node.expression.body.FunctionBody;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.SumADT;
 import org.twelve.gcp.outline.builtin.IGNORE;
 import org.twelve.gcp.outline.projectable.Return;
@@ -15,18 +16,21 @@ public class FunctionBodyInference extends BodyInference<FunctionBody> {
         Outline inferred = super.infer(node, inferencer);
         if (inferred instanceof IGNORE) inferred = node.ast().Unit;
         if (inferred.containsIgnore()) {
-
-            ((SumADT) inferred).options().removeIf(o -> o instanceof IGNORE);
-            if(((SumADT) inferred).options().size()==1){
-                inferred = ((SumADT) inferred).options().getFirst();
-            }
-            //((Option) inferred).options().add(node.ast().Unit);
-            GCPErrorReporter.report(node, GCPErrCode.AMBIGUOUS_RETURN, "return type is expected");
-
+            inferred = replaceIgnoreWithNothing(inferred, node.ast());
         }
         Returnable returns = Return.from(node.parent());
         returns.addReturn(inferred);
 //        returns.replaceIgnores();
         return returns;
+    }
+
+    private Outline replaceIgnoreWithNothing(Outline outline, org.twelve.gcp.ast.AST ast) {
+        if (!(outline instanceof SumADT sum) || !outline.containsIgnore()) {
+            return outline;
+        }
+        Outline[] normalized = sum.options().stream()
+                .map(option -> option instanceof IGNORE ? ast.Nothing : option)
+                .toArray(Outline[]::new);
+        return Option.from(sum.node(), ast, normalized);
     }
 }

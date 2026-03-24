@@ -10,7 +10,7 @@ public enum GCPErrCode {
 
     // ── Syntax / Structure ────────────────────────────────────────────────────
     NODE_AST_MISMATCH           ("internal: node belongs to a different AST"),
-    UNREACHABLE_STATEMENT       ("unreachable code"),
+    UNREACHABLE_STATEMENT       ("unreachable code", GCPError.Severity.WARNING),
     DUPLICATED_DEFINITION       ("duplicate definition"),
 
     // ── Type System ───────────────────────────────────────────────────────────
@@ -32,7 +32,8 @@ public enum GCPErrCode {
 
     // ── Control Flow ──────────────────────────────────────────────────────────
     CONDITION_IS_NOT_BOOL       ("condition must be a Bool expression"),
-    POSSIBLE_ENDLESS_LOOP       ("possible infinite loop"),
+    NON_EXHAUSTIVE_MATCH        ("non-exhaustive match", GCPError.Severity.WARNING),
+    POSSIBLE_ENDLESS_LOOP       ("possible infinite loop", GCPError.Severity.WARNING),
 
     // ── Name Resolution ───────────────────────────────────────────────────────
     AMBIGUOUS_VARIABLE_REFERENCE("ambiguous variable reference"),
@@ -53,7 +54,7 @@ public enum GCPErrCode {
     UNARY_POSITION_MISMATCH     ("unary operator used in wrong position"),
 
     // ── Type Cast ─────────────────────────────────────────────────────────────
-    TYPE_CAST_NEVER_SUCCEED     ("this type cast can never succeed"),
+    TYPE_CAST_NEVER_SUCCEED     ("this type cast can never succeed", GCPError.Severity.WARNING),
 
     // ── Collections / Arrays ──────────────────────────────────────────────────
     NOT_INTEGER                 ("array index must be an integer"),
@@ -80,14 +81,24 @@ public enum GCPErrCode {
     // ─────────────────────────────────────────────────────────────────────────
 
     private final String description;
+    private final GCPError.Severity defaultSeverity;
 
     GCPErrCode(String description) {
+        this(description, GCPError.Severity.ERROR);
+    }
+
+    GCPErrCode(String description, GCPError.Severity defaultSeverity) {
         this.description = description;
+        this.defaultSeverity = defaultSeverity;
     }
 
     /** Short, human-readable description of the error. */
     public String description() {
         return description;
+    }
+
+    public GCPError.Severity defaultSeverity() {
+        return defaultSeverity;
     }
 
     /** Returns the error category for grouping related errors. */
@@ -97,10 +108,7 @@ public enum GCPErrCode {
 
     /** Checks if this error is recoverable (warnings or non-fatal errors). */
     public boolean isRecoverable() {
-        return switch (this) {
-            case POSSIBLE_ENDLESS_LOOP, UNREACHABLE_STATEMENT, TYPE_CAST_NEVER_SUCCEED -> true;
-            default -> false;
-        };
+        return defaultSeverity == GCPError.Severity.WARNING;
     }
 
     /** Categories for error classification. */
@@ -134,7 +142,7 @@ public enum GCPErrCode {
                         -> SEMANTIC;
 
                 // ── Control Flow ──────────────────────────────────────────────
-                case CONDITION_IS_NOT_BOOL, POSSIBLE_ENDLESS_LOOP -> CONTROL_FLOW;
+                case CONDITION_IS_NOT_BOOL, NON_EXHAUSTIVE_MATCH, POSSIBLE_ENDLESS_LOOP -> CONTROL_FLOW;
 
                 // ── Name Resolution ───────────────────────────────────────────
                 case AMBIGUOUS_VARIABLE_REFERENCE, AMBIGUOUS_DECLARATION -> NAME_RESOLUTION;

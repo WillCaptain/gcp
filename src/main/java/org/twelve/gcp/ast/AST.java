@@ -145,8 +145,8 @@ public class AST {
 
     public GCPError addError(GCPError error) {
         if(error.node()==null) return error;
-        // O(1) dedup: key = nodeId + ":" + errorCode ordinal
-        String key = error.node().id() + ":" + error.errorCode().ordinal();
+        // O(1) dedup: key = nodeId + ":" + stable diagnostic identity
+        String key = error.node().id() + ":" + error.dedupKey();
         if (errorKeys.add(key)) {
             this.errors.add(error);
             return error;
@@ -159,7 +159,7 @@ public class AST {
         if (errors.isEmpty()) return;
         errors.removeIf(e -> {
             if (e.node() != null && Objects.equals(e.node().id(), nodeId)) {
-                errorKeys.remove(nodeId + ":" + e.errorCode().ordinal());
+                errorKeys.remove(nodeId + ":" + e.dedupKey());
                 return true;
             }
             return false;
@@ -176,7 +176,7 @@ public class AST {
         errors.subList(from, to).clear();
         for (GCPError e : toRemove) {
             if (e.node() != null) {
-                errorKeys.remove(e.node().id() + ":" + e.errorCode().ordinal());
+                errorKeys.remove(e.node().id() + ":" + e.dedupKey());
             }
         }
     }

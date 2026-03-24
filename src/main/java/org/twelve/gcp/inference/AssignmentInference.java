@@ -5,6 +5,7 @@ import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.Assignment;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.SumADT;
 import org.twelve.gcp.outline.builtin.IGNORE;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
@@ -31,7 +32,10 @@ public class AssignmentInference implements Inference<Assignment> {
             valueOutline = node.rhs().infer(inferencer);
         }
 
-        if (valueOutline == ast.Ignore || valueOutline == ast.Unit) {
+        if (valueOutline == ast.Ignore) {
+            valueOutline = ast.Nothing;
+        }
+        if (valueOutline == ast.Unit) {
             GCPErrorReporter.report(node.rhs(), GCPErrCode.UNAVAILABLE_OUTLINE_ASSIGNMENT);
             return ast.Ignore;
         }
@@ -44,13 +48,19 @@ public class AssignmentInference implements Inference<Assignment> {
             return ast.Ignore;
         }
         if (valueOutline.containsIgnore()) {//option with ignore
-            ((SumADT) valueOutline).options().removeIf(o -> o instanceof IGNORE);
-            if (((SumADT) valueOutline).options().size() == 1) {
-                valueOutline = ((SumADT) valueOutline).options().getFirst();
-            }
-            GCPErrorReporter.report(node, GCPErrCode.AMBIGUOUS_RETURN, "return type is expected");
+            valueOutline = replaceIgnoreWithNothing(valueOutline, ast);
         }
         node.lhs().assign(node.ast().symbolEnv(), valueOutline);
         return ast.Ignore;
+    }
+
+    private Outline replaceIgnoreWithNothing(Outline outline, AST ast) {
+        if (!(outline instanceof SumADT sum) || !outline.containsIgnore()) {
+            return outline;
+        }
+        Outline[] normalized = sum.options().stream()
+                .map(option -> option instanceof IGNORE ? ast.Nothing : option)
+                .toArray(Outline[]::new);
+        return Option.from(sum.node(), ast, normalized);
     }
 }

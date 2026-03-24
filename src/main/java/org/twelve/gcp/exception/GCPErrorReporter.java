@@ -24,11 +24,23 @@ public class GCPErrorReporter {
     public static void report(AST ast, Node node, GCPErrCode errCode, String message) {
         ast.addError(new GCPError(node, errCode, message));
     }
+    public static void report(AST ast, Node node, String message, GCPError.Severity severity) {
+        ast.addError(new GCPError(node, message, severity));
+    }
     public static void report(Node node, GCPErrCode errCode, String message) {
         report(node.ast(),node,errCode,message);
     }
+    public static void report(Node node, String message, GCPError.Severity severity) {
+        report(node.ast(), node, message, severity);
+    }
     public static void report(Node node, GCPErrCode errCode) {
         report(node,errCode,"");
+    }
+    public static void warn(AST ast, Node node, String message) {
+        report(ast, node, message, GCPError.Severity.WARNING);
+    }
+    public static void warn(Node node, String message) {
+        report(node, message, GCPError.Severity.WARNING);
     }
 
     /**

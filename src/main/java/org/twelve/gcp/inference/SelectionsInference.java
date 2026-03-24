@@ -2,6 +2,7 @@ package org.twelve.gcp.inference;
 
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.node.expression.conditions.MatchExpression;
 import org.twelve.gcp.node.expression.conditions.Arm;
 import org.twelve.gcp.node.expression.conditions.Selections;
 import org.twelve.gcp.outline.Outline;
@@ -19,8 +20,13 @@ public class SelectionsInference implements Inference<Selections<?>>{
         for (Arm arm : node.arms()) {
             inferred.add(arm.infer(inferencer));
         }
-        if(!node.containsElse() && !inferred.contains(node.ast().Ignore)){
+        boolean widenedByImplicitIgnore = !node.containsElse() && !inferred.contains(node.ast().Ignore);
+        if(widenedByImplicitIgnore){
             inferred.add(node.ast().Ignore);
+            if (node instanceof MatchExpression) {
+                GCPErrorReporter.report(node, GCPErrCode.NON_EXHAUSTIVE_MATCH,
+                        "result widens to Option");
+            }
         }
         //calculate return outline
         if(inferred.removeIf(o->o instanceof UNIT)){
