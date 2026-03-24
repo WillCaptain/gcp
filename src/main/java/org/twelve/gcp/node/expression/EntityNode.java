@@ -51,10 +51,24 @@ public class EntityNode extends ValueNode<EntityNode>{
     @Override
     public Location loc() {
         if (super.loc() != null) return super.loc();
+        List<Location> located = this.nodes().stream()
+                .map(Node::loc)
+                .filter(loc -> loc != null && loc.start() >= 0 && loc.end() >= 0)
+                .toList();
+        if (located.isEmpty()) {
+            return new SimpleLocation(-1, -1);
+        }
 
-        Long min = this.nodes().stream().map(m -> m.loc().start()).min((m1, m2) -> m1 < m2 ? -1 : 1).get();
-        Long max = this.nodes().stream().map(m -> m.loc().start()).min((m1, m2) -> m1 > m2 ? -1 : 1).get();
-        return new SimpleLocation(min, max);
+        Location first = located.getFirst();
+        Location last = located.getLast();
+        if (first.line() >= 0) {
+            return new org.twelve.gcp.ast.SourceLocation(
+                    first.start(),
+                    last.end(),
+                    first.line(),
+                    first.col());
+        }
+        return new SimpleLocation(first.start(), last.end());
     }
 
     @Override
