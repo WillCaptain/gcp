@@ -12,7 +12,13 @@ public class FunctionInference implements Inference<FunctionNode> {
     @Override
     public Outline infer(FunctionNode node, Inferencer inferencer) {
         List<Reference> refs = node.refs().stream().map(r->(Reference)r.infer(inferencer)).toList();
-        Genericable<?,?> argument = cast(node.argument().infer(inferencer));
+        Outline argOutline = node.argument().infer(inferencer);
+        Genericable<?,?> argument = argOutline instanceof Genericable<?,?>
+                ? cast(argOutline)
+                : Generic.from(node.argument(),
+                        argOutline instanceof Projectable
+                                ? ((Projectable) argOutline).guess()
+                                : argOutline);
         Returnable returns = cast(node.body().infer(inferencer));
         return FirstOrderFunction.from(node,argument,returns,refs);
     }

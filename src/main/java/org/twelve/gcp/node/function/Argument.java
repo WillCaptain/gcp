@@ -70,7 +70,8 @@ public class Argument extends Identifier {
 
     @Override
     public Genericable<?,?> outline() {
-        return cast(super.outline());
+        Outline out = super.outline();
+        return out instanceof Genericable<?,?> ? cast(out) : null;
     }
 
 //    public Argument setIndex(int index) {
