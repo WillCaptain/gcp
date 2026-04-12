@@ -453,31 +453,3 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
         return sb.toString();
     }
 }
-    /**
-     * Core projection method for Entity: substitutes generic member types during generic instantiation.
-     *
-     * <h2>Two Projection Scenarios</h2>
-     *
-     * <h3>Scenario 1: Self-projection (projected == this)</h3>
-     * When an Outline type definition (e.g. {@code Aggregator}) is projected by a concrete
-     * instance type (e.g. {@code employees}), iterate the projection's members and replace
-     * this entity's generic member types with concrete ones:
-     * <ul>
-     *   <li>If a member is {@link Projectable}, call its {@code project} method to substitute the type.</li>
-     *   <li>Key: if a member is an {@link AccessorGeneric} (i.e. {@code hasToBe==ANY}) and the projection
-     *       member is a concrete type, propagate that concrete type to the AccessorGeneric's {@code hasToBe},
-     *       enabling {@link org.twelve.gcp.inference.FunctionCallInference} to validate argument types later.</li>
-     *   <li>If the projection member is Genericable, reverse-propagate this member's concrete type
-     *       as a {@code hasToBe} constraint on the projection member.</li>
-     * </ul>
-     *
-     * <h3>Scenario 2: Transitive projection (projected != this)</h3>
-     * This Entity contains generic members; forward the projection to all Projectable members
-     * so that nested type parameters are resolved recursively.
-     *
-     * @param projected  the initiator of the projection (the Outline type definition Entity)
-     * @param projection the concrete instance type (provides the actual member types)
-     * @param session    projection session (caches substitutions for this call to avoid reprocessing)
-     * @return a new Entity with all generic variables replaced by concrete types
-     */
-

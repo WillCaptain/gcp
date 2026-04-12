@@ -6,6 +6,7 @@ import org.twelve.gcp.node.expression.body.WithExpression;
 import org.twelve.gcp.node.expression.conditions.*;
 import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
+import org.twelve.gcp.node.expression.typeable.NullableTypeNode;
 import org.twelve.gcp.node.expression.typeable.OptionTypeNode;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
@@ -72,6 +73,7 @@ public class OutlineInferencer implements Inferencer {
     private static final PolyInference                  POLY                     = new PolyInference();
     private static final OptionTypeInference            OPTION_TYPE              = new OptionTypeInference();
     private static final PolyTypeInference              POLY_TYPE                = new PolyTypeInference();
+    private static final NullableTypeInference          NULLABLE_TYPE            = new NullableTypeInference();
     private static final ArmInference                   ARM                      = new ArmInference();
     private static final ImportSpecifierInference       IMPORT_SPECIFIER         = new ImportSpecifierInference();
     private static final ExportSpecifierInference       EXPORT_SPECIFIER         = new ExportSpecifierInference();
@@ -285,6 +287,11 @@ public class OutlineInferencer implements Inferencer {
     @Override
     public Outline visit(PolyTypeNode poly) {
         return POLY_TYPE.infer(poly, this);
+    }
+
+    @Override
+    public Outline visit(NullableTypeNode nullable) {
+        return NULLABLE_TYPE.infer(nullable, this);
     }
 
     @Override

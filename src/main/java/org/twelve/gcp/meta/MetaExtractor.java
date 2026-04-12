@@ -228,6 +228,9 @@ public final class MetaExtractor {
             }
             for (EntityMember member : padt.members()) {
                 try {
+                    String memberName = member.name();
+                    // Skip private FK/internal fields (_fieldName) and the synthetic 'type' discriminant
+                    if (memberName == null || memberName.startsWith("_") || "type".equals(memberName)) continue;
                     // member.outline().toString() can cause StackOverflowError for ~this
                     // self-referential types (e.g. Aggregator methods returning ~this).
                     // Catch Throwable so the member is still included with a safe type string.
@@ -239,7 +242,7 @@ public final class MetaExtractor {
                     }
                     String desc = memberDescription(member, source);
                     String origin = memberOrigin(member, baseMemberNames);
-                    result.add(new FieldMeta(member.name(), mType, desc, origin));
+                    result.add(new FieldMeta(memberName, mType, desc, origin));
                 } catch (Throwable ignored) {}
             }
         }
@@ -676,15 +679,27 @@ public final class MetaExtractor {
             outlineName = ent.node().lexeme();
         }
         List<FieldMeta> result = new ArrayList<>();
+        Set<String> ownNames = new HashSet<>();
         if (outlineName != null && !outlineName.isEmpty()) {
             for (AST ast : contextAsf.asts()) {
                 List<FieldMeta> own = fieldsOf(outlineName, ast);
-                if (!own.isEmpty()) { result.addAll(own); break; }
+                if (!own.isEmpty()) {
+                    result.addAll(own);
+                    own.forEach(f -> ownNames.add(f.name()));
+                    break;
+                }
             }
         }
         for (AST ast : contextAsf.asts()) {
             List<FieldMeta> builtin = fieldsOf("VirtualSet", ast);
-            if (!builtin.isEmpty()) { result.addAll(builtin); break; }
+            if (!builtin.isEmpty()) {
+                for (FieldMeta fm : builtin) {
+                    if (!ownNames.contains(fm.name())) {
+                        result.add(fm);
+                    }
+                }
+                break;
+            }
         }
         return result;
     }

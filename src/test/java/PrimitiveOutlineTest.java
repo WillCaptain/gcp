@@ -3,6 +3,13 @@ import org.junit.jupiter.api.Test;
 import org.twelve.gcp.ast.ASF;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.adt.Entity;
+import org.twelve.gcp.outline.adt.EntityMember;
+import org.twelve.gcp.outline.adt.Option;
+import org.twelve.gcp.outline.adt.SumADT;
+import org.twelve.gcp.outline.primitive.NOTHING;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -66,8 +73,7 @@ public class PrimitiveOutlineTest {
     }
 
     @Test
-    void test_any_is(){
-        Outline number = ast.Integer;
+    void test_any_is(){        Outline number = ast.Integer;
         Outline string = ast.Integer;
         Outline unit = ast.Unit;
         Outline ignore = ast.Ignore;
@@ -91,5 +97,54 @@ public class PrimitiveOutlineTest {
         assertFalse(number.is(string));
         assertFalse(string.is(ignore));
         assertFalse(string.is(unit));
+    }
+
+    @Test
+    void test_nullable_type_is_string_or_nothing() {
+        // String|Nothing is a union of String and Nothing
+        Outline stringOrNothing = Option.from(null, ast, ast.String, ast.Nothing);
+        assertTrue(stringOrNothing instanceof SumADT);
+        SumADT sum = (SumADT) stringOrNothing;
+        assertTrue(sum.options().stream().anyMatch(o -> o instanceof NOTHING));
+        assertTrue(sum.options().stream().anyMatch(o -> o.toString().equals("String")));
+    }
+
+    @Test
+    void test_nullable_entity_field_allows_missing() {
+        // actual: {name: String}   formal: {name: String, tag: String|Nothing}
+        // actual.is(formal) → true  (tag is nullable, may be absent)
+        var testAst = new ASF().newAST();
+        Outline stringOrNothing = Option.from(null, testAst, testAst.String, testAst.Nothing);
+        var node = testAst.program();
+
+        Entity formal = Entity.from(node, List.of(
+                EntityMember.from("name", testAst.String,  null, false),
+                EntityMember.from("tag",  stringOrNothing, null, false)
+        ));
+        Entity actual = Entity.from(node, List.of(
+                EntityMember.from("name", testAst.String, null, false)
+        ));
+
+        assertTrue(actual.is(formal),
+                "actual struct missing nullable field should pass is() check");
+    }
+
+    @Test
+    void test_non_nullable_missing_field_rejects() {
+        // actual: {name: String}   formal: {name: String, required: String}
+        // actual.is(formal) → false  (required field is missing)
+        var testAst = new ASF().newAST();
+        var node = testAst.program();
+
+        Entity formal = Entity.from(node, List.of(
+                EntityMember.from("name",     testAst.String, null, false),
+                EntityMember.from("required", testAst.String, null, false)
+        ));
+        Entity actual = Entity.from(node, List.of(
+                EntityMember.from("name", testAst.String, null, false)
+        ));
+
+        assertFalse(actual.is(formal),
+                "actual struct missing required field should fail is() check");
     }
 }

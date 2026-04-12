@@ -5,6 +5,7 @@ import org.twelve.gcp.common.CONSTANTS;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.primitive.Literal;
+import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
 
 import java.util.HashMap;
@@ -94,12 +95,16 @@ public abstract class ADT implements Outline {
 
         //another的每一个成员，this都应有一个member对应，方可满足is关系
         // 例外：Literal类型字段无需在构造时提供，其值由字面量自动注入
+        // 例外：类型为 T|Nothing 的字段是可选字段，actual 中缺失时允许通过
         ProductADT extended = cast(another);
         for (EntityMember member : extended.members()) {
             if (member.isDefault()) continue;
             EntityMember found = this.members.get(member.name());
             if (found == null) {
                 if (member.outline() instanceof Literal) continue;
+                // Optional field: declared type is a union containing Nothing (e.g. String|Nothing).
+                // Absence in the actual struct is valid — the field simply has no value.
+                if (isNullableType(member.outline())) continue;
                 // Universal built-in methods (e.g. to_str) are available on every ADT even when
                 // not explicitly declared.  Load them lazily and retry before rejecting the check.
                 this.loadBuiltInMethods();
@@ -111,5 +116,17 @@ public abstract class ADT implements Outline {
             }
         }
         return true;
+    }
+
+    /**
+     * Returns true when {@code outline} is a union type ({@link SumADT}) whose options include
+     * {@link NOTHING}, making it a nullable / optional type (e.g. {@code String|Nothing}).
+     * Such fields in a formal struct parameter may be absent from the actual struct.
+     */
+    private static boolean isNullableType(Outline outline) {
+        if (outline instanceof SumADT sum) {
+            return sum.options().stream().anyMatch(o -> o instanceof NOTHING);
+        }
+        return false;
     }
 }

@@ -7,6 +7,7 @@ import org.twelve.gcp.node.expression.body.WithExpression;
 import org.twelve.gcp.node.expression.conditions.*;
 import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
+import org.twelve.gcp.node.expression.typeable.NullableTypeNode;
 import org.twelve.gcp.node.expression.typeable.OptionTypeNode;
 import org.twelve.gcp.node.expression.*;
 import org.twelve.gcp.node.expression.accessor.ArrayAccessor;
@@ -68,6 +69,7 @@ public interface Inferencer {
     Outline visit(PolyNode poly);
     Outline visit(OptionTypeNode option);
     Outline visit(PolyTypeNode poly);
+    Outline visit(NullableTypeNode nullable);
     Outline visit(Selections selections);
     Outline visit(Arm arm);
 
