@@ -1,5 +1,11 @@
 # Zero-Annotation Python Ahead-of-Time Compilation via Demand-Driven Call-Site Type Inference
 
+> Role note:
+> This file focuses on Python AOT compilation application and benchmark evidence.
+> For GCP core theory/proofs, see `gcp-paper.md`.
+> For Chinese integrated reading, see `gcp-软件学报.md`.
+> For document boundaries and de-dup rules, see `papers.md`.
+
 **Abstract** — `mypyc` compiles type-annotated Python to C extensions and routinely delivers 5–100× speedups over CPython. Its practical barrier is not compiler quality but *annotation coverage*: functions lacking explicit parameter types receive almost no benefit (average **1.30×** in our experiments on integer-intensive benchmarks; one case *regresses* to 0.81× due to mypyc boxing overhead), because mypyc falls back to dynamic dispatch for every untyped call. We present **GCP-Python**, a demand-driven inference pipeline that automatically injects PEP 484-compliant type annotations into zero-annotation Python source files by propagating type constraints from call sites into function parameters. The pipeline requires no developer effort: given a library file and a representative call-context file, GCP-Python produces a fully-annotated source ready for mypyc compilation in **66 ms** of analysis overhead. Evaluated on 22 Python program categories, GCP-Python achieves an arithmetic mean **17.1×** speedup over CPython, with peaks of **120×** for match/case dispatching, **106×** for default-parameter arithmetic, and **34×** for real-world number-theoretic code (TheAlgorithms/Python). On a 7-function oracle benchmark, GCP-Python achieves **101.8%** of manually-annotated performance on ARM64 and **99.7%** on Linux x86-64 with zero developer effort, and **outperforms warm Numba JIT** on call-intensive integer functions on ARM64 (`is_prime(997)`: mypyc(GCP) 14.67× vs Numba 7.66× over CPython; `factorial(10)`: 8.53× vs 2.78×) — with no code modification required and no JIT warm-up latency.
 
 ---

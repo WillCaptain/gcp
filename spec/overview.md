@@ -143,11 +143,24 @@ OutlineInterpreter interpreter = new OutlineInterpreter();
 Value result = interpreter.run(asf);
 ```
 
-## 文档索引
+## 文档分层
 
-| 文档 | 说明 |
-|---|---|
-| [api/gcp_api.md](api/gcp_api.md) | 核心 API 参考（AST / ASF / 解释器 / 插件） |
-| [api/meta_api.md](api/meta_api.md) | 元数据 API（MetaExtractor / ModuleMeta / FieldMeta…） |
-| [type-system.md](type-system.md) | Outline 类型系统与 GCP 约束传播原理 |
-| [error.md](error.md) | 错误诊断 API（GCPError / GCPErrCode） |
+为降低重复并保持文档职责单一，`gcp` 模块采用以下分层：
+
+- 设计文档（本目录 `spec/`）：架构、类型系统、约束语义、论文材料。
+- 使用文档（`docs/`）：用户接入、SDK API、IDE/LLM 集成说明。
+
+### 设计文档入口
+
+- [spec/index.md](index.md)
+- [terminology.md](terminology.md)
+- [type-system.md](type-system.md)
+- [parallel-constraints.md](parallel-constraints.md)
+- [error.md](error.md)
+
+### 使用文档入口
+
+- [docs/index.md](../docs/index.md)
+- [docs/quickstart.md](../docs/quickstart.md)
+- [docs/sdk-reference.md](../docs/sdk-reference.md)
+- [docs/dot-completion.md](../docs/dot-completion.md)

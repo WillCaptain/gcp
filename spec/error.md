@@ -1,5 +1,7 @@
 # GCP — 错误诊断 API
 
+> 术语与符号约定遵循 `terminology.md`；涉及约束链错误（如 `CONSTRUCT_CONSTRAINTS_FAIL`）时，以并行约束语义为准。
+
 **包路径** `org.twelve.gcp.exception`
 
 ---

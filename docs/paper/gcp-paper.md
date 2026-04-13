@@ -1,5 +1,11 @@
 # Generalized Constraint Projection: A Four-Dimensional Type Inference Engine for Dynamic Languages
 
+> Role note:
+> This file is the primary source for GCP theory definitions, proofs, and complexity claims.
+> For Python AOT application details, see `gcp-python-cgo.md`.
+> For Chinese integrated reading, see `gcp-软件学报.md`.
+> For document boundaries and de-dup rules, see `papers.md`.
+
 **Abstract** — Dynamic programming languages offer unmatched flexibility but impose a persistent type-inference challenge: the same variable may be assigned a value of one type, declared as a supertype, consumed in a context requiring a third type, and accessed through a structural interface implying a fourth. Existing approaches — from Hindley–Milner unification to TypeScript's bidirectional checking — conflate these four qualitatively distinct sources of type information into a single constraint set, causing spurious conflicts and forcing developers to supply redundant annotations. This paper presents **Generalized Constraint Projection (GCP)**, a progressive type inference methodology that attaches *four independent constraint dimensions* (value extension, programmer declaration, usage demand, and structural access pattern) to every unresolved type variable and narrows them iteratively via lattice operations rather than global unification. We formalize the approach over the **Outline** language: we define the type lattice, the four-dimensional Genericable constraint model with monotonicity and convergence proofs, **Outline Expression Matching (OEM)** as a structural subtyping relation for duck-typed languages, and a bidirectional Projection mechanism for polymorphic higher-order function instantiation. We prove soundness (inferred types are safe approximations of runtime types), local and global convergence (the fixed-point algorithm terminates in O(N·|𝕋|) steps for N variables over a type lattice of size |𝕋|), and order-independence (inference results are deterministic regardless of module processing order). We describe a production implementation in the **Entitir** ontology data platform, where GCP powers type-safe query compilation from Outline lambda predicates to SQL, enabling LLM-generated queries to be executed safely against relational schemas without dynamic type failures.
 
 ---

@@ -1,5 +1,11 @@
 # 泛化约束投影:一种四维类型推导方法及其在Python零标注AOT编译中的应用
 
+> 文档角色说明：
+> 本文档是中文整合版，面向中文评审与传播，聚合 GCP 理论与 Python 应用。
+> 理论主源请优先参考 `gcp-paper.md`，Python 应用主源请优先参考 `gcp-python-cgo.md`。
+> 若出现描述冲突，以 `gcp-paper.md` 与 `gcp-python-cgo.md` 为准。
+> 论文分工与去重规则见 `papers.md`。
+
 ## Abstract
 
 Type inference for dynamically-typed languages faces a fundamental challenge: the type of a function parameter is simultaneously constrained by four independent sources — the values assigned to it in the function body, the programmer's explicit declaration, the argument types passed at call sites, and the structural operations (field access, method calls) performed on it inside the body. Existing approaches, from Hindley-Milner unification to TypeScript's bidirectional checking, conflate these sources into a single constraint set, producing spurious conflicts and forcing developers to supply redundant annotations.

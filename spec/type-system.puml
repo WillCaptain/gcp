@@ -61,11 +61,12 @@ package "Outline 类型层次" #F5F5F5 {
             .. 四维约束 ..
             extendToBe: Outline   «上界：实际值类型»
             declaredToBe: Outline «声明类型»
-            hasToBe: Outline      «使用约束»
-            definedToBe: Outline  «结构用途»
+            hasToBe: Outline      «并行下界：使用约束»
+            definedToBe: Outline  «并行下界：结构用途»
             --
-            .. 约束链方向 ..
-            extendToBe ⊇ declaredToBe ⊇ hasToBe ⊇ definedToBe
+            .. 当前约束关系（并行语义） ..
+            extendToBe <: declaredToBe <: (hasToBe ⊓ definedToBe)
+            «旧线性链 extendToBe <: declaredToBe <: hasToBe <: definedToBe 已废弃»
             --
             min(): 最强下界
             max(): 最宽上界

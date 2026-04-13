@@ -187,10 +187,10 @@ package "Type System (Outline)" #F4ECD8 {
         abstract class "Genericable<G,N>" as Genericable {
             #declaredToBe: Outline   «declared type»
             #extendToBe: Outline     «upper bound (actual value)»
-            #hasToBe: Outline        «lower bound (usage context)»
-            #definedToBe: Outline    «structural usage (call/access)»
+            #hasToBe: Outline        «parallel lower bound (usage context)»
+            #definedToBe: Outline    «parallel lower bound (call/access)»
             --
-            +min(): Outline
+            +min(): Outline «declaredToBe or (hasToBe ⊓ definedToBe)»
             +max(): Outline
             +guess(): Outline
             --

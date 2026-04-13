@@ -1,5 +1,7 @@
 # 并行约束：hasToBe 与 definedToBe 的正确语义
 
+> 术语与符号约定遵循 `terminology.md`。
+
 ## 问题背景
 
 GCP 的 Genericable 泛型变量携带四维约束链，最初设计为严格的线性顺序：
