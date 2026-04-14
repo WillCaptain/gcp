@@ -22,6 +22,7 @@ import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.ProductADT;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.primitive.ANY;
+import org.twelve.gcp.outline.primitive.Primitive;
 import org.twelve.gcp.outline.projectable.Function;
 import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.Returnable;
@@ -674,12 +675,14 @@ public final class MetaExtractor {
      */
     public static List<FieldMeta> virtualSetDotCompletion(Outline resolved, ASF contextAsf) {
         if (contextAsf == null) return List.of();
-        String outlineName = null;
-        if (resolved instanceof Entity ent && ent.node() != null) {
-            outlineName = ent.node().lexeme();
-        }
         List<FieldMeta> result = new ArrayList<>();
         Set<String> ownNames = new HashSet<>();
+
+        // Strategy 1: AST by-name lookup (requires Entity.node() to match typeNode identity in contextAsf).
+        // Entity.node() points to the ExtendTypeNode (the RHS of the outline declaration, e.g.
+        // VirtualSet<SalaryRecord>{...}). We scan the ASF to find which OutlineDefinition's typeNode
+        // is the same object, then use that declaration's symbol name for the field lookup.
+        String outlineName = resolveOutlineDeclarationName(resolved, contextAsf);
         if (outlineName != null && !outlineName.isEmpty()) {
             for (AST ast : contextAsf.asts()) {
                 List<FieldMeta> own = fieldsOf(outlineName, ast);
@@ -690,18 +693,91 @@ public final class MetaExtractor {
                 }
             }
         }
+
+        // Strategy 2 (fallback): read own members directly from the extension AST node.
+        // For VirtualSet collections declared as `outline Xs = VirtualSet<X>{create:...}`,
+        // ent.node() is the ExtendTypeNode and ent.node().extension() is the EntityTypeNode
+        // containing *only* the own extension body fields (e.g. create, navigate relations).
+        // This bypasses both the node-identity issue (Strategy 1) and the incomplete
+        // Entity.members() list (which GCP may produce for lazy parametric projections).
+        if (ownNames.isEmpty() && resolved instanceof Entity ent
+                && ent.node() instanceof ExtendTypeNode ext) {
+            EntityTypeNode extensionBody = ext.extension();
+            String source = ent.node().ast() != null ? ent.node().ast().sourceCode() : null;
+            if (extensionBody != null) {
+                for (Variable v : extensionBody.members()) {
+                    try {
+                        String name = v.name();
+                        if (name == null || name.startsWith("_") || "type".equals(name)) continue;
+                        String rawType = v.declared() != null ? v.declared().lexeme() : "?";
+                        if (rawType != null && rawType.startsWith("#")) continue;
+                        String desc = (source != null && v.loc() != null && v.loc().start() > 0)
+                                ? CommentExtractor.precedingComment(source, v.loc().start()) : null;
+                        result.add(new FieldMeta(name, rawType, desc, "own"));
+                        ownNames.add(name);
+                    } catch (Throwable ignored) {}
+                }
+            }
+        }
+
+        // Append VirtualSet builtin operators (filter, count, first, …), deduplicating own names.
+        // Mark them as "builtin" so callers can distinguish from collection-specific own methods.
         for (AST ast : contextAsf.asts()) {
             List<FieldMeta> builtin = fieldsOf("VirtualSet", ast);
             if (!builtin.isEmpty()) {
                 for (FieldMeta fm : builtin) {
                     if (!ownNames.contains(fm.name())) {
-                        result.add(fm);
+                        result.add(new FieldMeta(fm.name(), fm.type(), fm.description(), "builtin"));
                     }
                 }
                 break;
             }
         }
         return result;
+    }
+
+    /**
+     * Finds the declaration name of a VirtualSet collection outline in the given ASF.
+     *
+     * <p>For outlines declared as {@code outline SalaryRecords = VirtualSet<SalaryRecord>{...}},
+     * {@link Entity#node()} points to the {@link ExtendTypeNode} (the RHS), whose
+     * {@link Node#lexeme()} returns the full RHS expression — not the symbol name.
+     * This method scans {@link OutlineDeclarator} declarations in the ASF to find
+     * the {@link OutlineDefinition} whose {@code typeNode()} is the same object as
+     * {@code entity.node()}, then returns {@code symbolNode().lexeme()}.
+     *
+     * <p>Falls back to {@code entity.node().lexeme()} if the scan finds nothing
+     * (e.g. for inline or anonymous entities).
+     */
+    private static String resolveOutlineDeclarationName(Outline resolved, ASF contextAsf) {
+        if (!(resolved instanceof Entity ent) || ent.node() == null) return null;
+        Node entityNode = ent.node();
+        // Fast path: if the node's lexeme is a simple PascalCase identifier, it IS the name.
+        String direct = entityNode.lexeme();
+        if (direct != null && direct.matches("[A-Z][A-Za-z0-9]*")) {
+            return direct;
+        }
+        // Slow path: find the OutlineDefinition whose typeNode is the same object.
+        for (AST ast : contextAsf.asts()) {
+            String found = scanForOutlineName(ast.program(), entityNode);
+            if (found != null) return found;
+        }
+        return direct; // fallback (may be wrong, but at least won't NPE)
+    }
+
+    private static String scanForOutlineName(Node root, Node targetNode) {
+        if (root instanceof OutlineDeclarator od) {
+            for (OutlineDefinition def : od.definitions()) {
+                if (def.typeNode() == targetNode) {
+                    return def.symbolNode().lexeme();
+                }
+            }
+        }
+        for (Node child : root.nodes()) {
+            String found = scanForOutlineName(child, targetNode);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     /**
@@ -766,11 +842,17 @@ public final class MetaExtractor {
 
     /**
      * Returns {@code true} when {@code outline} represents a VirtualSet-based collection
-     * (i.e., an {@link Entity} whose base is a concrete {@link ProductADT}).
+     * (i.e., an {@link Entity} whose base is a non-primitive {@link ProductADT} such as
+     * another Entity).
      *
-     * <p>Use this to distinguish collection symbols (Schools, Cities, …) from plain
-     * entities (School, City, Aggregator&lt;T&gt;, …) in dot-completion logic.
-     * This is the single authoritative implementation — do not reimplement this check
+     * <p>A VirtualSet collection (e.g. {@code Employees = VirtualSet<Employee>}) has a
+     * base that is the element Entity type ({@code Employee}). A plain entity (e.g.
+     * {@code SalaryRecord}) has base = {@code ANY} which is a {@link Primitive}. The
+     * previous identity check {@code base != ast.Any} failed across forked AST scopes
+     * where the preamble AST's {@code Any} and the forked AST's {@code Any} are different
+     * instances. Using {@code instanceof Primitive} is class-based and AST-independent.
+     *
+     * <p>This is the single authoritative implementation — do not reimplement this check
      * in dependent modules.
      */
     public static boolean isVirtualSetCollection(Outline outline) {
@@ -778,7 +860,7 @@ public final class MetaExtractor {
         try {
             Outline base = entity.base();
             if (base == null) return false;
-            return base instanceof ProductADT && base != entity.ast().Any;
+            return base instanceof ProductADT && !(base instanceof Primitive);
         } catch (Exception ignored) {
             return false;
         }
