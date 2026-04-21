@@ -5,6 +5,7 @@ import org.twelve.gcp.ast.AbstractNode;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.primitive.NUMBER;
 import org.twelve.gcp.outline.primitive.STRING;
 
@@ -89,6 +90,42 @@ public class Addable implements Projectable, OperateAble {
             if (l.containsUnknown() || r.containsUnknown()) return this;
             return getExactNumberOutline(l, r);
         }
+    }
+
+    /**
+     * Reference-substitution projection (invoked when a generic function is
+     * instantiated via {@code f<String>}-style reference projection).
+     *
+     * <p>The default {@link Outline#project(Reference, OutlineWrapper)}
+     * returns {@code this} unchanged, which leaves the return-position
+     * {@code Addable} as the rendered {@code String|Number} union even after
+     * the type variable has been replaced with a concrete type — callers
+     * then see {@code z1 :: String->String->String|Number} instead of
+     * {@code String->String->String}.
+     *
+     * <p>Strategy: recursively project the left/right operands, then fold
+     * using the same reduction rules as the usage-driven path
+     * ({@link #doProject}): if either operand is {@code STRING} the sum is
+     * {@code String}; if both are numeric the sum uses the wider of the two
+     * via {@link org.twelve.gcp.common.Tool#getExactNumberOutline}. When
+     * either operand remains projectable, wrap the result back in a new
+     * {@code Addable} so later projections can continue to narrow.
+     */
+    @Override
+    public Outline project(Reference reference, OutlineWrapper projection) {
+        Outline l = this.left.project(reference, projection);
+        Outline r = this.right.project(reference, projection);
+        if (l == this.left && r == this.right) return this;
+        if (l instanceof STRING || r instanceof STRING) {
+            return this.node().ast().String;
+        }
+        if (l instanceof NUMBER && r instanceof NUMBER) {
+            return getExactNumberOutline(l, r);
+        }
+        if (l instanceof Projectable || r instanceof Projectable) {
+            return new Addable(node, l, r);
+        }
+        return this;
     }
 
     @Override
