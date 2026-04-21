@@ -208,6 +208,38 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      * @return the inferred return type
      */
     private Outline project(Genericable<?, ?> generic, AbstractNode argument) {
+        // When the generic carries an explicit concrete function declaration
+        // (e.g. a lambda parameter annotated as `x: (String->Integer)`),
+        // delegate to the FOF path. Without this, the virtual HOF built by
+        // the fallback below (whose return is an unresolved Return slot)
+        // shadows the declaration, so `x("will")` would infer to that
+        // unresolved slot and the enclosing lambda's return type would
+        // surface as `null` at definition time — even though call-site
+        // projection later recovers the correct type.
+        //
+        // Gated to "formal argument is not itself a Genericable": when the
+        // declaration contains a type parameter that belongs to an enclosing
+        // generic function (e.g. `fx<a>(x: a -> …)`), usage-driven constraint
+        // accumulation must still run so that later instantiation mismatches
+        // — `f<Integer>` combined with a body that calls `x("Will")` — are
+        // reported. Concrete declarations have no such coupling and can
+        // short-circuit safely.
+        if (generic.declaredToBe() instanceof FirstOrderFunction fof) {
+            // Only shortcut when the declared formal argument resolves to a
+            // fully concrete, non-type-variable type. Formal arguments are
+            // always wrapped in a Generic envelope by the inference engine,
+            // so we must peek at min() — if min() is ANY or a Generic, the
+            // declaration contains an enclosing function's type parameter
+            // (e.g. `fx<a>(x: a -> …)`) and we must fall through to the
+            // usage-driven path so constraint propagation can still run.
+            Outline argMin = fof.argument() instanceof Genericable<?, ?> g
+                    ? g.min() : fof.argument();
+            boolean argIsConcrete = !(argMin instanceof ANY)
+                    && !(argMin instanceof Genericable);
+            if (argIsConcrete) {
+                return project(fof, argument);
+            }
+        }
         if (generic.definedToBe() instanceof HigherOrderFunction) {
             return ((HigherOrderFunction) generic.definedToBe()).returns();
         }
@@ -271,6 +303,16 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
      */
     private Outline project(FirstOrderFunction function, AbstractNode argument) {
         Outline formalMin = function.argument().min();
+        // If the formal argument's minimum type is completely unconstrained (ANY), it means the
+        // function's body was inferred in a pass where some callee was UNKNOWN (e.g. a forward
+        // reference to g in "let f = x -> g(x.son) - 1"), so the argument's structural members
+        // were never visited by MemberAccessorInference and no constraints were accumulated.
+        // Defer projection to a later pass so that once the callee resolves and constraints
+        // propagate back through the generic chain, the call site is re-evaluated with the
+        // refined formal type, allowing structural mismatches to be detected.
+        if (formalMin instanceof ANY && !argument.ast().asf().isLastInfer()) {
+            return argument.ast().Pending;
+        }
         Outline actual    = argument.outline();
         // Pre-check: detect mismatch so we can redirect any errors after projection.
         // A mismatch exists when the formal parameter has a declared constraint (not ANY),
