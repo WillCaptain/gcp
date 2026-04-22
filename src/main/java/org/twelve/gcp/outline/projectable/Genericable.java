@@ -374,7 +374,8 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
             copied = this.createNew();
             copied.extendToBe = this.extendToBe.copy(cache);
             copied.hasToBe = this.hasToBe.copy(cache);
-            copied.definedToBe = this.definedToBe.copy(cache);
+            Outline defCopy = this.definedToBe.copy(cache);
+            copied.definedToBe = defCopy;
             copied.declaredToBe = this.declaredToBe.copy(cache);
             copied.id = this.id;
             cache.put(this, copied);
@@ -690,7 +691,14 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (!(this.declaredToBe instanceof ANY) && this.declaredToBe instanceof Projectable) {
             outline = ((Projectable) this.declaredToBe).project(cast(this.declaredToBe), projection, session);
         }
-        if (!(this.extendToBe instanceof NOTHING) && outline instanceof Projectable && this.extendToBe instanceof Projectable) {
+        // When the declared type is an Option (ADT union), the constructor pre-fills
+        // extendToBe with an empty Option as the "most-general lower bound" placeholder.
+        // Projecting a concrete Entity into that placeholder has no constraint to enforce
+        // (its option list is empty) and would erroneously iterate zero members, producing
+        // a PROJECT_FAIL. Skip when the extend constraint is effectively empty.
+        boolean extEffectivelyEmpty = this.extendToBe instanceof NOTHING
+                || (this.extendToBe instanceof org.twelve.gcp.outline.adt.SumADT sum && sum.options().isEmpty());
+        if (!extEffectivelyEmpty && outline instanceof Projectable && this.extendToBe instanceof Projectable) {
             ((Projectable) outline).project(cast(outline), cast(this.extendToBe), session);
         }
         if (outline.is(this)) {

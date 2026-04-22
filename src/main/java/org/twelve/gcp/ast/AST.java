@@ -66,6 +66,13 @@ public class AST {
     public final Option StringOrNumber;
     private List<Node> missInferred = new ArrayList<>();
     private String sourceCode;
+    /**
+     * Syntax-level diagnostics collected during resilient parsing.
+     * These are pre-type-inference errors (e.g. unexpected token, reserved keyword,
+     * unclosed brace) that the parser recovered from via panic-mode recovery.
+     * Stored as plain messages so this module has no hard dependency on MSLL.
+     */
+    private List<String> syntaxErrors = new ArrayList<>();
     public final UNKNOWN unknown(Node node){
         return new UNKNOWN((AbstractNode) node);
     }
@@ -267,6 +274,23 @@ public class AST {
 
     public String sourceCode() {
         return this.sourceCode;
+    }
+
+    /**
+     * Attach syntax error messages collected by the parser during resilient
+     * parsing. The messages are usually produced by MSLL's panic-mode recovery,
+     * but any source of pre-type-inference diagnostics is acceptable.
+     */
+    public void setSyntaxErrors(List<String> errors) {
+        this.syntaxErrors = errors == null ? new ArrayList<>() : new ArrayList<>(errors);
+    }
+
+    /**
+     * @return an immutable view of syntax-level errors collected by the parser.
+     *         Empty if the module parsed cleanly or if resilient parsing was not used.
+     */
+    public List<String> syntaxErrors() {
+        return java.util.Collections.unmodifiableList(this.syntaxErrors);
     }
 
     /**

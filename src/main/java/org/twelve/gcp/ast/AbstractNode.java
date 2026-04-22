@@ -131,8 +131,18 @@ public abstract class AbstractNode implements Node {
                     this.clearError();
                     this.outline = this.acceptInfer(inferencer);
                 } catch (Exception ex) {
+                    // Resilient inference: a single node's inference failure must
+                    // never abort the whole AST/ASF traversal. In non-final rounds
+                    // we still retry by assigning UNKNOWN so fixed-point iteration
+                    // can converge; in the final round we record a diagnostic error
+                    // on this node (instead of rethrowing) so sibling nodes and
+                    // sibling ASTs still get a chance to infer.
                     if (this.ast().asf().isLastInfer()) {
-                        throw ex;
+                        GCPErrorReporter.report(this, GCPErrCode.INFER_ERROR,
+                                "inference failed: "
+                                        + ex.getClass().getSimpleName()
+                                        + (ex.getMessage() != null ? ": " + ex.getMessage() : ""));
+                        this.outline = this.ast().unknown(this);
                     } else {
                         this.outline = this.ast().unknown(this);
                     }

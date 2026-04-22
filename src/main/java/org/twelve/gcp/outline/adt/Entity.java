@@ -270,11 +270,21 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
                 if (myMember.isPresent()) {
                     if (myMember.get().outline() instanceof Projectable) {
                         Projectable me = cast(myMember.get().outline());
-                        // propagate the formal member type to AccessorGeneric's hasToBe,
-                        // enabling FunctionCallInference to validate argument types for this member
-                        if (me instanceof Genericable && ((Genericable<?,?>) me).hasToBe() instanceof ANY
-                                && !(yourMember.outline() instanceof Genericable)) {
-                            ((Genericable<?,?>) me).addHasToBe(yourMember.outline());
+                        if (me instanceof Genericable<?,?> meG) {
+                            if (meG.hasToBe() instanceof ANY && !(yourMember.outline() instanceof Genericable)) {
+                                // propagate the formal member type to AccessorGeneric's hasToBe,
+                                // enabling FunctionCallInference to validate argument types for this member
+                                meG.addHasToBe(yourMember.outline());
+                            } else if (!(meG.hasToBe() instanceof ANY)
+                                    && !(yourMember.outline() instanceof Genericable)
+                                    && !yourMember.outline().is(me)) {
+                                // The hasToBe constraint was set via back-propagation (e.g. from arithmetic)
+                                // but the actual member value violates it.
+                                Node errorNode = yourMember.node() != null ? yourMember.node()
+                                        : (me.node() != null ? (Node) me.node() : this.node());
+                                GCPErrorReporter.report(errorNode, GCPErrCode.PROJECT_FAIL,
+                                        yourMember.outline() + CONSTANTS.MISMATCH_STR + meG.hasToBe());
+                            }
                         }
                         outline.addMember(yourMember.name(), me.project(me, yourMember.outline(), session),
                                 yourMember.modifier(), yourMember.mutable() == Mutable.True, yourMember.node());

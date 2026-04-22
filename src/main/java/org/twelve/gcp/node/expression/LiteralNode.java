@@ -2,6 +2,7 @@ package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Token;
+import org.twelve.gcp.common.NullLiteral;
 import org.twelve.gcp.interpreter.Interpreter;
 import org.twelve.gcp.interpreter.value.Value;
 import org.twelve.gcp.node.ValueNode;
@@ -27,6 +28,9 @@ public class LiteralNode<T> extends ValueNode<LiteralNode<?>> {
         this.setOutline(this.createOutline(this.value()));
     }
     private ProductADT createOutline(T value){
+        if (value instanceof NullLiteral) {
+            return this.ast().Nothing;
+        }
         if (value instanceof String) {
             return new STRING(this);
         }

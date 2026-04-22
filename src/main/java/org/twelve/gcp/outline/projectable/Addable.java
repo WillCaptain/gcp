@@ -128,8 +128,27 @@ public class Addable implements Projectable, OperateAble {
         return this;
     }
 
+    /**
+     * Narrow the {@code str|num} union whenever the operands have already
+     * resolved. Mirrors the reduction rules of {@link #doProject} and the
+     * reference-substitution path of {@link #project(Reference, OutlineWrapper)}:
+     * STRING anywhere → String; two NUMBER s → the wider numeric; otherwise
+     * fall back to the conservative union. This lets post-hoc consumers
+     * (e.g. {@code FunctionInference} checking a declared return type, or
+     * {@code fib(n-1)+fib(n-2)} after multi-round convergence populates the
+     * recursive branch) see a narrowed result without having to invoke the
+     * full projection machinery.
+     */
     @Override
     public Outline guess() {
+        Outline l = left instanceof Projectable ? ((Projectable) left).guess() : left;
+        Outline r = right instanceof Projectable ? ((Projectable) right).guess() : right;
+        if (l instanceof STRING || r instanceof STRING) {
+            return this.node().ast().String;
+        }
+        if (l instanceof NUMBER && r instanceof NUMBER) {
+            return getExactNumberOutline(l, r);
+        }
         return this.node().ast().stringOrNumber(node);
     }
 

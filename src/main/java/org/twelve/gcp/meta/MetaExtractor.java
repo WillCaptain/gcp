@@ -230,8 +230,10 @@ public final class MetaExtractor {
             for (EntityMember member : padt.members()) {
                 try {
                     String memberName = member.name();
-                    // Skip private FK/internal fields (_fieldName) and the synthetic 'type' discriminant
-                    if (memberName == null || memberName.startsWith("_") || "type".equals(memberName)) continue;
+                    // Keep private members in OutlineMeta (needed for `this.` access);
+                    // visibility filtering is handled by ModuleMeta.membersOf for non-this symbols.
+                    // Still skip the synthetic discriminant field.
+                    if (memberName == null || "type".equals(memberName)) continue;
                     // member.outline().toString() can cause StackOverflowError for ~this
                     // self-referential types (e.g. Aggregator methods returning ~this).
                     // Catch Throwable so the member is still included with a safe type string.

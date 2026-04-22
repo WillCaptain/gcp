@@ -10,8 +10,9 @@ public class IsAsInterpretation implements Interpretation<IsAs> {
     @Override
     public Value interpret(IsAs node, Interpreter interpreter) {
         Value subject = interpreter.eval(node.a());
-        if (node.c() != null) {
-            interpreter.env().define(node.c().name(), subject);
+        var binding = node.c();
+        if (binding != null) {
+            interpreter.env().define(binding.name(), subject);
         }
         return BoolValue.TRUE;
     }

@@ -533,7 +533,7 @@ public class InferenceTest {
     @Test
     void test_inference_of_reference_in_function() {
         /*
-        let f = fx<a,b>(x:a)->{
+        let f = fn<a,b>(x:a)->{
            let y:b = 100;
            y
         }*/
@@ -551,10 +551,10 @@ public class InferenceTest {
     @Test
     void test_inference_of_reference_in_entity() {
         /*
-        let g = fx<a,b>()->{
+        let g = fn<a,b>()->{
            {
                 z:a = 100,
-                f = fx<c>(x:b,y:c)->y
+                f = fn<c>(x:b,y:c)->y
             }
         }*/
         AST ast = ASTHelper.mockReferenceInEntity();

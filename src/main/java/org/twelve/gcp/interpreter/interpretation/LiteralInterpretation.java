@@ -1,5 +1,6 @@
 package org.twelve.gcp.interpreter.interpretation;
 
+import org.twelve.gcp.common.NullLiteral;
 import org.twelve.gcp.interpreter.Interpretation;
 import org.twelve.gcp.interpreter.Interpreter;
 import org.twelve.gcp.interpreter.value.*;
@@ -18,6 +19,7 @@ public class LiteralInterpretation implements Interpretation<LiteralNode<?>> {
         if (v instanceof BigDecimal) return new FloatValue(((BigDecimal) v).doubleValue());
         if (v instanceof String)     return new StringValue((String) v);
         if (v instanceof Boolean)    return BoolValue.of((Boolean) v);
+        if (v instanceof NullLiteral) return UnitValue.INSTANCE;
         return UnitValue.INSTANCE;
     }
 }

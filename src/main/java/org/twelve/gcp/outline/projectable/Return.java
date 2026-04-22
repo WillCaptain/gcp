@@ -53,6 +53,36 @@ public class Return extends Genericable<Return, Node> implements Returnable {
         return from(ast, ast.Any);
     }
 
+    /**
+     * When an external context imposes a lower-bound constraint on this Return
+     * (e.g. {@code Return(g).definedToBe = Number} from {@code g(x) - 1}),
+     * propagate that constraint as a {@code hasToBe} on the {@code supposed} return
+     * expression. This lets {@code Generic(age)} in {@code g = y -> y.age} inherit
+     * the {@code Number} requirement so that later projection with a mismatched
+     * concrete type (e.g. {@code String}) is detected via
+     * {@link Genericable#addExtendToBe}.
+     */
+    private void propagateToSupposed(Outline outline) {
+        if (outline == null || outline instanceof ANY || outline instanceof NOTHING) return;
+        if (supposed instanceof UNKNOWN || supposed instanceof NOTHING) return;
+        if (supposed instanceof Constrainable constrainable) {
+            constrainable.addHasToBe(outline);
+        }
+    }
+
+    @Override
+    public boolean addDefinedToBe(Outline outline) {
+        boolean result = super.addDefinedToBe(outline);
+        if (result) propagateToSupposed(outline);
+        return result;
+    }
+
+    @Override
+    public void addHasToBe(Outline outline) {
+        super.addHasToBe(outline);
+        propagateToSupposed(outline);
+    }
+
     public boolean addReturn(Outline returns) {
         if (!(returns instanceof IGNORE) && !returns.is(this.declaredToBe)) {
             GCPErrorReporter.report(this.node, GCPErrCode.OUTLINE_MISMATCH);

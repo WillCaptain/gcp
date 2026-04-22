@@ -5,6 +5,7 @@ import org.twelve.gcp.common.SCOPE_TYPE;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
 import org.twelve.gcp.node.expression.EntityNode;
+import org.twelve.gcp.node.expression.accessor.MemberAccessor;
 import org.twelve.gcp.node.expression.identifier.SymbolIdentifier;
 import org.twelve.gcp.node.function.FunctionNode;
 import org.twelve.gcp.outline.adt.*;
@@ -26,6 +27,16 @@ public class EntityInference implements Inference<EntityNode> {
     @Override
     public Outline infer(EntityNode node, Inferencer inferencer) {
         Entity entity;
+        // Qualified-ctor form:  Owner.Variant{...}
+        // The base is a MemberAccessor whose member is a SymbolIdentifier (the tag).
+        // Semantics: structural upcast — the user is asserting the literal "belongs to Owner"
+        // as the specific Variant; result type is Owner (the SumADT). Row polymorphism is
+        // honoured: extras allowed, required fields of the variant must all match.
+        if (node.outline() instanceof UNKNOWN
+                && node.base() instanceof MemberAccessor ma
+                && ma.member() instanceof SymbolIdentifier tag) {
+            return inferQualifiedCtor(node, ma, tag, inferencer);
+        }
         if (node.outline() instanceof UNKNOWN) { // first inference
             // Resolve the base BEFORE setting IN_PRODUCT_ADT on the current scope.
             // If base is 'this', ThisInference traverses upward looking for IN_PRODUCT_ADT.
@@ -155,6 +166,91 @@ public class EntityInference implements Inference<EntityNode> {
             }
         }
         return entity;
+    }
+
+    /**
+     * Handle qualified constructor  {@code Owner.Variant{...}}.
+     * Structural upcast: the literal must structurally satisfy {@code Variant} (row-polymorphism —
+     * all required fields of the variant present and compatible; extras allowed). The result type
+     * is {@code Owner} (the enclosing {@link SumADT}).
+     */
+    private Outline inferQualifiedCtor(EntityNode node, MemberAccessor ma, SymbolIdentifier tag,
+                                       Inferencer inferencer) {
+        Outline hostOutline = ma.host().infer(inferencer);
+        Outline sumish = hostOutline;
+        if (sumish instanceof This t) sumish = t.eventual();
+        if (!(sumish instanceof SumADT sumADT)) {
+            GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH,
+                    hostOutline + " is not a sum type; qualified constructor requires a named ADT");
+            return node.ast().Error;
+        }
+        SymbolEntity variant = null;
+        for (Outline opt : sumADT.options()) {
+            if (opt instanceof SymbolEntity se
+                    && se.base() instanceof SYMBOL sym
+                    && sym.toString().equals(tag.name())) {
+                variant = se;
+                break;
+            }
+        }
+        if (variant == null) {
+            GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH,
+                    "'" + tag.name() + "' is not a variant of " + hostOutline);
+            return node.ast().Error;
+        }
+        // Build the proposed entity from user-provided members
+        node.ast().symbolEnv().current().setScopeType(SCOPE_TYPE.IN_PRODUCT_ADT);
+        Entity proposed = Entity.from(node, new ArrayList<>());
+        node.ast().symbolEnv().current().setOutline(proposed);
+        // two-phase: non-function members first so function bodies can reference them
+        node.members().forEach((k, v) -> {
+            if (!(v.expression() instanceof FunctionNode)) {
+                Outline o = v.infer(inferencer);
+                proposed.addMember(k, o, v.modifier(), v.mutable(), v.identifier());
+            }
+        });
+        node.members().forEach((k, v) -> {
+            if (v.expression() instanceof FunctionNode) {
+                Outline o = v.infer(inferencer);
+                proposed.addMember(k, o, v.modifier(), v.mutable(), v.identifier());
+            }
+        });
+        // Structural (row-polymorphism) check: proposed.is(variant).
+        // Entity.is iterates variant's required members and requires proposed to have matching
+        // compatible fields; extras in proposed are allowed — this is exactly width-subtyping.
+        boolean ok = proposed.is(variant);
+        if (!ok) {
+            // Build a human-readable missing/mismatch diagnostic focused on belonging, not
+            // "field not found on Owner".
+            List<String> missing = new ArrayList<>();
+            List<String> wrong = new ArrayList<>();
+            for (EntityMember m : variant.members()) {
+                if (m.isDefault()) continue;
+                Optional<EntityMember> found = proposed.getMember(m.name());
+                if (found.isEmpty()) {
+                    missing.add("'" + m.name() + "'");
+                } else if (!found.get().outline().is(m.outline())) {
+                    wrong.add("'" + m.name() + "':" + found.get().outline()
+                            + " (expected " + m.outline() + ")");
+                }
+            }
+            StringBuilder reason = new StringBuilder();
+            if (!missing.isEmpty()) reason.append("missing ").append(String.join(", ", missing));
+            if (!wrong.isEmpty()) {
+                if (reason.length() > 0) reason.append("; ");
+                reason.append("type mismatch on ").append(String.join(", ", wrong));
+            }
+            if (reason.length() == 0) reason.append("structure does not satisfy the variant");
+            GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH,
+                    "literal does not belong to '" + tag.name() + "' of " + hostOutline
+                            + ": " + reason);
+        }
+        // Return the concrete SymbolEntity built from the user's literal (preserving the tag and
+        // any extras the user supplied — row polymorphism). Downstream `is`-checks will still
+        // successfully upcast this to the owning SumADT; returning the SumADT directly breaks
+        // call-site projection (the formal's per-variant structural projection expects an
+        // Entity-shaped projection, not a union).
+        return ok ? new SymbolEntity((SYMBOL) variant.base(), proposed) : node.ast().Error;
     }
 
     /** Clone {@link FirstOrderFunction} members that carry a {@code this} binding (for entity extension). */

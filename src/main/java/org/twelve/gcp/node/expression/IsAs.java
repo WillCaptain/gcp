@@ -23,7 +23,11 @@ public class IsAs extends Expression {
         this.a = this.addNode(a);
         this.b = this.addNode(b);
         this.c = c;
-        if (a != c) this.addNode(c);
+        if (c != null && a != c) this.addNode(c);
+    }
+
+    public IsAs(Expression a, TypeNode is) {
+        this(a, is, null);
     }
 
     public IsAs(Identifier a, TypeNode is) {
@@ -45,7 +49,8 @@ public class IsAs extends Expression {
     }
 
     public Identifier c() {
-        return cast(c);
+        if (c instanceof Identifier id) return id;
+        return null;
     }
 
     public TypeNode b() {
@@ -56,7 +61,7 @@ public class IsAs extends Expression {
     public String lexeme() {
         StringBuilder sb = new StringBuilder();
         sb.append(a).append(" is ").append(b);
-        if (a != c) {
+        if (c != null && a != c) {
             sb.append(" as ").append(c);
         }
         return sb.toString();

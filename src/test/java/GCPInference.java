@@ -473,7 +473,7 @@ public class GCPInference {
     @Test
     void test_gcp_declared_hof_projection(){
         /*
-         * let f = fx<a>(x:a->{name:a,age:Integer})->{
+         * let f = fn<a>(x:a->{name:a,age:Integer})->{
          *   x("Will").name
          * }
          * f<Integer>;
@@ -597,7 +597,7 @@ public class GCPInference {
     @Test
     void test_extend_entity_projection(){
         /**
-         * let f = fx<a,b>(x, y:a, z:{age:b})->{
+         * let f = fn<a,b>(x, y:a, z:{age:b})->{
          * 	 x = {name="Will”, age = y};
          * 	 z = x;
          * 	 x.age
@@ -633,7 +633,7 @@ public class GCPInference {
     @Test
     void test_complicated_hof_projection(){
         /*
-        let f = fx<a>(x: a->a)->y->z->{
+        let f = fn<a>(x: a->a)->y->z->{
           x = b->b+"some";
           y = x;
           x = z;
@@ -749,7 +749,7 @@ public class GCPInference {
     @Test
     void test_gcp_only_reference_for_simple_function(){
         /*
-        let f = fx<a,b>(x:a)->{
+        let f = fn<a,b>(x:a)->{
            let y:b = 100;
            y
         }
@@ -802,10 +802,10 @@ public class GCPInference {
     @Test
     void test_gcp_only_reference_for_entity_return_function(){
         /*
-        let g = fx<a,b>()->{
+        let g = fn<a,b>()->{
            {
                 z:a = 100,
-                f = fx<c>(x:b,y:c)->y
+                f = fn<c>(x:b,y:c)->y
             }
         }*/
         AST ast = ASTHelper.mockReferenceInEntity();

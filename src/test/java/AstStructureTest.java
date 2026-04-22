@@ -218,7 +218,7 @@ public class AstStructureTest {
         String expected = """
                 module default
                 
-                let f = fx<a,b>(x: a)->(y: ((a, String), b))->y;
+                let f = fn<a,b>(x: a)->(y: ((a, String), b))->y;
                 let h = f(100,(("Will","Zhang"),"male"));
                 let g = f("Will",(("Will","Zhang"),30));
                 let will = g.0.0;
@@ -276,7 +276,7 @@ public class AstStructureTest {
         String expected = """
                 module default
                 
-                let f = fx<a,b>(x: a)->{
+                let f = fn<a,b>(x: a)->{
                   let y: b = 100;
                   y
                 };""";
@@ -345,7 +345,7 @@ public class AstStructureTest {
                   x = ["will","zhang"];
                   y
                 };
-                let r = fx<a>(x: [a])->{
+                let r = fn<a>(x: [a])->{
                   var b = [1,2];
                   b = x;
                   let c: a = x[0];

@@ -486,7 +486,7 @@ public class ASTHelper {
 
     public static AST mockExtendEntityProjection() {
         /**
-         * let f = fx<a,b>(x, y:a, z:{age:b})->{
+         * let f = fn<a,b>(x, y:a, z:{age:b})->{
          * 	 x = {name="Will”, age = y};
          * 	 z = x;
          * 	 x.age
@@ -575,7 +575,7 @@ public class ASTHelper {
 
     public static AST mockTupleProjection() {
         /**
-         * let f = fx<a,b>(x:a, y:((a,String),b))->y
+         * let f = fn<a,b>(x:a, y:((a,String),b))->y
          * let h = f(100,(("Will","Zhang"),“male"))
          * let g = f("Will",(("Will","Zhang"),30));
          * let will = g.0.0;
@@ -819,7 +819,7 @@ public class ASTHelper {
 
     public static AST mockReferenceInFunction() {
         /*
-        let f = fx<a,b>(x:a)->{
+        let f = fn<a,b>(x:a)->{
            let y:b = 100;
            y
         }*/
@@ -884,10 +884,10 @@ public class ASTHelper {
 
     public static AST mockReferenceInEntity() {
         /*
-        let g = fx<a,b>()->{
+        let g = fn<a,b>()->{
            {
                 z:a = 100,
-                f = fx<c>(x:b,y:c)->y
+                f = fn<c>(x:b,y:c)->y
             }
         }*/
         ASF asf = new ASF();
@@ -897,7 +897,7 @@ public class ASTHelper {
         members.add(new MemberNode(new Identifier(ast, new Token<>("z")),
                 new IdentifierTypeNode(new Identifier(ast, new Token<>("a"))),
                 LiteralNode.parse(ast, new Token<>(100)), false));
-        //f = fx<c>(x:b,y:c)->y
+        //f = fn<c>(x:b,y:c)->y
         FunctionBody body = new FunctionBody(ast);
         body.addStatement(new ReturnStatement(new Identifier(ast, new Token<>("y"))));
         List<ReferenceNode> refs = new ArrayList<>();
@@ -1166,7 +1166,7 @@ public class ASTHelper {
 
     public static AST mockDeclaredHofProjection() {
         /*
-         * let f = fx<a>(x:a->{name:a,age:Integer})->{
+         * let f = fn<a>(x:a->{name:a,age:Integer})->{
          *   x("Will").name
          * }
          * f<Integer>;
@@ -1259,7 +1259,7 @@ public class ASTHelper {
 
     public static AST mockComplicatedHofProjection() {
         /*
-         * let f = fx<a>(x:a->a,y,z)->{
+         * let f = fn<a>(x:a->a,y,z)->{
          *   x = b->b+"some";
          *   y = x;
          *   x = z;

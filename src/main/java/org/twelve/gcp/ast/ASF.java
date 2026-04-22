@@ -75,13 +75,27 @@ public class ASF {
         });
 
         // Phase 2: first inference pass – populates the pre-registered modules via exports.
-        this.asts.forEach(AST::infer);
+        // Per-AST try/catch: a catastrophic failure in one module (e.g. a partially
+        // recovered parse tree from resilient parsing) must not prevent inference of
+        // sibling modules. Node-level resilience lives in AbstractNode#infer; this
+        // loop-level guard is a defense-in-depth for any escape that still bubbles up.
+        for (AST ast : this.asts) {
+            try {
+                ast.infer();
+            } catch (Throwable ignored) {
+                // Node-level diagnostics were already attached by AbstractNode#infer.
+            }
+        }
 
         // Fixed-point iteration – semantics of leftTimes / isLastInfer() are
         // preserved exactly so that inference rules that call isLastInfer() keep
         // working correctly.
         while (!this.inferred()) {
-            for (AST ast : this.asts) ast.infer();
+            for (AST ast : this.asts) {
+                try {
+                    ast.infer();
+                } catch (Throwable ignored) { /* see rationale above */ }
+            }
             if (this.leftTimes == 0) break;
             this.leftTimes--;
         }

@@ -8,6 +8,8 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Entity;
 import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Poly;
+import org.twelve.gcp.outline.primitive.ANY;
+import org.twelve.gcp.outline.primitive.NOTHING;
 
 import java.util.Optional;
 
@@ -84,6 +86,76 @@ public class AccessorGeneric extends Genericable<AccessorGeneric, Accessor> {
         }
 
         return super.doProject(projected, projection, session);
+    }
+
+    /**
+     * When a projected copy (this.projected != null, created by doProject) receives a
+     * constraint from the surrounding expression context (e.g. "must be Number" from
+     * arithmetic), back-propagate that constraint to the ORIGINAL AccessorGeneric in
+     * the function definition so that later call-site projections can detect mismatches.
+     *
+     * <p>Example: {@code g = y -> y.age; g(x.son) - 1}
+     * <ol>
+     *   <li>{@code g(x.son)} projects {@code Return(g).supposed = AccessorGeneric(y.age)}
+     *       and returns a copy {@code AccessorGeneric(y.age, projected=AccessorGeneric(son))}.</li>
+     *   <li>{@code - 1} calls {@code copy.addDefinedToBe(Number)}.</li>
+     *   <li>This method back-propagates: {@code AccessorGeneric(y.age).addHasToBe(Number)}.</li>
+     *   <li>When {@code f(\{son=\{age="will"\}\})} is later projected, {@code String} is checked
+     *       against {@code AccessorGeneric(y.age)\{hasToBe=Number\}} → PROJECT_FAIL.</li>
+     * </ol>
+     */
+    private void backPropagateToOriginal(Outline outline) {
+        if (this.projected == null) return; // this IS the original; nothing to propagate to
+        if (outline == null || outline instanceof ANY || outline instanceof NOTHING) return;
+        if (this.node == null) return;
+        Outline original = this.node.outline();
+        if (original instanceof Constrainable orig && original != this && original.id() == this.id) {
+            orig.addHasToBe(outline);
+        }
+    }
+
+    @Override
+    public boolean addDefinedToBe(Outline outline) {
+        boolean result = super.addDefinedToBe(outline);
+        if (result) backPropagateToOriginal(outline);
+        return result;
+    }
+
+    @Override
+    public void addHasToBe(Outline outline) {
+        super.addHasToBe(outline);
+        backPropagateToOriginal(outline);
+    }
+
+    /**
+     * Returns the minimum (lower-bound) constraint for this AccessorGeneric.
+     * <p>
+     * When this instance is a projected copy (created by {@link #doProject} with a non-null
+     * {@code projected} field), its own constraints may be stale — they were captured at
+     * copy time, before any back-propagation from downstream arithmetic (or other usage)
+     * constraints reached the original.  In that case, fall back to the original's
+     * {@code min()} so that type checks see the up-to-date constraint.
+     * <p>
+     * Example: {@code g = y -> y.age; f = x -> g(x.son) - 1}
+     * <ul>
+     *   <li>The {@code - 1} back-propagates {@code Number} to {@code AG_original(y.age)}.</li>
+     *   <li>A copy {@code AG_copy2} stored inside {@code f}'s parameter entity was made
+     *       before that propagation and has own {@code min() = ANY}.</li>
+     *   <li>This override returns {@code AG_original.min() = Number} for the copy,
+     *       so that {@code String.is(AG_copy2)} → false → PROJECT_FAIL.</li>
+     * </ul>
+     */
+    @Override
+    public Outline min() {
+        Outline ownMin = super.min();
+        if (!(ownMin instanceof ANY)) return ownMin;
+        if (this.node != null) {
+            Outline original = this.node.outline();
+            if (original instanceof Generalizable orig && original != this && original.id() == this.id) {
+                return orig.min();
+            }
+        }
+        return ownMin;
     }
 
     @Override

@@ -15,6 +15,7 @@ public enum GCPErrCode {
 
     // ── Type System ───────────────────────────────────────────────────────────
     OUTLINE_MISMATCH            ("type mismatch"),
+    OUTLINE_MISMATCH_IN_CONDITION("type mismatch in condition (always true/false check)", GCPError.Severity.WARNING),
     CONSTRUCT_CONSTRAINTS_FAIL  ("type constraint violated"),
     UNSUPPORTED_UNARY_OPERATION ("unsupported unary operation for this type"),
     ARGUMENT_MISMATCH           ("argument type does not match parameter type"),
@@ -126,6 +127,7 @@ public enum GCPErrCode {
                 case OUTLINE_MISMATCH, CONSTRUCT_CONSTRAINTS_FAIL, UNSUPPORTED_UNARY_OPERATION,
                      ARGUMENT_MISMATCH, POLY_SUM_FAIL, INVALID_OPTION_EXPRESSION,
                      PROJECT_FAIL,           // Rank-2 / projection type failure
+                     OUTLINE_MISMATCH_IN_CONDITION,
                      TYPE_CAST_NEVER_SUCCEED,
                      DECLARED_CAN_NOT_BE_GENERIC,
                      NOT_BE_ASSIGNEDABLE, OUTLINE_USED_AS_VALUE

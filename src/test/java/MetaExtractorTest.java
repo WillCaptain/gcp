@@ -96,7 +96,7 @@ class MetaExtractorTest {
 
         @Test
         void generic_arrow_is_method() {
-            assertThat(new FieldMeta("map", "fx<b> (a->b) -> VirtualSet<b>", null).isMethod()).isTrue();
+            assertThat(new FieldMeta("map", "fn<b> (a->b) -> VirtualSet<b>", null).isMethod()).isTrue();
         }
     }
 
