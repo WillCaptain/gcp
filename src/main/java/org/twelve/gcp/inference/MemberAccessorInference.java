@@ -13,6 +13,9 @@ import org.twelve.gcp.outline.adt.EntityMember;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.adt.ProductADT;
+import org.twelve.gcp.outline.adt.SumADT;
+import org.twelve.gcp.outline.adt.SymbolEntity;
+import org.twelve.gcp.outline.primitive.SYMBOL;
 import org.twelve.gcp.outline.decorators.Lazy;
 import org.twelve.gcp.outline.primitive.ANY;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
@@ -74,6 +77,25 @@ public class MemberAccessorInference implements Inference<MemberAccessor> {
                 generic.addDefinedToBe(entity);
                 return member;
             }
+        }
+        // Qualified tag access on a named ADT: `Status.Ok` where Ok is a tag-only variant.
+        // Resolves to the concrete SymbolEntity variant (consistent with the `Status.Ok{...}`
+        // qualified-constructor path in EntityInference). Must run before the Option member-scan
+        // below, which would otherwise report FIELD_NOT_FOUND for a tag that is not a member name.
+        if (outline instanceof SumADT sumADT && node.member() instanceof SymbolIdentifier tag) {
+            for (Outline opt : sumADT.options()) {
+                if (opt instanceof SymbolEntity se
+                        && se.base() instanceof SYMBOL sym
+                        && sym.toString().equals(tag.name())) {
+                    return se;
+                }
+                if (opt instanceof SYMBOL sym && sym.toString().equals(tag.name())) {
+                    return opt;
+                }
+            }
+            GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH,
+                    "'" + tag.name() + "' is not a variant of " + outline);
+            return node.ast().Error;
         }
         // Option path: if every variant in the union has the requested member, return the common
         // member type (or a union of them when they differ). This enables structural member access
