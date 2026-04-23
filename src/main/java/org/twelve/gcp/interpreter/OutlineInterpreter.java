@@ -176,6 +176,38 @@ public class OutlineInterpreter implements Interpreter {
     }
 
     /**
+     * Registers a host-callable function under {@code __name__}, enabling Outline
+     * code such as {@code __llm__(model, prompt)} to dispatch to the provided
+     * Java implementation.
+     *
+     * <p>The {@code impl} receives all accumulated arguments once {@code arity}
+     * is reached.  A curried {@link FunctionValue} chain is installed under the
+     * bare {@code name} in the root environment; {@link IdentifierInterpretation}
+     * looks up {@code __name__ → name} and returns this callable.
+     *
+     * @param name  plugin id (without underscores)
+     * @param arity number of value arguments {@code impl} expects (must be >= 1)
+     * @param impl  host Java implementation taking exactly {@code arity} args
+     * @return {@code this} for chaining
+     */
+    public OutlineInterpreter registerFunction(String name, int arity,
+                                               java.util.function.Function<java.util.List<Value>, Value> impl) {
+        if (arity < 1) throw new IllegalArgumentException("arity must be >= 1");
+        env.define(name, curryPlugin(new java.util.ArrayList<>(), arity, impl));
+        return this;
+    }
+
+    private static FunctionValue curryPlugin(java.util.List<Value> acc, int arity,
+                                             java.util.function.Function<java.util.List<Value>, Value> impl) {
+        return new FunctionValue(next -> {
+            java.util.List<Value> extended = new java.util.ArrayList<>(acc);
+            extended.add(next);
+            if (extended.size() == arity) return impl.apply(extended);
+            return curryPlugin(extended, arity, impl);
+        });
+    }
+
+    /**
      * Scans {@code dir} for {@code ext_builder_*.jar} files and registers every
      * {@link org.twelve.gcp.plugin.GCPBuilderPlugin} discovered via {@link java.util.ServiceLoader}.
      *

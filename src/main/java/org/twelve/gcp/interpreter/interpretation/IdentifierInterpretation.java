@@ -11,7 +11,15 @@ public class IdentifierInterpretation implements Interpretation<Identifier> {
     public Value interpret(Identifier node, Interpreter interpreter) {
         String name = node.name();
         if (name.startsWith("__") && name.endsWith("__")) {
-            return new StringValue(stripUnderscores(name));
+            // `__xxx__` is the host-plugin bridge. A host may register a callable
+            // (e.g. curried FunctionValue for multi-arg plugins such as `__llm__`)
+            // under the stripped id; fall back to StringValue so that legacy
+            // `__builder__<T>` reference-call dispatch via constructors continues
+            // to work when no direct callable is registered.
+            String stripped = stripUnderscores(name);
+            Value bound = interpreter.env().lookup(stripped);
+            if (bound != null) return bound;
+            return new StringValue(stripped);
         }
         Value v = interpreter.env().lookup(name);
         if (v != null) return v;
