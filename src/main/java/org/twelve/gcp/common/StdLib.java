@@ -196,6 +196,11 @@ public final class StdLib {
         env.defineSymbol("len",       FirstOrderFunction.from(ast, ast.Integer, ast.Any),     false, null);
         env.defineSymbol("assert",    FirstOrderFunction.from(ast, ast.Unit,    ast.Boolean), false, null);
         env.defineSymbol("type_of",   FirstOrderFunction.from(ast, ast.String,  ast.Any),     false, null);
+        // Host bridge: __llm__(model, prompt) → AiResult (Ok{text}|Denied{reason}|Timeout).
+        // Installed by outline-ai-plugin at runtime; the symbol is always defined
+        // at the type level so inference / completions see a concrete signature
+        // even before the plugin is attached.
+        env.defineSymbol("__llm__",   FirstOrderFunction.from(ast, ast.Any,     ast.String, ast.String), false, null);
     }
 
     // ── Date ──────────────────────────────────────────────────────────────────
