@@ -30,6 +30,19 @@ public class EntityTypeNodeInference implements Inference<EntityTypeNode> {
                 // Infer the actual type of the default-value expression (lambda, string, entity, etc.)
                 // so that function-typed fields (e.g. run: ()->this.speed) get a callable outline.
                 Outline inferred = defaultValueNode.infer(inferencer);
+                // Grammar: `entity_field : ID (':' (declared_outline | literal))?`
+                //   `id:0`    → literal branch (bare value = default value, type should widen).
+                //   `id:#1`   → declared_outline → literal_type branch (explicit literal type, keep).
+                //   `id:0|3|4`→ declared_outline → option-of-literals (goes through else-branch below).
+                // When the user writes a plain default-value literal (`id:0`, `name:"x"`), the
+                // raw inference of that literal node is a `Literal` wrapper. Treating that as the
+                // field's declared type would make `id` ≡ the singleton value 0. That's almost
+                // never what the user wants here — they mean "type is Int, default is 0". Widen
+                // the Literal to its origin primitive so downstream type inference (e.g. the
+                // return type of `{..}->Entity` invocations, `.id` access returning Int) works.
+                if (inferred instanceof Literal lit) {
+                    inferred = lit.outline();
+                }
                 declared = (inferred instanceof UNKNOWN) ? node.ast().Any : inferred;
                 entity.addMemberWithDefault(m.name(), declared, m.modifier(), m.mutable(), m, defaultValueNode);
             } else {

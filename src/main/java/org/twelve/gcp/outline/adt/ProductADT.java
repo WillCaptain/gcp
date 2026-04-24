@@ -89,8 +89,19 @@ public abstract class ProductADT extends ADT {
             copied = cast(super.copy());
             ProductADT finalCopied = copied;
             this.members.forEach((k, v)->{
-               if(v.isDefault()) return;
-                finalCopied.members.put(k,EntityMember.from(v.name(), v.outline.copy(cache), v.modifier(), v.mutable()==Mutable.True, v.node(),v.isDefault()));
+               // Skip only built-in default methods (isDefault && !hasDefaultValue) —
+               // things like `to_str`, `abs` that are re-attached by loadBuiltInMethods()
+               // on the copy. User-declared default-value fields (isDefault && hasDefaultValue),
+               // e.g. `id:0` or `age:18`, are real members and MUST be preserved — otherwise
+               // generic instantiations of `{params}->Entity` (e.g. `create: {..}->Entity`)
+               // drop them silently and downstream `.id` completion/inference fails.
+               if(v.isDefault() && !v.hasDefaultValue()) return;
+               EntityMember m = v.hasDefaultValue()
+                   ? EntityMember.fromWithDefault(v.name(), v.outline.copy(cache), v.modifier(),
+                                                   v.mutable()==Mutable.True, v.node(), v.defaultValueNode())
+                   : EntityMember.from(v.name(), v.outline.copy(cache), v.modifier(),
+                                        v.mutable()==Mutable.True, v.node(), v.isDefault());
+               finalCopied.members.put(k, m);
             });
             cache.put(this,copied);
         }

@@ -590,17 +590,32 @@ public final class MetaExtractor {
         String source = resolved.ast() != null ? resolved.ast().sourceCode() : null;
         List<FieldMeta> fields = extractEntityFields(resolved, source);
 
-        if (!isTrivialResult(fields) || contextAsf == null) return fields;
+        if (contextAsf == null) return fields;
 
-        // AST fallback: look up the entity's declared body by its declared name in the preamble ASF.
-        // This handles system-typed outlines (e.g. Aggregator<School>, GroupBy<...>) whose
-        // instantiated projections may not carry full member lists after inference.
+        // AST-declaration merge: if the resolved outline has a declared name that exists
+        // in contextAsf, union in any field from the declaration that isn't already
+        // present. Two scenarios this fixes:
+        //   1. System-typed outlines (Aggregator<School>, GroupBy<...>) whose instantiated
+        //      projections carry an incomplete member list after inference (isTrivialResult).
+        //   2. Entity return types from method calls like {params} -> Entity where GCP's
+        //      inferer returns a record shaped by the input struct rather than the full
+        //      declared entity — fields declared with literal-value types (e.g. "id:0")
+        //      can be dropped in that pathway. Merging from the declaration fills them back.
         if (resolved instanceof Entity ent && ent.node() != null) {
-            String declaredName = ent.node().lexeme();
+            String declaredName = resolveOutlineDeclarationName(resolved, contextAsf);
             if (declaredName != null && !declaredName.isEmpty()) {
+                Set<String> present = new HashSet<>();
+                for (FieldMeta f : fields) present.add(f.name());
                 for (AST ast : contextAsf.asts()) {
                     List<FieldMeta> astFields = fieldsOf(declaredName, ast);
-                    if (!astFields.isEmpty()) return astFields;
+                    if (astFields.isEmpty()) continue;
+                    if (isTrivialResult(fields)) return astFields;
+                    // Non-trivial: union missing fields from declaration.
+                    boolean added = false;
+                    for (FieldMeta f : astFields) {
+                        if (present.add(f.name())) { fields.add(f); added = true; }
+                    }
+                    if (added) break;
                 }
             }
         }
