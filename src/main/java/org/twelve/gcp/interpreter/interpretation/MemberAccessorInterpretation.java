@@ -32,9 +32,17 @@ public class MemberAccessorInterpretation implements Interpretation<MemberAccess
                 }
                 throw new RuntimeException("Member '" + memberName + "' not found on " + entity);
             }
-            if (raw instanceof FunctionValue fv && !fv.isBuiltin()) {
-                // Inline cache: reuse the EntityMethodEnvironment-wrapped FunctionValue
-                return entity.getBoundMethod(memberName, entity, BIND_METHOD);
+            if (raw instanceof FunctionValue fv) {
+                if (fv.isThisAware()) {
+                    // Bake the entity receiver into a regular builtin FunctionValue.
+                    final EntityValue self = entity;
+                    final var fn = fv.thisAwareFn();
+                    return new FunctionValue(arg -> fn.apply(self, arg));
+                }
+                if (!fv.isBuiltin()) {
+                    // Inline cache: reuse the EntityMethodEnvironment-wrapped FunctionValue
+                    return entity.getBoundMethod(memberName, entity, BIND_METHOD);
+                }
             }
             return raw;
         }

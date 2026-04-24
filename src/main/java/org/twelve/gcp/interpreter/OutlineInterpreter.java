@@ -517,6 +517,16 @@ public class OutlineInterpreter implements Interpreter {
             if (!v.isTruthy()) throw new RuntimeException("Assertion failed");
             return UnitValue.INSTANCE;
         }));
+        env.define("env", new FunctionValue(name -> {
+            String raw = ((StringValue) name).value();
+            String v = System.getenv(raw);
+            return new StringValue(v == null ? "" : v);
+        }));
+        env.define("env_or", new FunctionValue(name -> new FunctionValue(def -> {
+            String raw = ((StringValue) name).value();
+            String v = System.getenv(raw);
+            return (v == null || v.isEmpty()) ? def : new StringValue(v);
+        })));
         org.twelve.gcp.interpreter.stdlib.StdLibRuntime.registerAll(env);
 
         // Built-in external builder — same GCPBuilderPlugin contract as JAR plugins;
