@@ -13,8 +13,10 @@ import org.twelve.gcp.outline.builtin.ERROR;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -34,6 +36,8 @@ import static org.twelve.gcp.common.Tool.cast;
  */
 
 public abstract class AbstractNode implements Node {
+    private static final ThreadLocal<Set<Long>> LOC_VISITING = ThreadLocal.withInitial(HashSet::new);
+
     // Structural Properties
     private final List<Node> nodes = new ArrayList<>();
     @Setter
@@ -41,6 +45,7 @@ public abstract class AbstractNode implements Node {
     private final Long id;  // Unique node identifier
     private final AST ast;  // Owning AST
     private final Location loc;  // Source location
+    private Location derivedLoc;
 
     // Semantic Properties
     protected Outline outline;  // Type/scope information
@@ -91,6 +96,7 @@ public abstract class AbstractNode implements Node {
         if (this.ast != node.ast()) {
             GCPErrorReporter.report(GCPErrCode.NODE_AST_MISMATCH);
         }
+        this.derivedLoc = null;
         this.nodes.add(index, cast(node));
         node.setParent(this);
         return node;
@@ -99,6 +105,7 @@ public abstract class AbstractNode implements Node {
     @Override
     public <T extends Node> T replaceNode(Node old, T now) {
         int index = this.nodes.indexOf(old);
+        this.derivedLoc = null;
         this.nodes.remove(old);
         this.nodes.add(index, cast(now));
         now.setParent(this);
@@ -109,16 +116,30 @@ public abstract class AbstractNode implements Node {
     @Override
     public Location loc() {
         if (loc != null) return loc;
+        if (derivedLoc != null) return derivedLoc;
+        Set<Long> visiting = LOC_VISITING.get();
+        boolean rootCall = visiting.isEmpty();
+        if (!visiting.add(this.id)) {
+            return new SimpleLocation(0, 0);
+        }
+        try {
+            List<Location> locatedNodes = nodes().stream()
+                    .map(Node::loc)
+                    .filter(l -> !(l.start() == 0 && l.end() == 0))
+                    .toList();
 
-        List<Node> locatedNodes = nodes().stream()
-                .filter(n -> !(n.loc().start() == 0 && n.loc().end() == 0))
-                .toList();
-
-        return locatedNodes.isEmpty() ?
-                new SimpleLocation(0, 0) :
-                new SimpleLocation(
-                        locatedNodes.getFirst().loc().start(),
-                        locatedNodes.getLast().loc().end());
+            derivedLoc = locatedNodes.isEmpty() ?
+                    new SimpleLocation(0, 0) :
+                    new SimpleLocation(
+                            locatedNodes.getFirst().start(),
+                            locatedNodes.getLast().end());
+            return derivedLoc;
+        } finally {
+            visiting.remove(this.id);
+            if (rootCall) {
+                LOC_VISITING.remove();
+            }
+        }
 
     }
 
