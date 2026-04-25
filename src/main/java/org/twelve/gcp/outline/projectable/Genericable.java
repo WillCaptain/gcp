@@ -10,6 +10,7 @@ import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.adt.*;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.primitive.ANY;
+import org.twelve.gcp.outline.primitive.Epsilon;
 import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 
@@ -73,7 +74,8 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     protected long id;
     protected final N node;
 
-    // Constraint chain: extendToBe(upper) <: projection <: declaredToBe <: hasToBe(lower) <: definedToBe
+    // Constraint chain: extendToBe(upper) <: projection <: declaredToBe <: hasToBe/definedToBe.
+    // When no declared type exists, declaredToBe is Epsilon and is transparent in the chain.
     // e.g. x: Number => x.declaredToBe = Number
     protected Outline declaredToBe;
 
@@ -95,7 +97,9 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         this.hasToBe = ast.Any;
         this.definedToBe = ast.Any;
 
-        this.declaredToBe = (declaredToBe == null || (declaredToBe instanceof UNKNOWN)) ? ast.Any : declaredToBe;
+        this.declaredToBe = (declaredToBe == null || (declaredToBe instanceof UNKNOWN) || declaredToBe == ast.Any)
+                ? ast.Epsilon
+                : declaredToBe;
         if (this.declaredToBe instanceof Poly) {
             this.extendToBe = this.declaredToBe;//.copy();//poly is declared确定了poly必须得到所有可能类型
 //            this.hasToBe = Poly.create(this.ast());//declared is poly确定了空Poly为最泛化基类
@@ -112,7 +116,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     public Genericable(@NonNull N node) {
-        this(node, node.ast().Any);
+        this(node, node.ast().Epsilon);
     }
 
     public Genericable(AST ast, Outline declaredToBe) {
@@ -120,7 +124,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     public Genericable(AST ast) {
-        this(ast, ast.Any);
+        this(ast, ast.Epsilon);
     }
 
     @Override
@@ -219,6 +223,10 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         return target;
     }
 
+    private boolean hasDeclaredToBe() {
+        return !(this.declaredToBe instanceof Epsilon);
+    }
+
     public void addExtendToBe(Outline outline) {
         if (outline == null) return;
         if (outline instanceof NOTHING) return;
@@ -240,7 +248,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     private void addDeclaredToBe(Outline declared) {
         if (declared instanceof ANY) return;
         Outline upConstraint = this.extendToBe();
-        Outline downConstraint = this.hasToBe == ast().Any ? this.definedToBe : this.hasToBe;
+        Outline downConstraint = mergeParallelConstraints(this.ast(), this.hasToBe, this.definedToBe);
 
         //find down stream maximum constraint
         if (!(downConstraint instanceof ANY) && !declared.is(downConstraint)) {
@@ -259,7 +267,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     public void addHasToBe(Outline outline) {
         if (outline == null) return;
         if (outline instanceof ANY) return;
-        Outline upConstraint = this.declaredToBe == ast().Any ? this.extendToBe : this.declaredToBe;
+        Outline upConstraint = this.hasDeclaredToBe() ? this.declaredToBe : this.extendToBe;
         // hasToBe and definedToBe are parallel independent lower-bound constraints.
         // Neither is required to be a subtype of the other; min() merges them independently.
         // Do NOT check outline against definedToBe here.
@@ -281,7 +289,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (outline instanceof ANY) return true;
         // hasToBe is a parallel constraint to definedToBe — it is NOT an upper bound.
         // Upper bound for definedToBe: only declaredToBe or extendToBe.
-        Outline upConstraint = this.declaredToBe == ast().Any ? this.extendToBe : this.declaredToBe;
+        Outline upConstraint = this.hasDeclaredToBe() ? this.declaredToBe : this.extendToBe;
 
         // ANY upper-bound means "totally unconstrained" — skip the is-check to avoid
         // false-positive "mismatch with any" errors on valid generic instantiations.
@@ -310,7 +318,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
     }
 
     public Outline min() {
-        if (this.declaredToBe != ast().Any) return this.declaredToBe;
+        if (this.hasDeclaredToBe()) return this.declaredToBe;
         return mergeParallelConstraints(this.ast(), this.hasToBe, this.definedToBe);
     }
 
@@ -688,7 +696,7 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         if (!(this.hasToBe instanceof ANY) && this.hasToBe instanceof Projectable) {
             outline = ((Projectable) this.hasToBe).project(cast(this.hasToBe), projection, session);
         }
-        if (!(this.declaredToBe instanceof ANY) && this.declaredToBe instanceof Projectable) {
+        if (this.hasDeclaredToBe() && this.declaredToBe instanceof Projectable) {
             outline = ((Projectable) this.declaredToBe).project(cast(this.declaredToBe), projection, session);
         }
         // When the declared type is an Option (ADT union), the constructor pre-fills
@@ -903,8 +911,8 @@ public abstract class Genericable<G extends Genericable, N extends Node> impleme
         // hasToBe and definedToBe are parallel constraints; use their merged lower bound
         // as the benchmark instead of requiring hasToBe <: definedToBe.
         Outline benchMark = mergeParallelConstraints(this.ast(), copied.hasToBe, copied.definedToBe);
-        if (copied.declaredToBe instanceof ANY || copied.declaredToBe.is(benchMark)) {
-            if (!(copied.declaredToBe instanceof ANY)) benchMark = copied.declaredToBe;
+        if (copied.declaredToBe instanceof Epsilon || copied.declaredToBe.is(benchMark)) {
+            if (!(copied.declaredToBe instanceof Epsilon)) benchMark = copied.declaredToBe;
         } else {
             GCPErrorReporter.report(node, GCPErrCode.PROJECT_FAIL, copied.declaredToBe + " doesn't match " + benchMark);
         }

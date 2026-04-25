@@ -1,5 +1,7 @@
 package org.twelve.gcp.inference;
 
+import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.node.expression.typeable.SymbolTupleTypeTypeNode;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.adt.Tuple;
@@ -27,6 +29,11 @@ public class SymbolTupleTypeNodeInference implements Inference<SymbolTupleTypeTy
             }
             return node.symbol().infer(inferencer);
         } else {
+            if (node.missingSingleItemTupleComma()) {
+                GCPErrorReporter.report(node, GCPErrCode.INFER_ERROR,
+                        "single-item tuple variant must be written with a trailing comma, e.g. "
+                                + node.symbol().lexeme() + "(T,)");
+            }
             Tuple tuple = cast(new TupleTypeNodeInference().infer(node, inferencer));
             SYMBOL symbol = cast(node.symbol().infer(inferencer));
             return new SymbolTuple(symbol, tuple);

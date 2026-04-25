@@ -12,6 +12,7 @@ import org.twelve.gcp.outline.adt.Poly;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.decorators.Lazy;
 import org.twelve.gcp.outline.primitive.ANY;
+import org.twelve.gcp.outline.primitive.Epsilon;
 import org.twelve.gcp.outline.primitive.Literal;
 import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.projectable.*;
@@ -380,7 +381,7 @@ public class FunctionCallInference implements Inference<FunctionCallNode> {
             // AND the lambda param has no explicit type from declaredToBe or hasToBe yet.
             // (definedToBe is structural/usage-inferred and must NOT block propagation.)
             if (!(formalArgMin instanceof ANY) && !(formalArgMin instanceof NOTHING)
-                    && actualArg.declaredToBe() instanceof ANY
+                    && actualArg.declaredToBe() instanceof Epsilon
                     && actualArg.hasToBe() instanceof ANY) {
                 actualArg.addHasToBe(formalArgMin);
             }

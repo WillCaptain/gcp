@@ -92,6 +92,7 @@ public class OutlineInferencer implements Inferencer {
     private static final SymbolTupleTypeNodeInference   SYMBOL_TUPLE_TYPE_NODE   = new SymbolTupleTypeNodeInference();
     private static final ThisTypeNodeInference          THIS_TYPE_NODE           = new ThisTypeNodeInference();
     private static final ExtendTypeNodeInference        EXTEND_TYPE_NODE         = new ExtendTypeNodeInference();
+    private static final ReferenceAliasTypeNodeInference REFERENCE_ALIAS_TYPE_NODE = new ReferenceAliasTypeNodeInference();
     private static final AsyncInference                 ASYNC                    = new AsyncInference();
     private static final AwaitInference                 AWAIT                    = new AwaitInference();
 
@@ -385,6 +386,11 @@ public class OutlineInferencer implements Inferencer {
     @Override
     public Outline visit(ExtendTypeNode extendTypeNode) {
         return EXTEND_TYPE_NODE.infer(extendTypeNode, this);
+    }
+
+    @Override
+    public Outline visit(ReferenceAliasTypeNode referenceAliasTypeNode) {
+        return REFERENCE_ALIAS_TYPE_NODE.infer(referenceAliasTypeNode, this);
     }
 
     @Override

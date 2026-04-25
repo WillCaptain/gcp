@@ -2,7 +2,10 @@ package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.exception.GCPErrCode;
+import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.projectable.*;
 
@@ -11,13 +14,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static org.twelve.gcp.common.Tool.cast;
+
 /**
  * Sum ADT
  * 定义为一种类型可能或者同时拥有多种类型
  * Option表明了多种类型中的一种
  * Poly表明了同时拥有多种类型
  */
-public abstract class SumADT extends ADT implements Constrainable, Projectable {
+public abstract class SumADT extends ADT implements Constrainable, Projectable, ReferAble {
     /**
      * Sum ADT为非标类型，所以有node对应
      */
@@ -31,6 +36,7 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
      * Sum ADT拥有的选项
      */
     protected List<Outline> options;
+    private List<Reference> references = new ArrayList<>();
 
 
     /**
@@ -108,6 +114,57 @@ public abstract class SumADT extends ADT implements Constrainable, Projectable {
 
     public List<Outline> options() {
         return this.options;
+    }
+
+    @Override
+    public abstract SumADT copy();
+
+    public void setReferences(List<Reference> references) {
+        this.references = new ArrayList<>(references);
+    }
+
+    @Override
+    public List<Reference> references() {
+        return this.references;
+    }
+
+    @Override
+    public Outline project(List<OutlineWrapper> types) {
+        SumADT sum = this;
+        if (this.references.size() < types.size()) {
+            GCPErrorReporter.report(this.node, GCPErrCode.REFERENCE_MIS_MATCH);
+            return sum;
+        }
+        for (int i = 0; i < types.size(); i++) {
+            Reference me = this.references.get(i);
+            OutlineWrapper you = types.get(i);
+            if (you == null) break;
+            if (you.outline().is(me)) {
+                sum = cast(sum.project(me, you));
+            } else {
+                GCPErrorReporter.report(you.node(), GCPErrCode.REFERENCE_MIS_MATCH);
+                sum = cast(sum.project(me, new OutlineWrapper(you.node(), me.guess())));
+            }
+        }
+        return sum;
+    }
+
+    @Override
+    public Outline project(Reference reference, OutlineWrapper projection) {
+        SumADT copied = this.copy();
+        copied.options.clear();
+        copied.declared.clear();
+        for (Outline option : this.options) {
+            Outline projected = option.project(reference, projection);
+            copied.options.add(projected);
+            if (!this.declared.isEmpty()) {
+                copied.declared.add(projected);
+            }
+        }
+        List<Reference> refs = new ArrayList<>(this.references);
+        refs.remove(reference);
+        copied.setReferences(refs);
+        return copied;
     }
 
     /**

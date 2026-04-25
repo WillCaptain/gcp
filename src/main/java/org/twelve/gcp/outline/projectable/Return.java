@@ -10,6 +10,7 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.adt.Option;
 import org.twelve.gcp.outline.primitive.ANY;
+import org.twelve.gcp.outline.primitive.Epsilon;
 import org.twelve.gcp.outline.builtin.IGNORE;
 import org.twelve.gcp.outline.primitive.NOTHING;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
@@ -84,6 +85,7 @@ public class Return extends Genericable<Return, Node> implements Returnable {
     }
 
     public boolean addReturn(Outline returns) {
+        if (returns instanceof Epsilon) return true;
         if (!(returns instanceof IGNORE) && !returns.is(this.declaredToBe)) {
             GCPErrorReporter.report(this.node, GCPErrCode.OUTLINE_MISMATCH);
             return false;
@@ -237,7 +239,7 @@ public class Return extends Genericable<Return, Node> implements Returnable {
 //    }
 
     public Outline supposedToBe() {
-        if (this.supposed == this.ast().Nothing && declaredToBe != this.ast().Any) {
+        if (this.supposed == this.ast().Nothing && !(declaredToBe instanceof Epsilon)) {
             return declaredToBe;
         } else {
             return this.supposed;
@@ -257,7 +259,7 @@ public class Return extends Genericable<Return, Node> implements Returnable {
         // (e.g. a generic function member that is declared but never called at a usage
         // site), fall back to the declared type so that Entity.inferred() doesn't
         // incorrectly return false for structurally complete entities.
-        if (effective instanceof UNKNOWN && !(declaredToBe instanceof ANY)) {
+        if (effective instanceof UNKNOWN && !(declaredToBe instanceof Epsilon)) {
             return declaredToBe.inferred();
         }
         return effective.inferred();

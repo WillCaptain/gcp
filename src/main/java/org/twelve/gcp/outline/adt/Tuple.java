@@ -7,6 +7,7 @@ import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.projectable.Genericable;
 import org.twelve.gcp.outline.projectable.ProjectSession;
 import org.twelve.gcp.outline.projectable.Projectable;
+import org.twelve.gcp.outline.projectable.Reference;
 
 import java.util.*;
 
@@ -77,6 +78,11 @@ public class Tuple extends Entity {
     @Override
     public Outline project(List<OutlineWrapper> types) {
         return new Tuple(cast(super.project(types)));
+    }
+
+    @Override
+    public Outline project(Reference reference, OutlineWrapper projection) {
+        return new Tuple(cast(super.project(reference, projection)));
     }
 
     @Override

@@ -13,6 +13,7 @@ import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.outline.builtin.UNKNOWN;
 import org.twelve.gcp.outline.primitive.ANY;
 import org.twelve.gcp.outline.primitive.BOOL;
+import org.twelve.gcp.outline.primitive.Epsilon;
 import org.twelve.gcp.outline.projectable.Generic;
 
 import static org.twelve.gcp.common.Tool.cast;
@@ -38,7 +39,7 @@ public class MatchTestInference implements Inference<MatchTest> {
             return node.ast().Boolean;
         }
         if (pattern instanceof Identifier) {
-            if (!(outline instanceof UNKNOWN) && subject instanceof Generic g && g.declaredToBe() instanceof ANY) {
+            if (!(outline instanceof UNKNOWN) && subject instanceof Generic g && g.declaredToBe() instanceof Epsilon) {
                 // Named-variant pattern (e.g. `Sat -> true`): treat as a type test and add the
                 // variant as a hasToBe constraint — but only when the enclosing match is
                 // non-exhaustive (no wildcard arm). A wildcard makes the match accept any input,
@@ -55,9 +56,9 @@ public class MatchTestInference implements Inference<MatchTest> {
             ((UnpackNode)pattern).assign(node.ast().symbolEnv(),subject);
             // Only propagate the pattern's structure as a hasToBe constraint when the subject
             // has no declared type. When the subject already has an explicit declaration
-            // (e.g. person: Human), declaredToBe is a concrete type (not ANY), and adding
+            // (e.g. person: Human), declaredToBe is a concrete type (not Epsilon), and adding
             // the partial pattern outline as hasToBe would conflict with that constraint.
-            if (subject instanceof Generic g && g.declaredToBe() instanceof ANY) {
+            if (subject instanceof Generic g && g.declaredToBe() instanceof Epsilon) {
                 g.addHasToBe(pattern.infer(inferencer));
             }
         }

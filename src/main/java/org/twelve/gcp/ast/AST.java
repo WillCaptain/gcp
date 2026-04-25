@@ -53,6 +53,7 @@ public class AST {
     public final UNKNOWN Pending;
     public final NOTHING Nothing;
     public final ANY Any;
+    public final Epsilon Epsilon;
     public final ERROR Error;
     public final IGNORE Ignore;
     public final STRING String;
@@ -99,6 +100,7 @@ public class AST {
         this.Pending = new UNKNOWN(this);
         this.Nothing = new NOTHING(this);
         this.Any = new ANY(this);
+        this.Epsilon = new Epsilon(this);
         this.Error = new ERROR(this);
         this.Ignore = new IGNORE(this);
         this.String = new STRING(this);

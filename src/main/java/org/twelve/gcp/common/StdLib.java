@@ -140,7 +140,7 @@ public final class StdLib {
      * {@code ANY} instead of {@code NOTHING} via {@code supposedToBe()}.
      *
      * <p>Background: {@link Return#supposedToBe()} returns {@code supposed} directly when
-     * {@code declaredToBe == ANY}.  Because {@link FirstOrderFunction#from} always calls
+     * {@code declaredToBe} is the no-declaration Epsilon sentinel. Because {@link FirstOrderFunction#from} always calls
      * {@code addReturn(Nothing)} on the newly created Returnable, {@code supposed} would
      * normally be set to {@code NOTHING}, which is not assignable.  By calling
      * {@code addReturn(Any)} first we lock {@code supposed = ANY}; the subsequent

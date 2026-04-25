@@ -81,6 +81,7 @@ public class Poly extends SumADT {
         copied.declared.addAll(this.declared);
         copied.options.addAll(this.options);
         copied.meta.putAll(this.meta);
+        copied.setReferences(this.references());
         return copied;
     }
 
@@ -97,6 +98,7 @@ public class Poly extends SumADT {
                 copied.declared.add(declared.copy(cache));
             }
             copied.meta.putAll(this.meta);
+            copied.setReferences(this.references());
             cache.put(this, copied);
         }
         return copied;

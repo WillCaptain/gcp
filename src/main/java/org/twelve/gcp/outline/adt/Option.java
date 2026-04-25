@@ -76,6 +76,7 @@ public class Option extends SumADT {
         Option copies = new Option(this.node(), this.ast());
         copies.id = this.id;
         copies.options.addAll(this.options);
+        copies.setReferences(this.references());
         return copies;
     }
 
@@ -87,6 +88,7 @@ public class Option extends SumADT {
             for (Outline option : this.options) {
                 copied.options.add(option.copy(cache));
             }
+            copied.setReferences(this.references());
             cache.put(this, copied);
         }
         return copied;

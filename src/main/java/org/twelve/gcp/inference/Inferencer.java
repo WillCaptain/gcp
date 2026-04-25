@@ -107,6 +107,7 @@ public interface Inferencer {
 
     Outline visit(ThisTypeNode thisTypeNode);
     Outline visit(ExtendTypeNode extendTypeNode);
+    Outline visit(ReferenceAliasTypeNode referenceAliasTypeNode);
 
     Outline visit(AsyncNode asyncNode);
     Outline visit(AwaitNode awaitNode);

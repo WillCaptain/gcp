@@ -1,7 +1,9 @@
 package org.twelve.gcp.outline.adt;
 
 import org.twelve.gcp.outline.Outline;
+import org.twelve.gcp.outline.decorators.OutlineWrapper;
 import org.twelve.gcp.outline.primitive.SYMBOL;
+import org.twelve.gcp.outline.projectable.Reference;
 
 import java.util.Map;
 
@@ -36,6 +38,11 @@ public class SymbolTuple extends Tuple {
     @Override
     public Entity copy(Map<Outline, Outline> cache) {
         return new SymbolTuple(this.base.copy(), cast(super.copy(cache)));
+    }
+
+    @Override
+    public Outline project(Reference reference, OutlineWrapper projection) {
+        return new SymbolTuple(this.base.copy(), cast(super.project(reference, projection)));
     }
 
     @Override

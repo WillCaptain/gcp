@@ -10,19 +10,31 @@ import java.util.List;
 
 public class SymbolTupleTypeTypeNode extends TupleTypeNode implements SymbolTypeNode<TupleTypeNode> {
     private final SymbolIdentifier symbol;
+    private final boolean missingSingleItemTupleComma;
 
     public SymbolTupleTypeTypeNode(SymbolIdentifier symbol, List<ReferenceNode> refs, List<TypeNode> members) {
+        this(symbol, refs, members, false);
+    }
+
+    public SymbolTupleTypeTypeNode(SymbolIdentifier symbol, List<ReferenceNode> refs, List<TypeNode> members,
+                                   boolean missingSingleItemTupleComma) {
         super(refs,members);
         this.symbol = this.addNode(0,symbol);
+        this.missingSingleItemTupleComma = missingSingleItemTupleComma;
     }
 
     public SymbolTupleTypeTypeNode(SymbolIdentifier symbol, List<TypeNode> members) {
         this(symbol,new ArrayList<>(),members);
     }
 
+    public SymbolTupleTypeTypeNode(SymbolIdentifier symbol, List<TypeNode> members, boolean missingSingleItemTupleComma) {
+        this(symbol, new ArrayList<>(), members, missingSingleItemTupleComma);
+    }
+
     public SymbolTupleTypeTypeNode(SymbolIdentifier symbol) {
         super(symbol.ast());
         this.symbol = this.addNode(symbol);
+        this.missingSingleItemTupleComma = false;
     }
 
 
@@ -39,6 +51,10 @@ public class SymbolTupleTypeTypeNode extends TupleTypeNode implements SymbolType
     @Override
     public TupleTypeNode data() {
         return this;
+    }
+
+    public boolean missingSingleItemTupleComma() {
+        return this.missingSingleItemTupleComma;
     }
 
     @Override
