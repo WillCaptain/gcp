@@ -2,6 +2,7 @@ package org.twelve.gcp.node.expression;
 
 import org.twelve.gcp.ast.Location;
 import org.twelve.gcp.ast.SimpleLocation;
+import org.twelve.gcp.common.FieldMergeMode;
 import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.node.expression.typeable.TypeNode;
@@ -17,12 +18,18 @@ public class Variable extends Identifier {
     private final Assignable identifier;
     private final TypeNode declared;
     private final Boolean mutable;
+    private final FieldMergeMode mergeMode;
 
     public Variable(Assignable identifier, Boolean mutable, TypeNode declared) {
+        this(identifier, mutable, declared, FieldMergeMode.DEFAULT);
+    }
+
+    public Variable(Assignable identifier, Boolean mutable, TypeNode declared, FieldMergeMode mergeMode) {
         super(identifier.ast(), identifier.token());
         this.mutable = mutable;
         this.identifier = identifier;
         this.declared = this.addNode(declared);
+        this.mergeMode = mergeMode == null ? FieldMergeMode.DEFAULT : mergeMode;
     }
 
     @Override
@@ -73,6 +80,10 @@ public class Variable extends Identifier {
 
     public TypeNode declared() {
         return this.declared;
+    }
+
+    public FieldMergeMode mergeMode() {
+        return this.mergeMode;
     }
 
     @Override

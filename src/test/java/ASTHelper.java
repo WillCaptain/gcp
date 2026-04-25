@@ -289,7 +289,7 @@ public class ASTHelper {
         body.addStatement(new ReturnStatement(LiteralNode.parse(ast, new Token<>(100))));
         MemberNode getName = new MemberNode(new Identifier(ast, new Token<>("get_name")),
                 FunctionNode.from(body,
-                        new Argument(new Identifier(ast, new Token<>("last_name")))), false);
+                        new Argument(new Identifier(ast, new Token<>("last_name")))), false, FieldMergeMode.OVERLOAD);
 
         List<MemberNode> members = new ArrayList<>();
         members.add(getName);//重载get_name方法

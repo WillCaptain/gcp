@@ -1,6 +1,7 @@
 package org.twelve.gcp.node.statement;
 
 import org.twelve.gcp.common.Modifier;
+import org.twelve.gcp.common.FieldMergeMode;
 import org.twelve.gcp.common.VariableKind;
 import org.twelve.gcp.inference.Inferencer;
 import org.twelve.gcp.node.expression.Assignable;
@@ -15,14 +16,24 @@ import org.twelve.gcp.interpreter.Interpreter;
 import org.twelve.gcp.interpreter.value.Value;
 
 public class MemberNode extends VariableDeclarator {
+    private final FieldMergeMode mergeMode;
 
     public MemberNode(Identifier name, TypeNode declared, Expression expression, Boolean mutable) {
+        this(name, declared, expression, mutable, FieldMergeMode.DEFAULT);
+    }
+
+    public MemberNode(Identifier name, TypeNode declared, Expression expression, Boolean mutable, FieldMergeMode mergeMode) {
         super(name.ast(), VariableKind.from(mutable));
+        this.mergeMode = mergeMode == null ? FieldMergeMode.DEFAULT : mergeMode;
         this.declare(name, declared, expression);
     }
 
     public MemberNode(Identifier name, Expression expression, Boolean mutable) {
         this(name, null, expression, mutable);
+    }
+
+    public MemberNode(Identifier name, Expression expression, Boolean mutable, FieldMergeMode mergeMode) {
+        this(name, null, expression, mutable, mergeMode);
     }
 
     @Override
@@ -69,5 +80,9 @@ public class MemberNode extends VariableDeclarator {
 
     public Boolean mutable() {
         return this.kind().mutable();
+    }
+
+    public FieldMergeMode mergeMode() {
+        return this.mergeMode;
     }
 }

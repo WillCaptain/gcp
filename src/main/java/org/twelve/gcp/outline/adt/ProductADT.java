@@ -3,6 +3,7 @@ package org.twelve.gcp.outline.adt;
 import com.sun.xml.ws.developer.Serialization;
 import org.twelve.gcp.ast.AST;
 import org.twelve.gcp.ast.Node;
+import org.twelve.gcp.common.FieldMergeMode;
 import org.twelve.gcp.common.Mutable;
 import org.twelve.gcp.exception.GCPErrorReporter;
 import org.twelve.gcp.exception.GCPErrCode;
@@ -10,6 +11,7 @@ import org.twelve.gcp.node.expression.identifier.Identifier;
 import org.twelve.gcp.outline.Outline;
 import org.twelve.gcp.common.Modifier;
 import org.twelve.gcp.outline.builtin.BuildInOutline;
+import org.twelve.gcp.outline.decorators.Lazy;
 import org.twelve.gcp.outline.projectable.FirstOrderFunction;
 
 import java.util.*;
@@ -98,9 +100,9 @@ public abstract class ProductADT extends ADT {
                if(v.isDefault() && !v.hasDefaultValue()) return;
                EntityMember m = v.hasDefaultValue()
                    ? EntityMember.fromWithDefault(v.name(), v.outline.copy(cache), v.modifier(),
-                                                   v.mutable()==Mutable.True, v.node(), v.defaultValueNode())
+                                                   v.mutable()==Mutable.True, v.node(), v.defaultValueNode(), v.mergeMode())
                    : EntityMember.from(v.name(), v.outline.copy(cache), v.modifier(),
-                                        v.mutable()==Mutable.True, v.node(), v.isDefault());
+                                       v.mutable()==Mutable.True, v.node(), v.isDefault(), v.mergeMode());
                finalCopied.members.put(k, m);
             });
             cache.put(this,copied);
@@ -163,27 +165,18 @@ public abstract class ProductADT extends ADT {
         }
 
         if (m.outline().equals(member.outline())) return true;
-
-
-        if (m.outline() instanceof Poly) {//第n次重载
-            return ((Poly) m.outline()).sum(member.outline(), member.mutable().toBool());
-        } else {//第一次重载
-            if (m.node() == member.node()) {
-                this.members.put(member.name(), member);
-                this.invalidateMembersCache();
-                return true;
-            }
-            Poly overwrite = Poly.from(m.node());
-            overwrite.sum(m.outline(), m.mutable().toBool());
-//            overwrite.sum(member.outline(), member.mutable().toBool());
-            if (overwrite.sum(member.outline(), member.mutable().toBool())) {
-                this.members.put(member.name(), EntityMember.from(m.name(), overwrite, m.modifier()));
-                this.invalidateMembersCache();
-                return true;
-            } else {
-                return false;
-            }
+        if (m.node() == member.node()) {
+            this.members.put(member.name(), member);
+            this.invalidateMembersCache();
+            return true;
         }
+
+        EntityMember merged = mergeMember(m, member, this.node());
+        if (merged == null) return false;
+        this.members.put(member.name(), merged);
+        this.invalidateMembersCache();
+        return true;
+
     }
 
     public boolean replaceMember(String name, Outline outline) {
@@ -196,12 +189,26 @@ public abstract class ProductADT extends ADT {
         return this.addMember(EntityMember.from(name, outline, modifier, mutable, node, false));
     }
 
+    public boolean addMember(String name, Outline outline, Modifier modifier, Boolean mutable, Identifier node, FieldMergeMode mergeMode) {
+        return this.addMember(EntityMember.from(name, outline, modifier, mutable, node, false, mergeMode));
+    }
+
     public boolean addMember(String name, Outline outline, Modifier modifier, Boolean mutable, Identifier node, boolean isDefault) {
         return this.addMember(EntityMember.from(name, outline, modifier, mutable, node, isDefault));
     }
 
+    public boolean addMember(String name, Outline outline, Modifier modifier, Boolean mutable, Identifier node,
+                             boolean isDefault, FieldMergeMode mergeMode) {
+        return this.addMember(EntityMember.from(name, outline, modifier, mutable, node, isDefault, mergeMode));
+    }
+
     public boolean addMemberWithDefault(String name, Outline outline, Modifier modifier, Boolean mutable, Identifier node, org.twelve.gcp.ast.Node defaultValueNode) {
         return this.addMember(EntityMember.fromWithDefault(name, outline, modifier, mutable, node, defaultValueNode));
+    }
+
+    public boolean addMemberWithDefault(String name, Outline outline, Modifier modifier, Boolean mutable, Identifier node,
+                                        org.twelve.gcp.ast.Node defaultValueNode, FieldMergeMode mergeMode) {
+        return this.addMember(EntityMember.fromWithDefault(name, outline, modifier, mutable, node, defaultValueNode, mergeMode));
     }
 
     public boolean checkMember(String name, Outline outline) {
@@ -224,16 +231,58 @@ public abstract class ProductADT extends ADT {
                 if (found.get().isDefault()) continue;
                 if (!found.get().outline().equals(member.outline())) {
                     members.remove(found.get());
-                    Poly overwrite = Poly.create(this.ast());
-                    overwrite.sum(member.outline(), member.mutable().toBool());
-                    overwrite.sum(found.get().outline(), found.get().mutable().toBool());
-                    members.add(EntityMember.from(member.name(), overwrite, member.modifier()));
+                    EntityMember merged = mergeMember(member, found.get(), this.node());
+                    if (merged != null) {
+                        members.add(merged);
+                    }
                 }
             } else {
                 members.add(member);
             }
         }
         return members;
+    }
+
+    public static EntityMember mergeMember(EntityMember oldMember, EntityMember newMember, Node errorNode) {
+        if (newMember.outline().equals(oldMember.outline())) return newMember;
+        if (newMember.outline() instanceof Lazy || oldMember.outline() instanceof Lazy
+                || newMember.outline().toString().contains("Lazy{")
+                || oldMember.outline().toString().contains("Lazy{")
+                || newMember.outline().containsUnknown() || oldMember.outline().containsUnknown()) {
+            return newMember;
+        }
+        boolean newIsOld = newMember.outline().is(oldMember.outline());
+        boolean oldIsNew = oldMember.outline().is(newMember.outline());
+
+        return switch (newMember.mergeMode()) {
+            case DEFAULT -> {
+                if (newIsOld) yield newMember;
+                reportMergeError(oldMember, newMember, errorNode);
+                yield null;
+            }
+            case OVERRIDE -> {
+                if (newIsOld || oldIsNew) yield newMember;
+                reportMergeError(oldMember, newMember, errorNode);
+                yield null;
+            }
+            case OVERLOAD -> {
+                if (newIsOld) yield oldMember;
+                if (oldIsNew) yield newMember;
+                Poly overwrite = Poly.create(oldMember.outline().ast());
+                overwrite.sum(oldMember.outline(), oldMember.mutable().toBool());
+                overwrite.sum(newMember.outline(), newMember.mutable().toBool());
+                yield EntityMember.from(oldMember.name(), overwrite, oldMember.modifier());
+            }
+        };
+    }
+
+    private static void reportMergeError(EntityMember oldMember, EntityMember newMember, Node fallback) {
+        Node node = newMember.node() != null ? newMember.node() : fallback;
+        if (node != null) {
+            GCPErrorReporter.report(node, GCPErrCode.OUTLINE_MISMATCH,
+                    "field '" + newMember.name() + "' type " + newMember.outline()
+                            + " is not compatible with inherited " + oldMember.outline());
+        }
     }
 
     public BuildInOutline buildIn() {

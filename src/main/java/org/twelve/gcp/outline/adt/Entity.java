@@ -161,7 +161,8 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
             List<EntityMember> members = new ArrayList<>();
             for (EntityMember m : this.members()) {
                 if (m.isDefault()) continue;
-                members.add(EntityMember.from(m.name(), m.outline.copy(cache), m.modifier(), m.mutable() == Mutable.True, m.node(), m.isDefault()));
+                members.add(EntityMember.from(m.name(), m.outline.copy(cache), m.modifier(),
+                        m.mutable() == Mutable.True, m.node(), m.isDefault(), m.mergeMode()));
             }
             copied.addMembers(members);
         }
@@ -361,7 +362,7 @@ public class Entity extends ProductADT implements Projectable, ReferAble {
                 }
             }
 
-            ms.add(EntityMember.from(m.name(), mProjected, m.modifier(), m.mutable().toBool(), n, m.isDefault()));
+            ms.add(EntityMember.from(m.name(), mProjected, m.modifier(), m.mutable().toBool(), n, m.isDefault(), m.mergeMode()));
         }
         List<Reference> refs = new ArrayList<>(this.references);
         refs.remove(reference);

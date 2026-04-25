@@ -70,7 +70,15 @@ public class EntityInference implements Inference<EntityNode> {
             if (base instanceof This thisWrapper) {
                 node.ast().symbolEnv().current().setScopeType(SCOPE_TYPE.IN_PRODUCT_ADT);
                 node.ast().symbolEnv().current().setOutline(thisWrapper.eventual());
-                node.members().forEach((k, v) -> v.infer(inferencer));
+                ProductADT baseEntity = thisWrapper.eventual() instanceof ProductADT product ? product : null;
+                node.members().forEach((k, v) -> {
+                    Outline outline = v.infer(inferencer);
+                    if (baseEntity == null) return;
+                    Optional<EntityMember> old = baseEntity.getMember(k);
+                    old.ifPresent(oldMember -> ProductADT.mergeMember(oldMember,
+                            EntityMember.from(k, outline, v.modifier(), v.mutable(), v.identifier(), false, v.mergeMode()),
+                            node));
+                });
                 return base; // This(outerEntity)
             }
             // ─────────────────────────────────────────────────────────────────────────
@@ -136,14 +144,18 @@ public class EntityInference implements Inference<EntityNode> {
                 if (baseTemplateOutline instanceof ProductADT && entity.getMember(k).isPresent()) {
                     entity.replaceMember(k, outline);
                 } else {
-                    entity.addMember(k, outline, v.modifier(), v.mutable(), v.identifier());
+                    entity.addMember(k, outline, v.modifier(), v.mutable(), v.identifier(), v.mergeMode());
                 }
             }
         });
         node.members().forEach((k, v) -> {
             if (v.expression() instanceof FunctionNode) {
                 Outline outline = v.infer(inferencer);
-                entity.addMember(k, outline, v.modifier(), v.mutable(), v.identifier());
+                if (baseTemplateOutline instanceof ProductADT && entity.getMember(k).isPresent()) {
+                    entity.replaceMember(k, outline);
+                } else {
+                    entity.addMember(k, outline, v.modifier(), v.mutable(), v.identifier(), v.mergeMode());
+                }
             }
         });
         // Check required-field errors on every pass (clearError() clears them before each pass,

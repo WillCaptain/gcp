@@ -44,12 +44,12 @@ public class EntityTypeNodeInference implements Inference<EntityTypeNode> {
                     inferred = lit.outline();
                 }
                 declared = (inferred instanceof UNKNOWN) ? node.ast().Any : inferred;
-                entity.addMemberWithDefault(m.name(), declared, m.modifier(), m.mutable(), m, defaultValueNode);
+                entity.addMemberWithDefault(m.name(), declared, m.modifier(), m.mutable(), m, defaultValueNode, m.mergeMode());
             } else {
                 declared = m.declared() == null ? node.ast().Any : m.declared().infer(sessionInferencer);
                 // literal-type fields (e.g. issuer: #"GCP-System") are auto-filled — mark isDefault=true
                 boolean isLiteralField = declared instanceof Literal;
-                entity.addMember(m.name(), declared, m.modifier(), m.mutable(), m, isLiteralField);
+                entity.addMember(m.name(), declared, m.modifier(), m.mutable(), m, isLiteralField, m.mergeMode());
             }
         }
 
